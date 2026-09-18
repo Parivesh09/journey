@@ -1,0 +1,25 @@
+name: SDE Reminder Cron
+
+on:
+  schedule:
+    - cron: "0 */4 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  reminders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger reminder API
+        env:
+          CRON_URL: ${{ secrets.CRON_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -eu
+          test -n "$CRON_URL"
+          test -n "$CRON_SECRET"
+          curl --fail-with-body --silent --show-error --location --request POST "$CRON_URL" \
+            --header "Authorization: Bearer $CRON_SECRET" \
+            --header "Content-Type: application/json"

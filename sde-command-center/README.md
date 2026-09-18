@@ -44,7 +44,7 @@ Do not commit `.env`; it contains credentials. The current task routes use the s
 
 ## Reminders
 
-The reminder cron runs every three hours through `vercel.json`. Each run selects only the earliest incomplete task scheduled for today. It creates one task-and-slot record, so the same task cannot be fanned out twice for the same three-hour slot. After a task is completed, the next run selects the next incomplete task; completed and skipped tasks are never reminded.
+GitHub Actions runs the reminder workflow every four hours from `.github/workflows/reminders.yml`. The app selects only the earliest incomplete task scheduled for today. It creates one task-and-slot record, so the same task cannot be fanned out twice for the same four-hour slot. After a task is completed, the next scheduled run selects the next incomplete task; completed and skipped tasks are never reminded.
 
 Set these production variables:
 
@@ -63,4 +63,15 @@ CRON_SECRET=a-long-random-secret
 
 Email and SMS are sent server-side. Chrome notifications are delivered while the app is open in a browser tab: the browser listener polls for the same deduplicated reminder and requires notification permission. A browser tab that is fully closed needs Web Push/VAPID infrastructure, which is not included in this simple first release.
 
-For a safe manual scheduler test, call `/api/notifications/remind?dryRun=true` with `Authorization: Bearer $CRON_SECRET`. It reports the next task, dedupe slot, channel readiness, and provider configuration without sending anything. Calling `/api/notifications/remind` without `dryRun=true` can send real email and SMS when a new three-hour slot is available.
+For a safe manual scheduler test, call `/api/notifications/remind?dryRun=true` with `Authorization: Bearer $CRON_SECRET`. It reports the next task, dedupe slot, channel readiness, and provider configuration without sending anything. Calling `/api/notifications/remind` without `dryRun=true` can send real email and SMS when a new four-hour slot is available.
+
+## GitHub Actions scheduler
+
+Add these repository secrets in **GitHub → Settings → Secrets and variables → Actions**:
+
+```text
+CRON_URL=https://your-deployed-app.example.com/api/cron/reminders
+CRON_SECRET=the-same-value-as-your-production-CRON_SECRET
+```
+
+The workflow sends a request every four hours. The application-side dedupe key prevents duplicate reminders and keeps the four-hour reminder policy in one place.

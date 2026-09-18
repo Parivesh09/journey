@@ -36,7 +36,9 @@ async function main() {
 
   await prisma.notificationPreference.upsert({
     where: { userId: user.id },
-    update: {},
+    update: {
+      minNotificationInterval: 240,
+    },
     create: {
       userId: user.id,
       browserEnabled: true,
@@ -44,7 +46,7 @@ async function main() {
       linqEnabled: true,
       dailyReminderEnabled: true,
       missedTaskReminderEnabled: true,
-      minNotificationInterval: 180,
+      minNotificationInterval: 240,
       maxDailyNotifications: 8,
     },
   });

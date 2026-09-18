@@ -9,7 +9,7 @@ import type {
   NotificationResult,
 } from "./notification.types";
 
-const reminderIntervalHours = 3;
+const reminderIntervalHours = 4;
 
 function startOfToday(date: Date) {
   const value = new Date(date);
@@ -41,7 +41,7 @@ export async function sendNextTaskReminder(now = new Date()) {
         browserEnabled: true,
         emailEnabled: true,
         linqEnabled: true,
-        minNotificationInterval: 180,
+        minNotificationInterval: 240,
         maxDailyNotifications: 8,
       },
     }));

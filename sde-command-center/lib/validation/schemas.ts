@@ -25,7 +25,7 @@ export const notificationPreferenceSchema = z.object({
   quietHoursStart: z.string().default("22:00"),
   quietHoursEnd: z.string().default("07:00"),
   maxDailyNotifications: z.number().int().min(1).max(20).default(5),
-  minNotificationInterval: z.number().int().min(5).max(180).default(30),
+  minNotificationInterval: z.number().int().min(5).max(1440).default(240),
   preferredChannel: z
     .enum(["browser", "email", "telegram", "linq"])
     .default("browser"),
