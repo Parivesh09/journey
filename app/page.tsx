@@ -158,6 +158,7 @@ export default async function HomePage() {
             <nav className="space-y-1 text-sm">
               {[
                 ["Dashboard", "/", false],
+
                 ["All tasks", "/tasks", false],
                 ["DSA", "/dsa", true],
                 ["Study", "/study", true],
