@@ -38,9 +38,7 @@ function getIndiaTime(date: Date) {
 
 function isReminderWindow(now: Date) {
   const india = getIndiaTime(now);
-  const withinHours = india.hour >= 8 || india.hour < 2;
-  const scheduledHour = [0, 8, 12, 16, 20].includes(india.hour);
-  return withinHours && scheduledHour && india.minute <= 15;
+  return india.hour >= 8 || india.hour < 2;
 }
 
 function startOfToday(date: Date) {
@@ -52,7 +50,7 @@ function startOfToday(date: Date) {
 function getReminderSlot(now: Date) {
   const india = getIndiaTime(now);
   const slot =
-    india.hour === 0 ? 4 : Math.floor((india.hour - 8) / reminderIntervalHours);
+    india.hour < 2 ? 4 : Math.floor((india.hour - 8) / reminderIntervalHours);
   return `${india.year}-${String(india.month).padStart(2, "0")}-${String(india.day).padStart(2, "0")}:${slot}`;
 }
 
