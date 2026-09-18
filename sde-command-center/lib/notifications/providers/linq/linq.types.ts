@@ -1,9 +1,9 @@
 export type LinqRequest = {
-  recipient?: string;
-  message: string;
-  title?: string;
-  channel?: string;
-  metadata?: Record<string, unknown>;
+  to: string[];
+  message: {
+    preferred_service: "SMS";
+    parts: Array<{ type: "text"; value: string }>;
+  };
 };
 
 export type LinqResponse = {

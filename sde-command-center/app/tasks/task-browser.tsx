@@ -50,6 +50,7 @@ export default function TaskBrowser({
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [filters, setFilters] = useState({
     q: "",
@@ -71,7 +72,6 @@ export default function TaskBrowser({
       if (value) query.set(key, value);
     });
 
-    setLoading(true);
     fetch(`/api/tasks?${query}`, { signal: controller.signal })
       .then((response) => response.json())
       .then(
@@ -81,13 +81,22 @@ export default function TaskBrowser({
           total: number;
           totalPages: number;
         }) => {
+          setLoading(false);
+          setErrorMessage("");
           setTasks(data.tasks);
           setFacets(data.facets);
           setTotal(data.total);
           setTotalPages(Math.max(1, data.totalPages));
         },
       )
-      .finally(() => setLoading(false));
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        setLoading(false);
+        setErrorMessage("Unable to load roadmap tasks. Please try again.");
+      });
 
     return () => controller.abort();
   }, [filters, page]);
@@ -255,6 +264,11 @@ export default function TaskBrowser({
           <span>{total} matching tasks</span>
           <span>Ordered by roadmap sequence</span>
         </div>
+        {errorMessage ? (
+          <p className="mb-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">
+            {errorMessage}
+          </p>
+        ) : null}
         <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60">
           {loading ? (
             <div className="flex items-center gap-3 p-6 text-slate-400">

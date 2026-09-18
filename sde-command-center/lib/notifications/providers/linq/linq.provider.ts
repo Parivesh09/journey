@@ -28,11 +28,16 @@ export class LinqNotificationProvider implements NotificationProvider {
 
     try {
       const response = await this.client.send({
-        recipient: notification.userId,
-        title: notification.title,
-        message: notification.message,
-        channel: notification.channel,
-        metadata: notification.metadata,
+        to: [process.env.LINQ_TO ?? ""],
+        message: {
+          preferred_service: "SMS",
+          parts: [
+            {
+              type: "text",
+              value: `${notification.title}\n${notification.message}`,
+            },
+          ],
+        },
       });
 
       if (!response.success) {

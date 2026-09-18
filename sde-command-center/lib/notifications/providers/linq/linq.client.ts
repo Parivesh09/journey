@@ -16,7 +16,7 @@ export class LinqClient {
       };
     }
 
-    const response = await fetch(`${this.baseUrl}/partner/messages`, {
+    const response = await fetch(`${this.baseUrl}/messages`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

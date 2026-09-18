@@ -34,6 +34,21 @@ async function main() {
       },
     }));
 
+  await prisma.notificationPreference.upsert({
+    where: { userId: user.id },
+    update: {},
+    create: {
+      userId: user.id,
+      browserEnabled: true,
+      emailEnabled: true,
+      linqEnabled: true,
+      dailyReminderEnabled: true,
+      missedTaskReminderEnabled: true,
+      minNotificationInterval: 180,
+      maxDailyNotifications: 8,
+    },
+  });
+
   const categoryNames = new Set<string>([
     "DSA",
     "CS FUNDAMENTALS",
