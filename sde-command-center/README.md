@@ -44,7 +44,7 @@ Do not commit `.env`; it contains credentials. The current task routes use the s
 
 ## Reminders
 
-GitHub Actions runs the reminder workflow every four hours from `.github/workflows/reminders.yml`. The app selects only the earliest incomplete task scheduled for today. It creates one task-and-slot record, so the same task cannot be fanned out twice for the same four-hour slot. After a task is completed, the next scheduled run selects the next incomplete task; completed and skipped tasks are never reminded.
+GitHub Actions runs the reminder workflow every four hours in IST from `.github/workflows/reminders.yml`: 08:00, 12:00, 16:00, 20:00, and 00:00. The app rejects requests outside 08:00 through 01:59 IST, so the first reminder is only sent at the 08:00 IST slot and only when an incomplete task remains for that day. It creates one task-and-slot record, so the same task cannot be fanned out twice for the same four-hour slot. After a task is completed, the next scheduled run selects the next incomplete task; completed and skipped tasks are never reminded.
 
 Set these production variables:
 

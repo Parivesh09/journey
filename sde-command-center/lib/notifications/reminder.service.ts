@@ -10,6 +10,32 @@ import type {
 } from "./notification.types";
 
 const reminderIntervalHours = 4;
+const indiaTimeZone = "Asia/Kolkata";
+
+function getIndiaTime(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: indiaTimeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const values = Object.fromEntries(
+    parts
+      .filter((part) => part.type !== "literal")
+      .map((part) => [part.type, Number(part.value)]),
+  );
+  return values as { year: number; month: number; day: number; hour: number; minute: number };
+}
+
+function isReminderWindow(now: Date) {
+  const india = getIndiaTime(now);
+  const withinHours = india.hour >= 8 || india.hour < 2;
+  const scheduledHour = [0, 8, 12, 16, 20].includes(india.hour);
+  return withinHours && scheduledHour && india.minute <= 15;
+}
 
 function startOfToday(date: Date) {
   const value = new Date(date);
@@ -18,10 +44,16 @@ function startOfToday(date: Date) {
 }
 
 function getReminderSlot(now: Date) {
-  return Math.floor(now.getTime() / (reminderIntervalHours * 60 * 60 * 1000));
+  const india = getIndiaTime(now);
+  const slot = india.hour === 0 ? 4 : Math.floor((india.hour - 8) / reminderIntervalHours);
+  return `${india.year}-${String(india.month).padStart(2, "0")}-${String(india.day).padStart(2, "0")}:${slot}`;
 }
 
 export async function sendNextTaskReminder(now = new Date()) {
+  if (!isReminderWindow(now)) {
+    return { sent: false, reason: "OUTSIDE_IST_REMINDER_WINDOW" };
+  }
+
   const user = await prisma.user.findUnique({
     where: { email: "user@sdecommand.center" },
     include: { notificationPreferences: true },
@@ -152,6 +184,10 @@ export async function sendNextTaskReminder(now = new Date()) {
 }
 
 export async function previewNextTaskReminder(now = new Date()) {
+  if (!isReminderWindow(now)) {
+    return { ready: false, reason: "OUTSIDE_IST_REMINDER_WINDOW" };
+  }
+
   const user = await prisma.user.findUnique({
     where: { email: "user@sdecommand.center" },
     include: { notificationPreferences: true },
