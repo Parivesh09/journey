@@ -33,7 +33,7 @@ curl http://localhost:3000/api/health
 
 The app is ready for a managed Next.js host such as Vercel and a managed PostgreSQL provider such as Neon, Supabase, or Railway.
 
-1. Create a production PostgreSQL database and set `DATABASE_URL` to Supabase's pooler connection string. In Supabase, open **Connect → ORMs → Prisma** and copy the pooler URL; do not use the direct `db.<project>.supabase.co:5432` URL for Vercel because it can resolve to an unreachable IPv6 address.
+1. Create a production PostgreSQL database and set `DATABASE_URL` to Supabase's pooler connection string. In Supabase, open **Connect → ORMs → Prisma** and copy the pooler URL; do not use the direct `db.<project>.supabase.co:5432` URL for Vercel because it can resolve to an unreachable IPv6 address. The runtime normalizes Supabase TLS to `sslmode=require&uselibpqcompat=true` for the Prisma Postgres adapter.
 2. Set a strong random `AUTH_SECRET` and `NEXT_PUBLIC_APP_URL` in the host environment.
 3. Deploy the repository with the default Next.js build command: `npm run build`.
 4. Run `DIRECT_URL="your-direct-supabase-url" npm run db:migrate:deploy` from a machine that can reach Supabase's direct connection. The deployed app itself only needs the pooler `DATABASE_URL`.
@@ -41,6 +41,12 @@ The app is ready for a managed Next.js host such as Vercel and a managed Postgre
 6. Verify `/api/health` returns `{ "status": "ok", "database": "connected" }`.
 
 Do not commit `.env`; it contains credentials. The current task routes use the seeded personal demo user and should remain behind private deployment access until authentication is enabled.
+
+For Vercel, the runtime URL should look like this (with your real password):
+
+```env
+DATABASE_URL="postgresql://postgres.<project-ref>:PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require&uselibpqcompat=true"
+```
 
 ## Reminders
 
