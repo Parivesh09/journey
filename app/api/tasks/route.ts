@@ -79,7 +79,7 @@ export async function GET(request: Request) {
     prisma.task.findMany({
       where,
       include: { category: true },
-      orderBy: { sequenceOrder: "asc" },
+      orderBy: [{ dueDate: "asc" }, { sequenceOrder: "asc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,
     }),

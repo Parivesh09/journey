@@ -56,7 +56,11 @@ export default function TaskBrowser({
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [todayModalOpen, setTodayModalOpen] = useState(false);
+  const [todayTasks, setTodayTasks] = useState<Task[]>([]);
+  const [todayLoading, setTodayLoading] = useState(false);
   const [shiftDays, setShiftDays] = useState("1");
+  const [shiftMessage, setShiftMessage] = useState("");
   const [form, setForm] = useState({
     title: "",
     dueDate: "",
@@ -210,6 +214,7 @@ export default function TaskBrowser({
   }
 
   async function shiftAllTasks() {
+    setShiftMessage("");
     const response = await fetch("/api/tasks/bulk/shift", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -219,7 +224,46 @@ export default function TaskBrowser({
       setErrorMessage("Unable to shift task dates.");
       return;
     }
-    window.location.reload();
+    const data = (await response.json()) as { shifted: number; days: number };
+    setShiftMessage(
+      `${data.shifted} scheduled task${data.shifted === 1 ? "" : "s"} moved by ${data.days} day${data.days === 1 ? "" : "s"}.`,
+    );
+    setPage(1);
+    setFilters((current) => ({ ...current }));
+  }
+
+  function getLocalDateString(date = new Date()) {
+    const offsetDate = new Date(
+      date.getTime() - date.getTimezoneOffset() * 60_000,
+    );
+    return offsetDate.toISOString().slice(0, 10);
+  }
+
+  async function showTodayTasks() {
+    setTodayModalOpen(true);
+    setTodayLoading(true);
+    setErrorMessage("");
+
+    const today = getLocalDateString();
+    try {
+      const response = await fetch(
+        `/api/tasks?${new URLSearchParams({
+          page: "1",
+          pageSize: "50",
+          from: today,
+          to: today,
+        })}`,
+      );
+      if (!response.ok) throw new Error("Unable to load today's tasks");
+
+      const data = (await response.json()) as { tasks: Task[] };
+      setTodayTasks(data.tasks);
+    } catch {
+      setTodayModalOpen(false);
+      setErrorMessage("Unable to load today's tasks. Please try again.");
+    } finally {
+      setTodayLoading(false);
+    }
   }
 
   const visibleTopics = facets.topics.filter(
@@ -358,7 +402,14 @@ export default function TaskBrowser({
           </label>
         </section>
 
-        <div className="mb-6 flex justify-end">
+        <div className="mb-6 flex flex-wrap justify-end gap-3">
+          <button
+            type="button"
+            onClick={showTodayTasks}
+            className="rounded-lg border border-cyan-400/50 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-400/10"
+          >
+            Today&apos;s tasks
+          </button>
           <button
             type="button"
             onClick={startAdding}
@@ -492,6 +543,76 @@ export default function TaskBrowser({
           </div>
         ) : null}
 
+        {todayModalOpen ? (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="today-tasks-modal-title"
+          >
+            <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-950 p-6 shadow-2xl">
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">
+                    Daily plan
+                  </p>
+                  <h2
+                    id="today-tasks-modal-title"
+                    className="mt-1 text-2xl font-semibold"
+                  >
+                    Today&apos;s tasks
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setTodayModalOpen(false)}
+                  className="text-slate-400 hover:text-white"
+                  aria-label="Close today's tasks"
+                >
+                  ×
+                </button>
+              </div>
+
+              {todayLoading ? (
+                <div className="flex items-center gap-3 py-8 text-slate-400">
+                  <LoaderCircle className="h-5 w-5 animate-spin" /> Loading
+                  today&apos;s tasks...
+                </div>
+              ) : todayTasks.length === 0 ? (
+                <p className="rounded-lg border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-400">
+                  Nothing is scheduled for today.
+                </p>
+              ) : (
+                <div className="max-h-[60vh] divide-y divide-slate-800 overflow-y-auto rounded-lg border border-slate-800">
+                  {todayTasks.map((task) => (
+                    <div key={task.id} className="p-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="min-w-0">
+                          <p
+                            className={
+                              task.status === "COMPLETED"
+                                ? "text-slate-500 line-through"
+                                : "font-medium text-slate-100"
+                            }
+                          >
+                            {task.title}
+                          </p>
+                          <p className="mt-1 text-xs text-slate-500">
+                            {task.phaseTitle ?? "No phase"} / {task.topicTitle ?? "No topic"}
+                          </p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-slate-800 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-slate-300">
+                          {task.status.replace("_", " ")}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
+
         <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
           <span className="text-sm text-slate-300">
             Bulk shift all scheduled tasks
@@ -512,11 +633,14 @@ export default function TaskBrowser({
           >
             Shift dates
           </button>
+          {shiftMessage ? (
+            <span className="text-sm text-emerald-300">{shiftMessage}</span>
+          ) : null}
         </div>
 
         <div className="mb-3 flex items-center justify-between text-sm text-slate-400">
           <span>{total} matching tasks</span>
-          <span>Ordered by roadmap sequence</span>
+          <span>Ordered by due date</span>
         </div>
         {errorMessage ? (
           <p className="mb-3 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">

@@ -5,7 +5,7 @@ import { isAuthenticated } from "@/lib/auth";
 export async function POST(request: Request) {
   if (!(await isAuthenticated()))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const body = (await request.json()) as { days?: number; from?: string };
+  const body = (await request.json()) as { days?: number };
   const days = Number(body.days);
   if (!Number.isInteger(days) || days < 1 || days > 30) {
     return NextResponse.json(
@@ -18,13 +18,10 @@ export async function POST(request: Request) {
   });
   if (!user)
     return NextResponse.json({ error: "User not found" }, { status: 404 });
-  const from = body.from ? new Date(`${body.from}T00:00:00.000Z`) : new Date();
-  if (Number.isNaN(from.getTime()))
-    return NextResponse.json({ error: "Invalid from date" }, { status: 400 });
   const result = await prisma.$executeRaw`
     UPDATE "Task"
     SET "dueDate" = "dueDate" + (${days} * INTERVAL '1 day'), "updatedAt" = NOW()
-    WHERE "userId" = ${user.id} AND "dueDate" >= ${from}
+    WHERE "userId" = ${user.id} AND "dueDate" IS NOT NULL
   `;
   return NextResponse.json({ shifted: Number(result), days });
 }
