@@ -33,7 +33,7 @@ curl http://localhost:3000/api/health
 
 The app is ready for a managed Next.js host such as Vercel and a managed PostgreSQL provider such as Neon, Supabase, or Railway.
 
-1. Create a production PostgreSQL database and set `DATABASE_URL` to its connection string.
+1. Create a production PostgreSQL database and set `DATABASE_URL` to Supabase's pooler connection string. In Supabase, open **Connect → ORMs → Prisma** and copy the pooler URL; do not use the direct `db.<project>.supabase.co:5432` URL for Vercel because it can resolve to an unreachable IPv6 address.
 2. Set a strong random `AUTH_SECRET` and `NEXT_PUBLIC_APP_URL` in the host environment.
 3. Deploy the repository with the default Next.js build command: `npm run build`.
 4. Run `npm run db:migrate:deploy` against the production database.

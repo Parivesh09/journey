@@ -14,6 +14,8 @@ import { ensureDailyTasks } from "@/lib/business/daily-plan";
 import { defaultStudyPlan } from "@/lib/data/mock-data";
 import { formatMinutes, toPercent } from "@/lib/utils";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
