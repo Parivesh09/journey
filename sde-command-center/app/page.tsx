@@ -10,26 +10,38 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { ensureDailyTasks } from "@/lib/business/daily-plan";
 import { defaultStudyPlan } from "@/lib/data/mock-data";
 import { formatMinutes, toPercent } from "@/lib/utils";
 
 export default async function HomePage() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const user = await prisma.user.findFirst({
+  const account = await prisma.user.findUnique({
     where: { email: "user@sdecommand.center" },
-    include: {
-      tasks: {
-        include: { category: true },
-        orderBy: [
-          { status: "asc" },
-          { priority: "desc" },
-          { createdAt: "asc" },
-        ],
-      },
-      studySessions: { where: { startedAt: { gte: today } } },
-    },
+    select: { id: true },
   });
+
+  if (account) {
+    await ensureDailyTasks(account.id, today);
+  }
+
+  const user = account
+    ? await prisma.user.findUnique({
+        where: { id: account.id },
+        include: {
+          tasks: {
+            where: {
+              isDailyTask: true,
+              dueDate: { gte: today, lt: new Date(today.getTime() + 86400000) },
+            },
+            include: { category: true },
+            orderBy: { sequenceOrder: "asc" },
+          },
+          studySessions: { where: { startedAt: { gte: today } } },
+        },
+      })
+    : null;
 
   const tasks = user?.tasks ?? [];
   const studyMinutes = (user?.studySessions ?? []).reduce(
@@ -74,29 +86,39 @@ export default async function HomePage() {
 
           <nav className="space-y-2 text-sm text-slate-300">
             {["Dashboard", "Tasks", "DSA", "Study", "Revision", "Settings"].map(
-              (item, index) => (
-                <Link
-                  key={item}
-                  href={
-                    {
-                      Dashboard: "/",
-                      Tasks: "/tasks",
-                      DSA: "/dsa",
-                      Study: "/study",
-                      Revision: "/revision",
-                      Settings: "/settings",
-                    }[item] ?? "/"
-                  }
-                  className={`flex w-full items-center justify-between rounded-xl px-3 py-2 transition ${
-                    index === 0
-                      ? "bg-slate-800 text-white"
-                      : "hover:bg-slate-900"
-                  }`}
-                >
-                  <span>{item}</span>
-                  <ArrowRight className="h-4 w-4 opacity-60" />
-                </Link>
-              ),
+              (item, index) =>
+                ["DSA", "Study", "Revision"].includes(item) ? (
+                  <span
+                    key={item}
+                    aria-disabled="true"
+                    className="flex w-full cursor-not-allowed items-center justify-between rounded-xl px-3 py-2 text-slate-600"
+                  >
+                    <span>{item}</span>
+                    <ArrowRight className="h-4 w-4 opacity-30" />
+                  </span>
+                ) : (
+                  <Link
+                    key={item}
+                    href={
+                      {
+                        Dashboard: "/",
+                        Tasks: "/tasks",
+                        DSA: "/dsa",
+                        Study: "/study",
+                        Revision: "/revision",
+                        Settings: "/settings",
+                      }[item] ?? "/"
+                    }
+                    className={`flex w-full items-center justify-between rounded-xl px-3 py-2 transition ${
+                      index === 0
+                        ? "bg-slate-800 text-white"
+                        : "hover:bg-slate-900"
+                    }`}
+                  >
+                    <span>{item}</span>
+                    <ArrowRight className="h-4 w-4 opacity-60" />
+                  </Link>
+                ),
             )}
           </nav>
 
@@ -140,7 +162,7 @@ export default async function HomePage() {
                   />
                 </div>
                 <p className="mt-4 text-sm text-slate-300">
-                  {completedCount} / {tasks.length || 1} tasks completed
+                  {completedCount} / {tasks.length || 4} daily tasks completed
                 </p>
               </div>
 
@@ -164,7 +186,7 @@ export default async function HomePage() {
               <div className="mb-5 flex items-center justify-between">
                 <h3 className="text-xl font-semibold">Today&apos;s Tasks</h3>
                 <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-1 text-xs uppercase tracking-[0.2em] text-slate-300">
-                  {visibleTasks.length} items
+                  {visibleTasks.length} daily blocks
                 </span>
               </div>
 
@@ -183,7 +205,11 @@ export default async function HomePage() {
                       <div>
                         <p className="font-medium">{task.title}</p>
                         <p className="text-xs text-slate-400">
-                          {task.category?.name ?? "Uncategorized"}
+                          {task.dailySlot?.replaceAll("_", " ") ??
+                            task.category?.name ??
+                            "Daily task"}{" "}
+                          • {task.plannedMinutes ?? task.estimatedMinutes ?? 60}
+                          m
                         </p>
                       </div>
                     </div>

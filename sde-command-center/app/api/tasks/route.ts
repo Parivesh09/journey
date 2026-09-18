@@ -7,6 +7,12 @@ const demoUserEmail = "user@sdecommand.center";
 
 const pageSizeLimit = 50;
 
+function parseDate(value: unknown) {
+  if (typeof value !== "string" || !value) return null;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
@@ -106,4 +112,58 @@ export async function GET(request: Request) {
       topics,
     },
   });
+}
+
+export async function POST(request: Request) {
+  const user = await prisma.user.findUnique({
+    where: { email: demoUserEmail },
+  });
+  if (!user)
+    return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+  const body = (await request.json()) as Record<string, unknown>;
+  const title = typeof body.title === "string" ? body.title.trim() : "";
+  if (!title || title.length > 160) {
+    return NextResponse.json(
+      { error: "A title between 1 and 160 characters is required" },
+      { status: 400 },
+    );
+  }
+
+  const dueDate = parseDate(body.dueDate) ?? new Date();
+  const task = await prisma.task.create({
+    data: {
+      userId: user.id,
+      title,
+      description:
+        typeof body.description === "string" ? body.description : undefined,
+      categoryId:
+        typeof body.categoryId === "string" ? body.categoryId : undefined,
+      priority: Object.values(TaskPriority).includes(
+        body.priority as TaskPriority,
+      )
+        ? (body.priority as TaskPriority)
+        : "MEDIUM",
+      status: Object.values(TaskStatus).includes(body.status as TaskStatus)
+        ? (body.status as TaskStatus)
+        : "TODO",
+      estimatedMinutes:
+        typeof body.estimatedMinutes === "number"
+          ? Math.max(1, Math.round(body.estimatedMinutes))
+          : 60,
+      plannedMinutes:
+        typeof body.plannedMinutes === "number"
+          ? Math.max(1, Math.round(body.plannedMinutes))
+          : 60,
+      dueDate,
+      taskType: typeof body.taskType === "string" ? body.taskType : "custom",
+      dailySlot:
+        typeof body.dailySlot === "string" ? body.dailySlot : undefined,
+      isDailyTask: body.isDailyTask === true,
+      sequenceOrder: Number.MAX_SAFE_INTEGER,
+    },
+    include: { category: true },
+  });
+
+  return NextResponse.json({ task }, { status: 201 });
 }

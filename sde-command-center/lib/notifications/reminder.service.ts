@@ -1,6 +1,7 @@
-import { NotificationStatus } from "@prisma/client";
+import { NotificationStatus, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
+import { ensureDailyTasks } from "@/lib/business/daily-plan";
 import { EmailNotificationProvider } from "./providers/email/email.provider";
 import { LinqNotificationProvider } from "./providers/linq/linq.provider";
 import type {
@@ -29,6 +30,8 @@ export async function sendNextTaskReminder(now = new Date()) {
   if (!user) {
     return { sent: false, reason: "USER_NOT_FOUND" };
   }
+
+  await ensureDailyTasks(user.id, now);
 
   const preferences =
     user.notificationPreferences ??
@@ -79,7 +82,10 @@ export async function sendNextTaskReminder(now = new Date()) {
       },
     });
   } catch (error) {
-    if (error instanceof Error && error.message.includes("Unique constraint")) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
       return {
         sent: false,
         reason: "ALREADY_SENT_FOR_TASK_AND_SLOT",
@@ -94,7 +100,11 @@ export async function sendNextTaskReminder(now = new Date()) {
     title,
     message,
     channel: "email",
-    metadata: { email: user.email, taskId: task.id, reminderKey },
+    metadata: {
+      email: process.env.REMINDER_EMAIL ?? "rimjha.parivesh2002@gmail.com",
+      taskId: task.id,
+      reminderKey,
+    },
   };
   const results: NotificationResult[] = [];
 
@@ -138,6 +148,66 @@ export async function sendNextTaskReminder(now = new Date()) {
       provider: result.provider,
       success: result.success,
     })),
+  };
+}
+
+export async function previewNextTaskReminder(now = new Date()) {
+  const user = await prisma.user.findUnique({
+    where: { email: "user@sdecommand.center" },
+    include: { notificationPreferences: true },
+  });
+
+  if (!user) {
+    return { ready: false, reason: "USER_NOT_FOUND" };
+  }
+
+  const dayStart = startOfToday(now);
+  const dayEnd = new Date(dayStart);
+  dayEnd.setDate(dayEnd.getDate() + 1);
+  const task = await prisma.task.findFirst({
+    where: {
+      userId: user.id,
+      status: { notIn: ["COMPLETED", "SKIPPED"] },
+      dueDate: { gte: dayStart, lt: dayEnd },
+    },
+    orderBy: { sequenceOrder: "asc" },
+  });
+
+  if (!task) {
+    return { ready: false, reason: "NO_INCOMPLETE_TASK_FOR_TODAY" };
+  }
+
+  const preferences = user.notificationPreferences;
+  const reminderKey = `${user.id}:${task.id}:${getReminderSlot(now)}`;
+  const existingReminder = await prisma.notification.findUnique({
+    where: { reminderKey },
+    select: { id: true, status: true },
+  });
+
+  return {
+    ready: !existingReminder,
+    reason: existingReminder ? "ALREADY_SENT_FOR_TASK_AND_SLOT" : "READY",
+    task: { id: task.id, title: task.title, dueDate: task.dueDate },
+    reminderKey,
+    channels: {
+      browser: Boolean(preferences?.browserEnabled),
+      email: Boolean(preferences?.emailEnabled && process.env.SMTP_HOST),
+      linq: Boolean(
+        preferences?.linqEnabled &&
+        process.env.LINQ_ENABLED === "true" &&
+        process.env.LINQ_API_KEY &&
+        process.env.LINQ_TO,
+      ),
+    },
+    configuration: {
+      smtpConfigured: Boolean(process.env.SMTP_HOST && process.env.SMTP_FROM),
+      linqConfigured: Boolean(
+        process.env.LINQ_ENABLED === "true" &&
+        process.env.LINQ_API_KEY &&
+        process.env.LINQ_TO,
+      ),
+      browserRequiresOpenTab: true,
+    },
   };
 }
 

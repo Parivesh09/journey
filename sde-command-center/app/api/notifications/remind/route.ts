@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { sendNextTaskReminder } from "@/lib/notifications/reminder.service";
+import {
+  previewNextTaskReminder,
+  sendNextTaskReminder,
+} from "@/lib/notifications/reminder.service";
 
 function isAuthorized(request: Request) {
   const secret = process.env.CRON_SECRET;
@@ -13,6 +16,11 @@ function isAuthorized(request: Request) {
 export async function GET(request: Request) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const url = new URL(request.url);
+  if (url.searchParams.get("dryRun") === "true") {
+    return NextResponse.json(await previewNextTaskReminder());
   }
 
   return NextResponse.json(await sendNextTaskReminder());

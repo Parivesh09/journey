@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { ArrowLeft, CheckCircle2, Circle, LoaderCircle } from "lucide-react";
 
@@ -17,6 +17,8 @@ type Task = {
   topicId: string | null;
   topicTitle: string | null;
   category: { name: string } | null;
+  plannedMinutes: number | null;
+  dailySlot: string | null;
 };
 
 type Facets = {
@@ -52,6 +54,15 @@ export default function TaskBrowser({
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    title: "",
+    dueDate: "",
+    plannedMinutes: "60",
+    priority: "MEDIUM",
+    taskType: "custom",
+    category: "",
+  });
   const [filters, setFilters] = useState({
     q: "",
     category: initialCategory,
@@ -122,6 +133,63 @@ export default function TaskBrowser({
       current.map((item) => (item.id === task.id ? data.task : item)),
     );
     setUpdatingId(null);
+  }
+
+  function startEditing(task: Task) {
+    setEditingId(task.id);
+    setForm({
+      title: task.title,
+      dueDate: task.dueDate ? task.dueDate.slice(0, 10) : "",
+      plannedMinutes: String(task.plannedMinutes ?? 60),
+      priority: task.priority,
+      taskType: task.taskType ?? "custom",
+      category: task.category?.name ?? "",
+    });
+  }
+
+  async function saveTask(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const payload = {
+      title: form.title,
+      dueDate: form.dueDate,
+      plannedMinutes: Number(form.plannedMinutes),
+      estimatedMinutes: Number(form.plannedMinutes),
+      priority: form.priority,
+      taskType: form.taskType,
+      categoryId: undefined,
+    };
+    const endpoint = editingId ? `/api/tasks/${editingId}` : "/api/tasks";
+    const response = await fetch(endpoint, {
+      method: editingId ? "PATCH" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      setErrorMessage("Unable to save this task.");
+      return;
+    }
+    const data = (await response.json()) as { task: Task };
+    setTasks((current) =>
+      editingId
+        ? current.map((task) => (task.id === editingId ? data.task : task))
+        : [data.task, ...current],
+    );
+    setEditingId(null);
+    setForm({
+      title: "",
+      dueDate: "",
+      plannedMinutes: "60",
+      priority: "MEDIUM",
+      taskType: "custom",
+      category: "",
+    });
+  }
+
+  async function removeTask(task: Task) {
+    if (!window.confirm(`Delete "${task.title}"?`)) return;
+    const response = await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
+    if (response.ok)
+      setTasks((current) => current.filter((item) => item.id !== task.id));
   }
 
   const visibleTopics = facets.topics.filter(
@@ -260,6 +328,94 @@ export default function TaskBrowser({
           </label>
         </section>
 
+        <form
+          onSubmit={saveTask}
+          className="mb-6 grid gap-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4 sm:grid-cols-2 lg:grid-cols-5"
+        >
+          <input
+            required
+            value={form.title}
+            onChange={(event) =>
+              setForm((current) => ({ ...current, title: event.target.value }))
+            }
+            placeholder={editingId ? "Edit task title" : "Add a task"}
+            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm lg:col-span-2"
+          />
+          <input
+            type="date"
+            value={form.dueDate}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                dueDate: event.target.value,
+              }))
+            }
+            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+          />
+          <input
+            type="number"
+            min="1"
+            value={form.plannedMinutes}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                plannedMinutes: event.target.value,
+              }))
+            }
+            placeholder="Minutes"
+            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+          />
+          <select
+            value={form.priority}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                priority: event.target.value,
+              }))
+            }
+            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+          >
+            <option>CRITICAL</option>
+            <option>HIGH</option>
+            <option>MEDIUM</option>
+            <option>LOW</option>
+          </select>
+          <select
+            value={form.taskType}
+            onChange={(event) =>
+              setForm((current) => ({
+                ...current,
+                taskType: event.target.value,
+              }))
+            }
+            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+          >
+            <option>custom</option>
+            <option>concept</option>
+            <option>practice</option>
+            <option>implementation</option>
+            <option>project</option>
+            <option>revision</option>
+            <option>interview</option>
+            <option>mock</option>
+          </select>
+          <button
+            type="submit"
+            className="rounded-lg bg-cyan-400 px-3 py-2 text-sm font-semibold text-slate-950"
+          >
+            {editingId ? "Save changes" : "Add task"}
+          </button>
+          {editingId ? (
+            <button
+              type="button"
+              onClick={() => setEditingId(null)}
+              className="rounded-lg border border-slate-700 px-3 py-2 text-sm"
+            >
+              Cancel
+            </button>
+          ) : null}
+        </form>
+
         <div className="mb-3 flex items-center justify-between text-sm text-slate-400">
           <span>{total} matching tasks</span>
           <span>Ordered by roadmap sequence</span>
@@ -323,6 +479,20 @@ export default function TaskBrowser({
                   <span className="hidden rounded-full bg-slate-800 px-2 py-1 text-[10px] uppercase tracking-[0.18em] text-slate-300 sm:inline">
                     {task.priority}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => startEditing(task)}
+                    className="text-xs text-cyan-300 hover:text-cyan-100"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => removeTask(task)}
+                    className="text-xs text-rose-300 hover:text-rose-100"
+                  >
+                    Delete
+                  </button>
                 </div>
               ))}
             </div>

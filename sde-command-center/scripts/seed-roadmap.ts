@@ -201,6 +201,79 @@ async function main() {
     }
   }
 
+  const dailyDate = new Date();
+  dailyDate.setHours(0, 0, 0, 0);
+  const dailyDateKey = dailyDate.toISOString().slice(0, 10);
+  const dailyTasks = [
+    {
+      slot: "DSA_PRACTICE",
+      title: "DSA practice: solve 3 questions",
+      description:
+        "Solve three DSA questions and record the pattern, complexity, and mistakes.",
+      category: "DSA",
+      type: "practice",
+      minutes: 60,
+      order: -4,
+    },
+    {
+      slot: "SYSTEM_DESIGN",
+      title: "System design study",
+      description: "Spend one focused hour on the next system design topic.",
+      category: "System Design",
+      type: "concept",
+      minutes: 60,
+      order: -3,
+    },
+    {
+      slot: "NEW_DSA_LEARNING",
+      title: "New DSA learning",
+      description: "Learn and explain one new DSA concept without notes.",
+      category: "DSA",
+      type: "concept",
+      minutes: 60,
+      order: -2,
+    },
+    {
+      slot: "DEVELOPMENT",
+      title: "Development study",
+      description:
+        "Spend one focused hour on the next development topic or implementation task.",
+      category: "DEVELOPMENT",
+      type: "implementation",
+      minutes: 60,
+      order: -1,
+    },
+  ] as const;
+
+  for (const dailyTask of dailyTasks) {
+    const sourceId = `daily-${dailyDateKey}-${dailyTask.slot}`;
+    const existingDailyTask = await prisma.task.findFirst({
+      where: { userId: user.id, sourceId },
+    });
+    const categoryId = categoryMap.get(dailyTask.category);
+    const data = {
+      userId: user.id,
+      title: dailyTask.title,
+      description: dailyTask.description,
+      categoryId,
+      priority: "HIGH" as const,
+      estimatedMinutes: dailyTask.minutes,
+      dueDate: dailyDate,
+      taskType: dailyTask.type,
+      sourceId,
+      sequenceOrder: dailyTask.order,
+      dailySlot: dailyTask.slot,
+      plannedMinutes: dailyTask.minutes,
+      isDailyTask: true,
+    };
+
+    if (existingDailyTask) {
+      await prisma.task.update({ where: { id: existingDailyTask.id }, data });
+    } else {
+      await prisma.task.create({ data });
+    }
+  }
+
   console.log("Roadmap seed complete");
 }
 
