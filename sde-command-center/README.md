@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SDE Command Center
 
-## Getting Started
+A small Next.js application for tracking a software engineering preparation roadmap. The roadmap source is `../sde-master-roadmap.json`; seeded tasks, categories, study sessions, and completion state are stored in PostgreSQL through Prisma.
 
-First, run the development server:
+## Local setup
+
+Requirements: Node.js 20+, Docker, and npm.
 
 ```bash
+npm install
+docker compose up -d
+npm run prisma migrate dev -- --name init
+npm run seed
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open `http://localhost:3000`. The local PostgreSQL container uses port `5433` because port `5432` is already occupied on this machine.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Daily maintenance
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Use `/tasks` to work through the imported roadmap. Clicking a task status persists completion directly to PostgreSQL. Re-run `npm run seed` only when you intentionally want to refresh the imported roadmap; it recreates the seeded task list for the demo user.
 
-## Learn More
+Useful checks:
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run lint
+npm test
+npm run build
+curl http://localhost:3000/api/health
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Production deployment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+The app is ready for a managed Next.js host such as Vercel and a managed PostgreSQL provider such as Neon, Supabase, or Railway.
 
-## Deploy on Vercel
+1. Create a production PostgreSQL database and set `DATABASE_URL` to its connection string.
+2. Set a strong random `AUTH_SECRET` and `NEXT_PUBLIC_APP_URL` in the host environment.
+3. Deploy the repository with the default Next.js build command: `npm run build`.
+4. Run `npm run db:migrate:deploy` against the production database.
+5. Run `npm run seed` once from a machine where `sde-master-roadmap.json` is available.
+6. Verify `/api/health` returns `{ "status": "ok", "database": "connected" }`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Do not commit `.env`; it contains credentials. The current task routes use the seeded personal demo user and should remain behind private deployment access until authentication is enabled.

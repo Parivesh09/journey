@@ -1,0 +1,199 @@
+import fs from "node:fs";
+import path from "node:path";
+
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "@prisma/client";
+
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error("DATABASE_URL is not set");
+}
+
+const adapter = new PrismaPg({ connectionString });
+const prisma = new PrismaClient({ adapter });
+
+const roadmapPath = path.resolve(__dirname, "../../sde-master-roadmap.json");
+const roadmapData = JSON.parse(fs.readFileSync(roadmapPath, "utf-8"));
+
+async function main() {
+  if (!roadmapData || !roadmapData.phases) {
+    throw new Error("Roadmap JSON is missing phases");
+  }
+
+  const existingUser = await prisma.user.findFirst({
+    where: { email: "user@sdecommand.center" },
+  });
+
+  const user =
+    existingUser ??
+    (await prisma.user.create({
+      data: {
+        email: "user@sdecommand.center",
+        name: "SDE User",
+      },
+    }));
+
+  const categoryNames = new Set<string>([
+    "DSA",
+    "CS FUNDAMENTALS",
+    "DEVELOPMENT",
+    "SYSTEM DESIGN",
+    "PROJECT",
+    "REVISION",
+    "MOCK INTERVIEW",
+    "OTHER",
+  ]);
+
+  for (const phase of roadmapData.phases ?? []) {
+    if (phase.category) {
+      categoryNames.add(phase.category);
+    }
+
+    for (const topic of phase.topics ?? []) {
+      if (topic.category) {
+        categoryNames.add(topic.category);
+      }
+    }
+  }
+
+  const categories = await prisma.taskCategory.findMany({
+    where: { userId: user.id },
+  });
+  const categoryMap = new Map(
+    categories.map((category) => [category.name, category.id]),
+  );
+
+  for (const categoryName of [...categoryNames].sort()) {
+    if (!categoryMap.has(categoryName)) {
+      const createdCategory = await prisma.taskCategory.create({
+        data: {
+          name: categoryName,
+          userId: user.id,
+        },
+      });
+
+      categoryMap.set(categoryName, createdCategory.id);
+    }
+  }
+
+  const tasksToSeed: Array<{
+    title: string;
+    priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+    status: "TODO" | "IN_PROGRESS" | "COMPLETED" | "SKIPPED";
+    categoryId?: string;
+    taskType?: string;
+    difficulty?: string;
+    sourceId?: string;
+    phaseId?: string;
+    phaseTitle?: string;
+    topicId?: string;
+    topicTitle?: string;
+    sequenceOrder: number;
+    dueDate: Date;
+    estimatedMinutes?: number;
+  }> = [];
+
+  const scheduleStart = new Date();
+  scheduleStart.setHours(0, 0, 0, 0);
+  let sequenceOrder = 0;
+  let scheduleOffset = 0;
+
+  for (const phase of roadmapData.phases ?? []) {
+    const phaseStartOffset = scheduleOffset;
+    for (const topic of phase.topics ?? []) {
+      const topicDate = new Date(scheduleStart);
+      topicDate.setDate(topicDate.getDate() + scheduleOffset);
+      for (const task of topic.tasks ?? []) {
+        const priority = (task.priority ?? "medium").toUpperCase();
+        const status = (task.status ?? "todo").toUpperCase();
+
+        tasksToSeed.push({
+          title: task.title,
+          priority:
+            priority === "CRITICAL" ||
+            priority === "HIGH" ||
+            priority === "MEDIUM" ||
+            priority === "LOW"
+              ? priority
+              : "MEDIUM",
+          status:
+            status === "TODO" ||
+            status === "IN_PROGRESS" ||
+            status === "COMPLETED" ||
+            status === "SKIPPED"
+              ? status
+              : "TODO",
+          categoryId: categoryMap.get(
+            topic.category ?? phase.category ?? "OTHER",
+          ),
+          taskType: task.type,
+          difficulty: task.difficulty,
+          sourceId: task.id,
+          phaseId: phase.id,
+          phaseTitle: phase.title,
+          topicId: topic.id,
+          topicTitle: topic.title,
+          sequenceOrder,
+          dueDate: topicDate,
+          estimatedMinutes: Math.max(
+            30,
+            Math.round(
+              ((topic.estimated_days ?? 1) * 45) /
+                Math.max(1, topic.tasks?.length ?? 1),
+            ),
+          ),
+        });
+        sequenceOrder += 1;
+      }
+
+      scheduleOffset += Math.max(1, topic.estimated_days ?? 1);
+    }
+
+    if (scheduleOffset === phaseStartOffset) {
+      scheduleOffset += 1;
+    }
+  }
+
+  for (const task of tasksToSeed) {
+    const existingTask = task.sourceId
+      ? await prisma.task.findFirst({
+          where: { userId: user.id, sourceId: task.sourceId },
+        })
+      : null;
+
+    const data = {
+      userId: user.id,
+      title: task.title,
+      priority: task.priority,
+      categoryId: task.categoryId,
+      taskType: task.taskType,
+      difficulty: task.difficulty,
+      sourceId: task.sourceId,
+      phaseId: task.phaseId,
+      phaseTitle: task.phaseTitle,
+      topicId: task.topicId,
+      topicTitle: task.topicTitle,
+      sequenceOrder: task.sequenceOrder,
+      dueDate: task.dueDate,
+      estimatedMinutes: task.estimatedMinutes,
+    };
+
+    if (existingTask) {
+      await prisma.task.update({ where: { id: existingTask.id }, data });
+    } else {
+      await prisma.task.create({ data: { ...data, status: task.status } });
+    }
+  }
+
+  console.log("Roadmap seed complete");
+}
+
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

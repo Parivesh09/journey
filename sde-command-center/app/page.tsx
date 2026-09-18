@@ -8,15 +8,54 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
-import { defaultStudyPlan, defaultTasks } from "@/lib/data/mock-data";
+import Link from "next/link";
+import { prisma } from "@/lib/prisma";
+import { defaultStudyPlan } from "@/lib/data/mock-data";
 import { formatMinutes, toPercent } from "@/lib/utils";
 
-const completedCount = defaultTasks.filter(
-  (task) => task.status === "COMPLETED",
-).length;
-const progress = toPercent(completedCount, defaultTasks.length);
+export default async function HomePage() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const user = await prisma.user.findFirst({
+    where: { email: "user@sdecommand.center" },
+    include: {
+      tasks: {
+        include: { category: true },
+        orderBy: [
+          { status: "asc" },
+          { priority: "desc" },
+          { createdAt: "asc" },
+        ],
+      },
+      studySessions: { where: { startedAt: { gte: today } } },
+    },
+  });
 
-export default function HomePage() {
+  const tasks = user?.tasks ?? [];
+  const studyMinutes = (user?.studySessions ?? []).reduce(
+    (total, session) => total + session.durationMinutes,
+    0,
+  );
+  const completedCount = tasks.filter(
+    (task) => task.status === "COMPLETED",
+  ).length;
+  const progress = toPercent(completedCount, tasks.length || 1);
+  const revisionTasks = tasks
+    .filter(
+      (task) =>
+        task.taskType?.toLowerCase() === "revision" &&
+        task.status !== "COMPLETED",
+    )
+    .slice(0, 3);
+  const importantTasks = tasks
+    .filter(
+      (task) =>
+        task.status !== "COMPLETED" &&
+        (task.priority === "CRITICAL" || task.priority === "HIGH"),
+    )
+    .slice(0, 3);
+  const visibleTasks = tasks.slice(0, 5);
+
   return (
     <main className="min-h-screen bg-[#0b1020] text-slate-100">
       <div className="mx-auto flex max-w-7xl gap-8 px-6 py-8">
@@ -36,8 +75,18 @@ export default function HomePage() {
           <nav className="space-y-2 text-sm text-slate-300">
             {["Dashboard", "Tasks", "DSA", "Study", "Revision", "Settings"].map(
               (item, index) => (
-                <button
+                <Link
                   key={item}
+                  href={
+                    {
+                      Dashboard: "/",
+                      Tasks: "/tasks",
+                      DSA: "/dsa",
+                      Study: "/study",
+                      Revision: "/revision",
+                      Settings: "/settings",
+                    }[item] ?? "/"
+                  }
                   className={`flex w-full items-center justify-between rounded-xl px-3 py-2 transition ${
                     index === 0
                       ? "bg-slate-800 text-white"
@@ -46,7 +95,7 @@ export default function HomePage() {
                 >
                   <span>{item}</span>
                   <ArrowRight className="h-4 w-4 opacity-60" />
-                </button>
+                </Link>
               ),
             )}
           </nav>
@@ -91,7 +140,7 @@ export default function HomePage() {
                   />
                 </div>
                 <p className="mt-4 text-sm text-slate-300">
-                  {completedCount} / {defaultTasks.length} tasks completed
+                  {completedCount} / {tasks.length || 1} tasks completed
                 </p>
               </div>
 
@@ -101,7 +150,10 @@ export default function HomePage() {
                 </p>
                 <div className="mt-4 flex items-center gap-3">
                   <Clock3 className="h-5 w-5 text-cyan-300" />
-                  <span className="text-2xl font-semibold">2h 45m / 4h</span>
+                  <span className="text-2xl font-semibold">
+                    {formatMinutes(studyMinutes)} /{" "}
+                    {formatMinutes(defaultStudyPlan.dailyStudyMinutes)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -112,12 +164,12 @@ export default function HomePage() {
               <div className="mb-5 flex items-center justify-between">
                 <h3 className="text-xl font-semibold">Today&apos;s Tasks</h3>
                 <span className="rounded-full border border-slate-700 bg-slate-900 px-2 py-1 text-xs uppercase tracking-[0.2em] text-slate-300">
-                  5 items
+                  {visibleTasks.length} items
                 </span>
               </div>
 
               <div className="space-y-3">
-                {defaultTasks.map((task) => (
+                {visibleTasks.map((task) => (
                   <div
                     key={task.id}
                     className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/80 px-4 py-3"
@@ -131,7 +183,7 @@ export default function HomePage() {
                       <div>
                         <p className="font-medium">{task.title}</p>
                         <p className="text-xs text-slate-400">
-                          {task.category}
+                          {task.category?.name ?? "Uncategorized"}
                         </p>
                       </div>
                     </div>
@@ -150,9 +202,13 @@ export default function HomePage() {
                   <Target className="h-5 w-5 text-amber-300" />
                 </div>
                 <ul className="mt-4 space-y-3 text-sm text-slate-300">
-                  <li>• DBMS Indexing — due today</li>
-                  <li>• Two Sum — 3 days</li>
-                  <li>• Binary Search — 7 days</li>
+                  {revisionTasks.length ? (
+                    revisionTasks.map((task) => (
+                      <li key={task.id}>• {task.title}</li>
+                    ))
+                  ) : (
+                    <li>No revision tasks queued.</li>
+                  )}
                 </ul>
               </div>
 
@@ -162,11 +218,17 @@ export default function HomePage() {
                   <Sparkles className="h-5 w-5 text-cyan-300" />
                 </div>
                 <p className="mt-4 text-sm text-slate-300">
-                  You still have 2 important SDE preparation tasks remaining
-                  today.
+                  {importantTasks.length} important SDE preparation task
+                  {importantTasks.length === 1 ? "" : "s"} remaining.
                 </p>
                 <div className="mt-4 rounded-xl bg-amber-500/10 p-3 text-sm text-amber-200">
-                  • DBMS Indexing • System Design — URL Shortener
+                  {importantTasks.length
+                    ? importantTasks.map((task) => (
+                        <span key={task.id} className="mr-3">
+                          • {task.title}
+                        </span>
+                      ))
+                    : "Nothing urgent today."}
                 </div>
               </div>
             </div>
@@ -174,9 +236,13 @@ export default function HomePage() {
 
           <section className="grid gap-6 md:grid-cols-3">
             {[
-              { label: "Total Problems", value: "47", icon: ListTodo },
-              { label: "Solved", value: "18", icon: CheckCircle2 },
-              { label: "Needs Revision", value: "6", icon: Target },
+              { label: "Total Tasks", value: tasks.length, icon: ListTodo },
+              { label: "Completed", value: completedCount, icon: CheckCircle2 },
+              {
+                label: "Needs Revision",
+                value: revisionTasks.length,
+                icon: Target,
+              },
             ].map((stat) => (
               <div
                 key={stat.label}
