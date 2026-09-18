@@ -55,6 +55,8 @@ export default function TaskBrowser({
   const [errorMessage, setErrorMessage] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [shiftDays, setShiftDays] = useState("1");
   const [form, setForm] = useState({
     title: "",
     dueDate: "",
@@ -137,6 +139,7 @@ export default function TaskBrowser({
 
   function startEditing(task: Task) {
     setEditingId(task.id);
+    setModalOpen(true);
     setForm({
       title: task.title,
       dueDate: task.dueDate ? task.dueDate.slice(0, 10) : "",
@@ -145,6 +148,19 @@ export default function TaskBrowser({
       taskType: task.taskType ?? "custom",
       category: task.category?.name ?? "",
     });
+  }
+
+  function startAdding() {
+    setEditingId(null);
+    setForm({
+      title: "",
+      dueDate: "",
+      plannedMinutes: "60",
+      priority: "MEDIUM",
+      taskType: "custom",
+      category: "",
+    });
+    setModalOpen(true);
   }
 
   async function saveTask(event: FormEvent<HTMLFormElement>) {
@@ -175,6 +191,7 @@ export default function TaskBrowser({
         : [data.task, ...current],
     );
     setEditingId(null);
+    setModalOpen(false);
     setForm({
       title: "",
       dueDate: "",
@@ -190,6 +207,19 @@ export default function TaskBrowser({
     const response = await fetch(`/api/tasks/${task.id}`, { method: "DELETE" });
     if (response.ok)
       setTasks((current) => current.filter((item) => item.id !== task.id));
+  }
+
+  async function shiftAllTasks() {
+    const response = await fetch("/api/tasks/bulk/shift", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ days: Number(shiftDays) }),
+    });
+    if (!response.ok) {
+      setErrorMessage("Unable to shift task dates.");
+      return;
+    }
+    window.location.reload();
   }
 
   const visibleTopics = facets.topics.filter(
@@ -328,10 +358,19 @@ export default function TaskBrowser({
           </label>
         </section>
 
-        <form
-          onSubmit={saveTask}
-          className="mb-6 grid gap-3 rounded-2xl border border-cyan-500/20 bg-cyan-500/5 p-4 sm:grid-cols-2 lg:grid-cols-5"
-        >
+        <div className="mb-6 flex justify-end">
+          <button type="button" onClick={startAdding} className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">
+            Add task
+          </button>
+        </div>
+
+        {modalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
+        <form onSubmit={saveTask} className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-950 p-6 shadow-2xl">
+          <div className="mb-6 flex items-start justify-between gap-4">
+            <div><p className="text-xs uppercase tracking-[0.2em] text-cyan-300">Task editor</p><h2 id="task-modal-title" className="mt-1 text-2xl font-semibold">{editingId ? "Edit task" : "Add task"}</h2></div>
+            <button type="button" onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white" aria-label="Close task editor">×</button>
+          </div>
           <input
             required
             value={form.title}
@@ -339,7 +378,7 @@ export default function TaskBrowser({
               setForm((current) => ({ ...current, title: event.target.value }))
             }
             placeholder={editingId ? "Edit task title" : "Add a task"}
-            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm lg:col-span-2"
+            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
           />
           <input
             type="date"
@@ -350,7 +389,7 @@ export default function TaskBrowser({
                 dueDate: event.target.value,
               }))
             }
-            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+            className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
           />
           <input
             type="number"
@@ -363,7 +402,7 @@ export default function TaskBrowser({
               }))
             }
             placeholder="Minutes"
-            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+            className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
           />
           <select
             value={form.priority}
@@ -373,7 +412,7 @@ export default function TaskBrowser({
                 priority: event.target.value,
               }))
             }
-            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+            className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
           >
             <option>CRITICAL</option>
             <option>HIGH</option>
@@ -388,7 +427,7 @@ export default function TaskBrowser({
                 taskType: event.target.value,
               }))
             }
-            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+            className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
           >
             <option>custom</option>
             <option>concept</option>
@@ -401,20 +440,28 @@ export default function TaskBrowser({
           </select>
           <button
             type="submit"
-            className="rounded-lg bg-cyan-400 px-3 py-2 text-sm font-semibold text-slate-950"
+            className="mt-6 rounded-lg bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950"
           >
             {editingId ? "Save changes" : "Add task"}
           </button>
           {editingId ? (
             <button
               type="button"
-              onClick={() => setEditingId(null)}
-              className="rounded-lg border border-slate-700 px-3 py-2 text-sm"
+              onClick={() => { setEditingId(null); setModalOpen(false); }}
+              className="ml-2 rounded-lg border border-slate-700 px-4 py-3 text-sm"
             >
               Cancel
             </button>
           ) : null}
         </form>
+        </div>
+        ) : null}
+
+        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
+          <span className="text-sm text-slate-300">Bulk shift all scheduled tasks</span>
+          <select value={shiftDays} onChange={(event) => setShiftDays(event.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"><option value="1">Tomorrow (+1 day)</option><option value="2">Move 2 days</option><option value="7">Move 1 week</option></select>
+          <button type="button" onClick={shiftAllTasks} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950">Shift dates</button>
+        </div>
 
         <div className="mb-3 flex items-center justify-between text-sm text-slate-400">
           <span>{total} matching tasks</span>

@@ -86,7 +86,7 @@ export async function sendNextTaskReminder(now = new Date()) {
   const dayStart = startOfToday(now);
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayEnd.getDate() + 1);
-  const task = await prisma.task.findFirst({
+  const tasks = await prisma.task.findMany({
     where: {
       userId: user.id,
       status: { notIn: ["COMPLETED", "SKIPPED"] },
@@ -95,20 +95,24 @@ export async function sendNextTaskReminder(now = new Date()) {
     orderBy: { sequenceOrder: "asc" },
   });
 
-  if (!task) {
+  if (!tasks.length) {
     return { sent: false, reason: "NO_INCOMPLETE_TASK_FOR_TODAY" };
   }
 
-  const reminderKey = `${user.id}:${task.id}:${getReminderSlot(now)}`;
+  const reminderKey = `${user.id}:${getReminderSlot(now)}`;
   const title = "SDE Command Center reminder";
-  const message = `Next task: ${task.title}. Complete this task before moving to the next one.`;
+  const message = [
+    "Remaining tasks for today:",
+    ...tasks.map((task, index) => `${index + 1}. ${task.title}`),
+    "Complete these tasks before the day ends.",
+  ].join("\n");
   let reminder;
 
   try {
     reminder = await prisma.notification.create({
       data: {
         userId: user.id,
-        taskId: task.id,
+        taskId: tasks[0].id,
         reminderKey,
         provider: "fanout",
         channel: "BROWSER",
@@ -125,8 +129,8 @@ export async function sendNextTaskReminder(now = new Date()) {
     ) {
       return {
         sent: false,
-        reason: "ALREADY_SENT_FOR_TASK_AND_SLOT",
-        taskId: task.id,
+        reason: "ALREADY_SENT_FOR_DAY_AND_SLOT",
+        taskId: tasks[0].id,
       };
     }
     throw error;
@@ -139,7 +143,7 @@ export async function sendNextTaskReminder(now = new Date()) {
     channel: "email",
     metadata: {
       email: process.env.REMINDER_EMAIL ?? "rimjha.parivesh2002@gmail.com",
-      taskId: task.id,
+      taskId: tasks[0].id,
       reminderKey,
     },
   };
@@ -179,8 +183,9 @@ export async function sendNextTaskReminder(now = new Date()) {
 
   return {
     sent: true,
-    taskId: task.id,
-    taskTitle: task.title,
+    taskId: tasks[0].id,
+    taskTitle: tasks[0].title,
+    taskCount: tasks.length,
     channels: results.map((result) => ({
       provider: result.provider,
       success: result.success,
@@ -205,7 +210,7 @@ export async function previewNextTaskReminder(now = new Date()) {
   const dayStart = startOfToday(now);
   const dayEnd = new Date(dayStart);
   dayEnd.setDate(dayEnd.getDate() + 1);
-  const task = await prisma.task.findFirst({
+  const tasks = await prisma.task.findMany({
     where: {
       userId: user.id,
       status: { notIn: ["COMPLETED", "SKIPPED"] },
@@ -214,12 +219,12 @@ export async function previewNextTaskReminder(now = new Date()) {
     orderBy: { sequenceOrder: "asc" },
   });
 
-  if (!task) {
+  if (!tasks.length) {
     return { ready: false, reason: "NO_INCOMPLETE_TASK_FOR_TODAY" };
   }
 
   const preferences = user.notificationPreferences;
-  const reminderKey = `${user.id}:${task.id}:${getReminderSlot(now)}`;
+  const reminderKey = `${user.id}:${getReminderSlot(now)}`;
   const existingReminder = await prisma.notification.findUnique({
     where: { reminderKey },
     select: { id: true, status: true },
@@ -227,8 +232,8 @@ export async function previewNextTaskReminder(now = new Date()) {
 
   return {
     ready: !existingReminder,
-    reason: existingReminder ? "ALREADY_SENT_FOR_TASK_AND_SLOT" : "READY",
-    task: { id: task.id, title: task.title, dueDate: task.dueDate },
+    reason: existingReminder ? "ALREADY_SENT_FOR_DAY_AND_SLOT" : "READY",
+    tasks: tasks.map((task) => ({ id: task.id, title: task.title, dueDate: task.dueDate })),
     reminderKey,
     channels: {
       browser: Boolean(preferences?.browserEnabled),

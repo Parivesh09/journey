@@ -1,6 +1,9 @@
 import Link from "next/link";
+import { isAuthenticated } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
-export default function SettingsPage() {
+export default async function SettingsPage() {
+  if (!(await isAuthenticated())) redirect("/login");
   return (
     <main className="min-h-screen bg-[#0b1020] px-6 py-8 text-slate-100">
       <div className="mx-auto max-w-3xl">

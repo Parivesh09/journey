@@ -13,10 +13,13 @@ import { prisma } from "@/lib/prisma";
 import { ensureDailyTasks } from "@/lib/business/daily-plan";
 import { defaultStudyPlan } from "@/lib/data/mock-data";
 import { formatMinutes, toPercent } from "@/lib/utils";
+import { isAuthenticated } from "@/lib/auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
+  if (!(await isAuthenticated())) redirect("/login");
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   const account = await prisma.user.findUnique({

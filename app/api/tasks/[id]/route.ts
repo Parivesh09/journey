@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { TaskPriority, TaskStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { isAuthenticated } from "@/lib/auth";
 
 const demoUserEmail = "user@sdecommand.center";
 
@@ -9,6 +10,7 @@ export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
+  if (!(await isAuthenticated())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await context.params;
   const body = (await request.json()) as Record<string, unknown>;
   const user = await prisma.user.findUnique({
@@ -77,6 +79,7 @@ export async function DELETE(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
+  if (!(await isAuthenticated())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const { id } = await context.params;
   const user = await prisma.user.findUnique({
     where: { email: demoUserEmail },
