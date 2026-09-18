@@ -157,17 +157,21 @@ export default async function HomePage() {
             </div>
             <nav className="space-y-1 text-sm">
               {[
-                ["Dashboard", "/"],
-                ["All tasks", "/tasks"],
-                ["DSA", "/dsa"],
-                ["Study", "/study"],
-                ["Revision", "/revision"],
+                ["Dashboard", "/", false],
+                ["All tasks", "/tasks", false],
+                ["DSA", "/dsa", true],
+                ["Study", "/study", true],
+                ["Revision", "/revision", true],
                 ["Settings", "/settings"],
-              ].map(([label, href]) => (
+              ].map(([label, href, isDisabled]) => (
                 <Link
-                  key={href}
-                  href={href}
-                  className={`flex items-center justify-between rounded-lg px-3 py-2.5 transition hover:bg-slate-800/80 ${href === "/" ? "bg-slate-800 text-white" : "text-slate-400 hover:text-slate-100"}`}
+                  key={label}
+                  href={isDisabled ? "#" : (href as string)}
+                  className={`flex items-center justify-between rounded-lg px-3 py-2.5 transition  ${
+                    isDisabled
+                      ? "cursor-not-allowed text-slate-600"
+                      : "text-slate-400 hover:text-slate-200"
+                  }`}
                 >
                   {label}
                   <ArrowRight className="h-4 w-4 opacity-60" />

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import BrowserReminderListener from "@/app/notifications/browser-listener";
+import LogoutButton from "@/app/logout-button";
+import { isAuthenticated } from "@/lib/auth";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,7 +21,8 @@ export const metadata: Metadata = {
     "A focused workspace for planning and completing your SDE roadmap.",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const authenticated = await isAuthenticated();
   return (
     <html
       lang="en"
@@ -27,6 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         {children}
+        {authenticated ? <LogoutButton /> : null}
         <BrowserReminderListener />
       </body>
     </html>
