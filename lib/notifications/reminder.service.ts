@@ -233,7 +233,11 @@ export async function previewNextTaskReminder(now = new Date()) {
   return {
     ready: !existingReminder,
     reason: existingReminder ? "ALREADY_SENT_FOR_DAY_AND_SLOT" : "READY",
-    tasks: tasks.map((task) => ({ id: task.id, title: task.title, dueDate: task.dueDate })),
+    tasks: tasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      dueDate: task.dueDate,
+    })),
     reminderKey,
     channels: {
       browser: Boolean(preferences?.browserEnabled),

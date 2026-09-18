@@ -20,7 +20,11 @@ export function isValidSession(value?: string) {
   const email = value.slice(0, separator);
   const signature = value.slice(separator + 1);
   const expected = createSessionValue(email).slice(separator + 1);
-  return email === allowedEmail && signature.length === expected.length && timingSafeEqual(Buffer.from(signature), Buffer.from(expected));
+  return (
+    email === allowedEmail &&
+    signature.length === expected.length &&
+    timingSafeEqual(Buffer.from(signature), Buffer.from(expected))
+  );
 }
 
 export async function isAuthenticated() {

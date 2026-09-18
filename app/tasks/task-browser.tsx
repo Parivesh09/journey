@@ -359,108 +359,159 @@ export default function TaskBrowser({
         </section>
 
         <div className="mb-6 flex justify-end">
-          <button type="button" onClick={startAdding} className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950">
+          <button
+            type="button"
+            onClick={startAdding}
+            className="rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950"
+          >
             Add task
           </button>
         </div>
 
         {modalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4" role="dialog" aria-modal="true" aria-labelledby="task-modal-title">
-        <form onSubmit={saveTask} className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-950 p-6 shadow-2xl">
-          <div className="mb-6 flex items-start justify-between gap-4">
-            <div><p className="text-xs uppercase tracking-[0.2em] text-cyan-300">Task editor</p><h2 id="task-modal-title" className="mt-1 text-2xl font-semibold">{editingId ? "Edit task" : "Add task"}</h2></div>
-            <button type="button" onClick={() => setModalOpen(false)} className="text-slate-400 hover:text-white" aria-label="Close task editor">×</button>
-          </div>
-          <input
-            required
-            value={form.title}
-            onChange={(event) =>
-              setForm((current) => ({ ...current, title: event.target.value }))
-            }
-            placeholder={editingId ? "Edit task title" : "Add a task"}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
-          />
-          <input
-            type="date"
-            value={form.dueDate}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                dueDate: event.target.value,
-              }))
-            }
-            className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
-          />
-          <input
-            type="number"
-            min="1"
-            value={form.plannedMinutes}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                plannedMinutes: event.target.value,
-              }))
-            }
-            placeholder="Minutes"
-            className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
-          />
-          <select
-            value={form.priority}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                priority: event.target.value,
-              }))
-            }
-            className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="task-modal-title"
           >
-            <option>CRITICAL</option>
-            <option>HIGH</option>
-            <option>MEDIUM</option>
-            <option>LOW</option>
-          </select>
-          <select
-            value={form.taskType}
-            onChange={(event) =>
-              setForm((current) => ({
-                ...current,
-                taskType: event.target.value,
-              }))
-            }
-            className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
-          >
-            <option>custom</option>
-            <option>concept</option>
-            <option>practice</option>
-            <option>implementation</option>
-            <option>project</option>
-            <option>revision</option>
-            <option>interview</option>
-            <option>mock</option>
-          </select>
-          <button
-            type="submit"
-            className="mt-6 rounded-lg bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950"
-          >
-            {editingId ? "Save changes" : "Add task"}
-          </button>
-          {editingId ? (
-            <button
-              type="button"
-              onClick={() => { setEditingId(null); setModalOpen(false); }}
-              className="ml-2 rounded-lg border border-slate-700 px-4 py-3 text-sm"
+            <form
+              onSubmit={saveTask}
+              className="w-full max-w-lg rounded-2xl border border-slate-700 bg-slate-950 p-6 shadow-2xl"
             >
-              Cancel
-            </button>
-          ) : null}
-        </form>
-        </div>
+              <div className="mb-6 flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">
+                    Task editor
+                  </p>
+                  <h2
+                    id="task-modal-title"
+                    className="mt-1 text-2xl font-semibold"
+                  >
+                    {editingId ? "Edit task" : "Add task"}
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(false)}
+                  className="text-slate-400 hover:text-white"
+                  aria-label="Close task editor"
+                >
+                  ×
+                </button>
+              </div>
+              <input
+                required
+                value={form.title}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    title: event.target.value,
+                  }))
+                }
+                placeholder={editingId ? "Edit task title" : "Add a task"}
+                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
+              />
+              <input
+                type="date"
+                value={form.dueDate}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    dueDate: event.target.value,
+                  }))
+                }
+                className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
+              />
+              <input
+                type="number"
+                min="1"
+                value={form.plannedMinutes}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    plannedMinutes: event.target.value,
+                  }))
+                }
+                placeholder="Minutes"
+                className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
+              />
+              <select
+                value={form.priority}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    priority: event.target.value,
+                  }))
+                }
+                className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
+              >
+                <option>CRITICAL</option>
+                <option>HIGH</option>
+                <option>MEDIUM</option>
+                <option>LOW</option>
+              </select>
+              <select
+                value={form.taskType}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    taskType: event.target.value,
+                  }))
+                }
+                className="mt-3 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3 text-sm"
+              >
+                <option>custom</option>
+                <option>concept</option>
+                <option>practice</option>
+                <option>implementation</option>
+                <option>project</option>
+                <option>revision</option>
+                <option>interview</option>
+                <option>mock</option>
+              </select>
+              <button
+                type="submit"
+                className="mt-6 rounded-lg bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950"
+              >
+                {editingId ? "Save changes" : "Add task"}
+              </button>
+              {editingId ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingId(null);
+                    setModalOpen(false);
+                  }}
+                  className="ml-2 rounded-lg border border-slate-700 px-4 py-3 text-sm"
+                >
+                  Cancel
+                </button>
+              ) : null}
+            </form>
+          </div>
         ) : null}
 
         <div className="mb-6 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4">
-          <span className="text-sm text-slate-300">Bulk shift all scheduled tasks</span>
-          <select value={shiftDays} onChange={(event) => setShiftDays(event.target.value)} className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"><option value="1">Tomorrow (+1 day)</option><option value="2">Move 2 days</option><option value="7">Move 1 week</option></select>
-          <button type="button" onClick={shiftAllTasks} className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950">Shift dates</button>
+          <span className="text-sm text-slate-300">
+            Bulk shift all scheduled tasks
+          </span>
+          <select
+            value={shiftDays}
+            onChange={(event) => setShiftDays(event.target.value)}
+            className="rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm"
+          >
+            <option value="1">Tomorrow (+1 day)</option>
+            <option value="2">Move 2 days</option>
+            <option value="7">Move 1 week</option>
+          </select>
+          <button
+            type="button"
+            onClick={shiftAllTasks}
+            className="rounded-lg bg-amber-300 px-3 py-2 text-sm font-semibold text-slate-950"
+          >
+            Shift dates
+          </button>
         </div>
 
         <div className="mb-3 flex items-center justify-between text-sm text-slate-400">

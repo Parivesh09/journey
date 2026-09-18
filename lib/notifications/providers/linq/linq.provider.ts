@@ -44,7 +44,11 @@ export class LinqNotificationProvider implements NotificationProvider {
         const errorMessage =
           typeof response.error?.message === "string"
             ? response.error.message
-            : JSON.stringify(response.error?.message ?? response.message ?? "Linq request failed");
+            : JSON.stringify(
+                response.error?.message ??
+                  response.message ??
+                  "Linq request failed",
+              );
         return {
           success: false,
           provider: "linq",
