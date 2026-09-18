@@ -27,7 +27,13 @@ function getIndiaTime(date: Date) {
       .filter((part) => part.type !== "literal")
       .map((part) => [part.type, Number(part.value)]),
   );
-  return values as { year: number; month: number; day: number; hour: number; minute: number };
+  return values as {
+    year: number;
+    month: number;
+    day: number;
+    hour: number;
+    minute: number;
+  };
 }
 
 function isReminderWindow(now: Date) {
@@ -45,7 +51,8 @@ function startOfToday(date: Date) {
 
 function getReminderSlot(now: Date) {
   const india = getIndiaTime(now);
-  const slot = india.hour === 0 ? 4 : Math.floor((india.hour - 8) / reminderIntervalHours);
+  const slot =
+    india.hour === 0 ? 4 : Math.floor((india.hour - 8) / reminderIntervalHours);
   return `${india.year}-${String(india.month).padStart(2, "0")}-${String(india.day).padStart(2, "0")}:${slot}`;
 }
 
