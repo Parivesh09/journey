@@ -36,7 +36,7 @@ The app is ready for a managed Next.js host such as Vercel and a managed Postgre
 1. Create a production PostgreSQL database and set `DATABASE_URL` to Supabase's pooler connection string. In Supabase, open **Connect → ORMs → Prisma** and copy the pooler URL; do not use the direct `db.<project>.supabase.co:5432` URL for Vercel because it can resolve to an unreachable IPv6 address.
 2. Set a strong random `AUTH_SECRET` and `NEXT_PUBLIC_APP_URL` in the host environment.
 3. Deploy the repository with the default Next.js build command: `npm run build`.
-4. Run `npm run db:migrate:deploy` against the production database.
+4. Run `DIRECT_URL="your-direct-supabase-url" npm run db:migrate:deploy` from a machine that can reach Supabase's direct connection. The deployed app itself only needs the pooler `DATABASE_URL`.
 5. Run `npm run seed` once from a machine where `sde-master-roadmap.json` is available.
 6. Verify `/api/health` returns `{ "status": "ok", "database": "connected" }`.
 
