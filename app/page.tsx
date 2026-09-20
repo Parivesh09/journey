@@ -14,6 +14,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import DashboardTaskList from "@/app/dashboard-task-list";
 import OnboardingBanner from "@/app/onboarding-banner";
+import FocusLog from "@/app/focus-log";
 import { getCurrentUser } from "@/lib/auth";
 import { ensureDailyTasks } from "@/lib/business/daily-plan";
 import { defaultStudyPlan } from "@/lib/data/mock-data";
@@ -226,6 +227,8 @@ export default async function HomePage() {
               </article>
             ))}
           </section>
+
+          <FocusLog />
 
           <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
             <article className="rounded-2xl border border-slate-800 bg-slate-950/55 p-6">

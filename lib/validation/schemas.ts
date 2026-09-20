@@ -12,6 +12,11 @@ export const taskSchema = z.object({
     .default("TODO"),
 });
 
+export const studySessionSchema = z.object({
+  minutes: z.number().int().min(1).max(1440),
+  taskId: z.string().min(1).optional(),
+});
+
 export const phoneSchema = z
   .string()
   .regex(/^\+[1-9]\d{7,14}$/, "Use an international format like +91XXXXXXXXXX");
