@@ -22,6 +22,25 @@ export async function PUT(request: Request) {
     where: { userId: user.id },
     update: data,
     create: { userId: user.id, ...data },
+    select: {
+      browserEnabled: true,
+      emailEnabled: true,
+      smsEnabled: true,
+      phoneNumber: true,
+      reminderSchedule: true,
+      excludeCompletedTasks: true,
+      dailyReminderEnabled: true,
+      missedTaskReminderEnabled: true,
+      revisionReminderEnabled: true,
+      weeklySummaryEnabled: true,
+      weeklySummaryDay: true,
+      quietHoursEnabled: true,
+      quietHoursStart: true,
+      quietHoursEnd: true,
+      maxDailyNotifications: true,
+      minNotificationInterval: true,
+      preferredChannel: true,
+    },
   });
 
   return NextResponse.json({ notifications: preferences });

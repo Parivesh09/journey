@@ -35,7 +35,14 @@ export class LinqClient {
       );
     }
 
-    return (await response.json()) as LinqResponse;
+    const data = (await response.json()) as {
+      message?: { id?: string; delivery_status?: string };
+    };
+    return {
+      success: true,
+      id: data.message?.id,
+      status: data.message?.delivery_status ?? "queued",
+    };
   }
 
   verifyWebhookSignature(rawBody: string, signature: string): boolean {

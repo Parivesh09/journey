@@ -11,6 +11,25 @@ export async function GET() {
 
   const preferences = await prisma.notificationPreference.findUnique({
     where: { userId: user.id },
+    select: {
+      browserEnabled: true,
+      emailEnabled: true,
+      smsEnabled: true,
+      phoneNumber: true,
+      reminderSchedule: true,
+      excludeCompletedTasks: true,
+      dailyReminderEnabled: true,
+      missedTaskReminderEnabled: true,
+      revisionReminderEnabled: true,
+      weeklySummaryEnabled: true,
+      weeklySummaryDay: true,
+      quietHoursEnabled: true,
+      quietHoursStart: true,
+      quietHoursEnd: true,
+      maxDailyNotifications: true,
+      minNotificationInterval: true,
+      preferredChannel: true,
+    },
   });
 
   return NextResponse.json({
