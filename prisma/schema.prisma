@@ -39,6 +39,8 @@ enum NotificationChannel {
   EMAIL
   TELEGRAM
   LINQ
+  SMS
+  WHATSAPP
 }
 
 enum NotificationStatus {
@@ -50,21 +52,26 @@ enum NotificationStatus {
 }
 
 model User {
-  id                     String                  @id @default(cuid())
-  name                   String?
-  email                  String                  @unique
-  emailVerified          DateTime?
-  image                  String?
-  passwordHash           String?
-  createdAt              DateTime                @default(now())
-  updatedAt              DateTime                @updatedAt
+  id                      String    @id @default(cuid())
+  name                    String?
+  email                   String    @unique
+  emailVerified           DateTime?
+  image                   String?
+  passwordHash            String?
+  isActive                Boolean   @default(true)
+  timezone                String    @default("UTC")
+  onboardingDismissedAt   DateTime?
+  dailyStudyTargetMinutes Int       @default(240)
+  theme                   String    @default("dark")
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
-  tasks                  Task[]
-  studySessions          StudySession[]
-  notifications          Notification[]
+  tasks                   Task[]
+  studySessions           StudySession[]
+  notifications           Notification[]
   notificationPreferences NotificationPreference?
-  integrations           UserIntegration[]
-  logs                   NotificationLog[]
+  integrations            UserIntegration[]
+  logs                    NotificationLog[]
 }
 
 model TaskCategory {
@@ -74,19 +81,19 @@ model TaskCategory {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tasks     Task[]
+  tasks Task[]
 }
 
 model Task {
-  id               String        @id @default(cuid())
+  id               String       @id @default(cuid())
   userId           String
   title            String
   description      String?
   categoryId       String?
-  priority         TaskPriority  @default(MEDIUM)
+  priority         TaskPriority @default(MEDIUM)
   estimatedMinutes Int?
   dueDate          DateTime?
-  status           TaskStatus    @default(TODO)
+  status           TaskStatus   @default(TODO)
   completedAt      DateTime?
   taskType         String?
   difficulty       String?
@@ -95,39 +102,39 @@ model Task {
   phaseTitle       String?
   topicId          String?
   topicTitle       String?
-  sequenceOrder    Int           @default(0)
+  sequenceOrder    Int          @default(0)
   dailySlot        String?
   plannedMinutes   Int?
-  isDailyTask      Boolean       @default(false)
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
+  isDailyTask      Boolean      @default(false)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 
-  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category         TaskCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  studySessions    StudySession[]
-  notifications     Notification[]
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      TaskCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  studySessions StudySession[]
+  notifications Notification[]
 
+  @@unique([userId, sourceId])
   @@index([userId, sequenceOrder])
   @@index([userId, phaseId])
   @@index([userId, topicId])
   @@index([userId, dueDate])
   @@index([userId, dueDate, isDailyTask])
-  @@unique([userId, sourceId])
 }
 
 model StudyPlan {
-  id               String   @id @default(cuid())
-  userId           String
-  goal             String
-  durationDays     Int
+  id                String   @id @default(cuid())
+  userId            String
+  goal              String
+  durationDays      Int
   dailyStudyMinutes Int
-  weeklyTargets    String?
-  topics           String?
-  revisionSchedule String?
-  mockInterviews   String?
-  projects         String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  weeklyTargets     String?
+  topics            String?
+  revisionSchedule  String?
+  mockInterviews    String?
+  projects          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model StudySession {
@@ -139,17 +146,17 @@ model StudySession {
   endedAt         DateTime
   createdAt       DateTime @default(now())
 
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  task            Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
 }
 
 model DailyPlan {
-  id          String   @id @default(cuid())
-  userId      String
-  date        DateTime
-  summary     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  userId    String
+  date      DateTime
+  summary   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model TaskCompletion {
@@ -161,79 +168,85 @@ model TaskCompletion {
 }
 
 model Notification {
-  id                  String             @id @default(cuid())
+  id                  String              @id @default(cuid())
   userId              String
   taskId              String?
-  reminderKey         String?            @unique
+  reminderKey         String?             @unique
   provider            String
   channel             NotificationChannel
   title               String
   message             String
-  status              NotificationStatus @default(QUEUED)
+  status              NotificationStatus  @default(QUEUED)
   scheduledFor        DateTime?
   providerMessageId   String?
   lastProviderEvent   String?
   lastProviderEventAt DateTime?
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 
-  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  task                Task?              @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task? @relation(fields: [taskId], references: [id], onDelete: SetNull)
 }
 
 model NotificationPreference {
-  id                        String   @id @default(cuid())
-  userId                    String   @unique
-  browserEnabled            Boolean  @default(true)
-  emailEnabled              Boolean  @default(false)
-  telegramEnabled           Boolean  @default(false)
-  linqEnabled               Boolean  @default(false)
-  dailyReminderEnabled      Boolean  @default(true)
-  missedTaskReminderEnabled Boolean  @default(true)
-  revisionReminderEnabled   Boolean  @default(true)
-  weeklySummaryEnabled      Boolean  @default(true)
-  quietHoursEnabled         Boolean  @default(true)
-  quietHoursStart           String   @default("22:00")
-  quietHoursEnd             String   @default("07:00")
-  maxDailyNotifications     Int      @default(5)
-  minNotificationInterval   Int      @default(30)
+  id                        String              @id @default(cuid())
+  userId                    String              @unique
+  browserEnabled            Boolean             @default(false)
+  emailEnabled              Boolean             @default(false)
+  telegramEnabled           Boolean             @default(false)
+  linqEnabled               Boolean             @default(false)
+  smsEnabled                Boolean             @default(false)
+  whatsappEnabled           Boolean             @default(false)
+  phoneNumber               String?
+  reminderSchedule          Json?
+  overdueRemindersEnabled   Boolean             @default(false)
+  excludeCompletedTasks     Boolean             @default(true)
+  dailyReminderEnabled      Boolean             @default(false)
+  missedTaskReminderEnabled Boolean             @default(false)
+  revisionReminderEnabled   Boolean             @default(false)
+  weeklySummaryEnabled      Boolean             @default(false)
+  quietHoursEnabled         Boolean             @default(true)
+  quietHoursStart           String              @default("22:00")
+  quietHoursEnd             String              @default("07:00")
+  maxDailyNotifications     Int                 @default(5)
+  minNotificationInterval   Int                 @default(30)
   preferredChannel          NotificationChannel @default(BROWSER)
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  createdAt                 DateTime            @default(now())
+  updatedAt                 DateTime            @updatedAt
 
-  user                      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model NotificationLog {
-  id                  String             @id @default(cuid())
-  userId              String
-  notificationId      String?
-  provider            String
-  providerMessageId   String?
-  channel             NotificationChannel
-  status              NotificationStatus @default(QUEUED)
-  title               String
-  message             String
-  errorCode           String?
-  errorMessage        String?
-  sentAt              DateTime?
-  deliveredAt         DateTime?
-  failedAt            DateTime?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                String              @id @default(cuid())
+  userId            String
+  notificationId    String?
+  provider          String
+  providerMessageId String?
+  channel           NotificationChannel
+  status            NotificationStatus  @default(QUEUED)
+  title             String
+  message           String
+  errorCode         String?
+  errorMessage      String?
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  failedAt          DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model UserIntegration {
-  id                String   @id @default(cuid())
-  userId            String
-  provider          String
-  enabled           Boolean  @default(false)
-  telegramChatId    String?
-  metadata          Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id             String   @id @default(cuid())
+  userId         String
+  provider       String
+  enabled        Boolean  @default(false)
+  telegramChatId String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

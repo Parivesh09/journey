@@ -2,9 +2,7 @@ import { NextResponse } from "next/server";
 
 import { Prisma, TaskPriority, TaskStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { isAuthenticated } from "@/lib/auth";
-
-const demoUserEmail = "user@sdecommand.center";
+import { requireUser } from "@/lib/auth";
 
 const pageSizeLimit = 50;
 
@@ -14,9 +12,13 @@ function parseDate(value: unknown) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function unauthorized() {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+}
+
 export async function GET(request: Request) {
-  if (!(await isAuthenticated()))
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await requireUser();
+  if (!user) return unauthorized();
   const url = new URL(request.url);
   const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
   const pageSize = Math.min(
@@ -33,14 +35,6 @@ export async function GET(request: Request) {
   const priority = url.searchParams.get("priority");
   const from = url.searchParams.get("from");
   const to = url.searchParams.get("to");
-
-  const user = await prisma.user.findUnique({
-    where: { email: demoUserEmail },
-  });
-
-  if (!user) {
-    return NextResponse.json({ tasks: [] });
-  }
 
   const where: Prisma.TaskWhereInput = {
     userId: user.id,
@@ -118,13 +112,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!(await isAuthenticated()))
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const user = await prisma.user.findUnique({
-    where: { email: demoUserEmail },
-  });
-  if (!user)
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
+  const user = await requireUser();
+  if (!user) return unauthorized();
 
   const body = (await request.json()) as Record<string, unknown>;
   const title = typeof body.title === "string" ? body.title.trim() : "";
@@ -165,7 +154,8 @@ export async function POST(request: Request) {
       dailySlot:
         typeof body.dailySlot === "string" ? body.dailySlot : undefined,
       isDailyTask: body.isDailyTask === true,
-      sequenceOrder: Number.MAX_SAFE_INTEGER,
+      // Int column max minus margin so the row always sorts last.
+      sequenceOrder: 2147483646,
     },
     include: { category: true },
   });

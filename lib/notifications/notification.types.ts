@@ -1,4 +1,10 @@
-export type NotificationChannel = "browser" | "email" | "telegram" | "linq";
+export type NotificationChannel =
+  | "browser"
+  | "email"
+  | "telegram"
+  | "linq"
+  | "sms"
+  | "whatsapp";
 
 export type NotificationPayload = {
   userId: string;
@@ -26,6 +32,12 @@ export type NotificationPreference = {
   emailEnabled: boolean;
   telegramEnabled: boolean;
   linqEnabled: boolean;
+  smsEnabled: boolean;
+  whatsappEnabled: boolean;
+  phoneNumber: string | null;
+  reminderSchedule: unknown;
+  overdueRemindersEnabled: boolean;
+  excludeCompletedTasks: boolean;
   dailyReminderEnabled: boolean;
   missedTaskReminderEnabled: boolean;
   revisionReminderEnabled: boolean;

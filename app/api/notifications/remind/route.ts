@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
 import {
-  previewNextTaskReminder,
-  sendNextTaskReminder,
+  previewDueReminders,
+  sendDueReminders,
 } from "@/lib/notifications/reminder.service";
 
 function isAuthorized(request: Request) {
@@ -20,10 +20,10 @@ export async function GET(request: Request) {
 
   const url = new URL(request.url);
   if (url.searchParams.get("dryRun") === "true") {
-    return NextResponse.json(await previewNextTaskReminder());
+    return NextResponse.json({ preview: await previewDueReminders() });
   }
 
-  return NextResponse.json(await sendNextTaskReminder());
+  return NextResponse.json({ results: await sendDueReminders() });
 }
 
 export async function POST(request: Request) {

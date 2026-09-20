@@ -13,7 +13,8 @@ import {
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import DashboardTaskList from "@/app/dashboard-task-list";
-import { isAuthenticated } from "@/lib/auth";
+import OnboardingBanner from "@/app/onboarding-banner";
+import { getCurrentUser } from "@/lib/auth";
 import { ensureDailyTasks } from "@/lib/business/daily-plan";
 import { defaultStudyPlan } from "@/lib/data/mock-data";
 import { prisma } from "@/lib/prisma";
@@ -28,42 +29,37 @@ function dayStart(date: Date) {
 }
 
 export default async function HomePage() {
-  if (!(await isAuthenticated())) redirect("/login");
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
   const today = dayStart(new Date());
   const tomorrow = new Date(today.getTime() + 86_400_000);
   const weekStart = new Date(today.getTime() - 6 * 86_400_000);
-  const account = await prisma.user.findUnique({
-    where: { email: "user@sdecommand.center" },
-    select: { id: true },
-  });
-  if (account) await ensureDailyTasks(account.id, today);
+  await ensureDailyTasks(user.id, today);
 
-  const [todayTasks, allTasks, studySessions] = account
-    ? await Promise.all([
-        prisma.task.findMany({
-          where: { userId: account.id, dueDate: { gte: today, lt: tomorrow } },
-          include: { category: true },
-          orderBy: [
-            { status: "asc" },
-            { dueDate: "asc" },
-            { sequenceOrder: "asc" },
-          ],
-        }),
-        prisma.task.findMany({
-          where: { userId: account.id },
-          select: {
-            status: true,
-            priority: true,
-            taskType: true,
-            completedAt: true,
-          },
-        }),
-        prisma.studySession.findMany({
-          where: { userId: account.id, startedAt: { gte: today } },
-          select: { durationMinutes: true },
-        }),
-      ])
-    : [[], [], []];
+  const [todayTasks, allTasks, studySessions] = await Promise.all([
+    prisma.task.findMany({
+      where: { userId: user.id, dueDate: { gte: today, lt: tomorrow } },
+      include: { category: true },
+      orderBy: [
+        { status: "asc" },
+        { dueDate: "asc" },
+        { sequenceOrder: "asc" },
+      ],
+    }),
+    prisma.task.findMany({
+      where: { userId: user.id },
+      select: {
+        status: true,
+        priority: true,
+        taskType: true,
+        completedAt: true,
+      },
+    }),
+    prisma.studySession.findMany({
+      where: { userId: user.id, startedAt: { gte: today } },
+      select: { durationMinutes: true },
+    }),
+  ]);
 
   const completedToday = todayTasks.filter(
     (task) => task.status === "COMPLETED",
@@ -139,6 +135,7 @@ export default async function HomePage() {
 
   return (
     <main className="min-h-screen bg-[#0b1020] text-slate-100">
+      <OnboardingBanner show={!user.onboardingDismissedAt} />
       <div className="mx-auto flex max-w-[1440px] gap-8 px-5 py-6 lg:px-8">
         <aside className="hidden w-64 shrink-0 lg:block">
           <div className="sticky top-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-5 shadow-[0_24px_80px_rgba(2,6,23,0.32)]">

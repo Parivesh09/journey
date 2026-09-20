@@ -16,11 +16,21 @@ export class TelegramNotificationProvider implements NotificationProvider {
       };
     }
 
+    if (!notification.metadata?.telegramChatId) {
+      return {
+        success: false,
+        provider: "telegram",
+        status: "failed",
+        errorCode: "TELEGRAM_CHAT_ID_MISSING",
+        errorMessage: "No Telegram chat link is configured for this account.",
+      };
+    }
+
     return {
       success: true,
       provider: "telegram",
       status: "queued",
-      providerMessageId: `telegram-${notification.userId}-${Date.now()}`,
+      providerMessageId: `telegram-${notification.metadata.telegramChatId}-${Date.now()}`,
     };
   }
 }

@@ -1,83 +1,95 @@
 # SDE Command Center
 
-A small Next.js application for tracking a software engineering preparation roadmap. The roadmap source is `../sde-master-roadmap.json`; seeded tasks, categories, study sessions, and completion state are stored in PostgreSQL through Prisma.
+A multi-user SDE preparation and accountability app. Every user gets their own
+copy of the default SDE roadmap, daily plans, progress, study sessions, settings,
+and notification preferences — with strict server-side data isolation.
+
+## Architecture
+
+```text
+SYSTEM DATA
+  Roadmap templates (sde-master-roadmap.json)  →  per-user task instances
+  Default daily-plan blocks                     →  per-user daily tasks
+  Default configuration (all notifications OFF)
+
+USER (per account)
+  Tasks / Progress · Daily plans · Study sessions
+  Notification preferences · Settings · Reminders
+```
+
+The master roadmap is the immutable source of truth. A user's roadmap is created
+by copying the template into rows owned by that user (`tasks.sourceId` =
+template id). Users edit, delete, reschedule, and mark their own instances;
+templates are never mutated.
+
+Authentication uses a signed, expiring, HTTP-only session cookie
+(`lib/auth.ts`). Every user-owned API handler resolves the authenticated user
+from the session cookie (`requireUser()`); client-supplied user identifiers are
+never trusted for ownership. All reads/writes are scoped with `userId`.
 
 ## Local setup
 
-Requirements: Node.js 20+, Docker, and npm.
+Requirements: Node.js 20+, Docker, npm.
 
 ```bash
 npm install
-docker compose up -d
-npm run prisma migrate dev -- --name init
-npm run seed
-npm run dev
+docker compose up -d          # PostgreSQL (5433) + Redis (6379) with volumes
+npm run db:migrate:deploy      # apply migrations
+npm run seed                   # dev-only user + default roadmap (optional)
+npm run dev                    # http://localhost:3000
 ```
 
-Open `http://localhost:3000`. The local PostgreSQL container uses port `5433` because port `5432` is already occupied on this machine.
+open `http://localhost:3000`, create an account, and sign in.
 
-## Daily maintenance
+## Commands
 
-Use `/tasks` to work through the imported roadmap. Clicking a task status persists completion directly to PostgreSQL. Re-run `npm run seed` only when you intentionally want to refresh the imported roadmap; it recreates the seeded task list for the demo user.
+| Task               | Command                          |
+| ------------------ | -------------------------------- |
+| Install            | `npm install`                    |
+| Database startup   | `docker compose up -d`           |
+| Migration (apply)  | `npm run db:migrate:deploy`      |
+| Migration (dev)    | `npm run prisma migrate dev`     |
+| Seed (dev-only)    | `npm run seed`                   |
+| Development        | `npm run dev`                    |
+| Lint               | `npm run lint`                   |
+| Typecheck          | `npx tsc --noEmit`               |
+| Test               | `npm test` (vitest)              |
+| Build              | `npm run build`                  |
 
-Useful checks:
+## Multi-user behavior
+
+- Sign up → the default roadmap is provisioned as *your* tasks; nothing you do
+  ever touches another account.
+- All task/plan/session/progress/notification queries are scoped to the
+  authenticated user on the backend.
+- ID tampering (e.g. `/api/tasks/<someone-else's-id>`) returns 404.
+- Notifications are **opt-in**: every channel defaults to OFF. A phone number
+  alone never triggers SMS/WhatsApp — the matching channel must be enabled.
+- Reminders are computed per user in their own timezone and deduplicated per
+  `(userId, date, slot)`. Sending always checks: active user → reminder type
+  enabled → channel enabled → valid contact → opted in → not already sent.
+
+## Reminder cron
+
+The scheduled job (`/api/notifications/remind`, guarded by `CRON_SECRET`) loops
+over active users and sends only to enabled channels. Manual dry run:
 
 ```bash
-npm run lint
-npm test
-npm run build
-curl http://localhost:3000/api/health
+curl -H "Authorization: Bearer $CRON_SECRET" \
+  http://localhost:3000/api/notifications/remind?dryRun=true
 ```
 
-## Production deployment
+Browser reminders are delivered to an open tab only when the user enables the
+browser channel (see `app/notifications/browser-listener.tsx`).
 
-The app is ready for a managed Next.js host such as Vercel and a managed PostgreSQL provider such as Neon, Supabase, or Railway.
+## Production notes
 
-1. Create a production PostgreSQL database and set `DATABASE_URL` to Supabase's pooler connection string. In Supabase, open **Connect → ORMs → Prisma** and copy the pooler URL; do not use the direct `db.<project>.supabase.co:5432` URL for Vercel because it can resolve to an unreachable IPv6 address. The runtime normalizes Supabase TLS to `sslmode=require&uselibpqcompat=true` for the Prisma Postgres adapter.
-2. Set a strong random `AUTH_SECRET` and `NEXT_PUBLIC_APP_URL` in the host environment.
-3. Deploy the repository with the default Next.js build command: `npm run build`.
-4. Run `DIRECT_URL="your-direct-supabase-url" npm run db:migrate:deploy` from a machine that can reach Supabase's direct connection. The deployed app itself only needs the pooler `DATABASE_URL`.
-5. Run `npm run seed` once from a machine where `sde-master-roadmap.json` is available.
-6. Verify `/api/health` returns `{ "status": "ok", "database": "connected" }`.
-
-Do not commit `.env`; it contains credentials. The current task routes use the seeded personal demo user and should remain behind private deployment access until authentication is enabled.
-
-For Vercel, the runtime URL should look like this (with your real password):
-
-```env
-DATABASE_URL="postgresql://postgres.<project-ref>:PASSWORD@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres?sslmode=require&uselibpqcompat=true"
-```
-
-## Reminders
-
-GitHub Actions runs the reminder workflow every four hours in IST from `.github/workflows/reminders.yml`: 08:00, 12:00, 16:00, 20:00, and 00:00. The app rejects requests outside 08:00 through 01:59 IST, so the first reminder is only sent at the 08:00 IST slot and only when an incomplete task remains for that day. It creates one task-and-slot record, so the same task cannot be fanned out twice for the same four-hour slot. After a task is completed, the next scheduled run selects the next incomplete task; completed and skipped tasks are never reminded.
-
-Set these production variables:
-
-```bash
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_USER=your-sender@example.com
-SMTP_PASSWORD=your-smtp-password
-SMTP_FROM=your-sender@example.com
-LINQ_ENABLED=true
-LINQ_API_KEY=your-linq-api-key
-LINQ_API_BASE_URL=https://api.linqapp.com/api/partner/v3
-LINQ_TO=+919302998876
-CRON_SECRET=a-long-random-secret
-```
-
-Email and SMS are sent server-side. Chrome notifications are delivered while the app is open in a browser tab: the browser listener polls for the same deduplicated reminder and requires notification permission. A browser tab that is fully closed needs Web Push/VAPID infrastructure, which is not included in this simple first release.
-
-For a safe manual scheduler test, call `/api/notifications/remind?dryRun=true` with `Authorization: Bearer $CRON_SECRET`. It reports the next task, dedupe slot, channel readiness, and provider configuration without sending anything. Calling `/api/notifications/remind` without `dryRun=true` can send real email and SMS when a new four-hour slot is available.
-
-## GitHub Actions scheduler
-
-Add these repository secrets in **GitHub → Settings → Secrets and variables → Actions**:
-
-```text
-CRON_URL=https://your-deployed-app.example.com/api/cron/reminders
-CRON_SECRET=the-same-value-as-your-production-CRON_SECRET
-```
-
-The workflow sends a request every four hours. The application-side dedupe key prevents duplicate reminders and keeps the four-hour reminder policy in one place.
+- Set a strong `AUTH_SECRET` and `CRON_SECRET`.
+- Do not commit `.env`; use `.env.example` as the template.
+- Run migrations with `npm run db:migrate:deploy` — never edit the database by
+  hand.
+- Existing single-user data (previously owned by `user@sdecommand.center`)
+  remains owned by that account; keep its existing data by seeding a password
+  for it with `SEED_USER_EMAIL`/`SEED_USER_PASSWORD`, or leave it untouched.
+- Redis is provisioned for future rate-limiting/queue work; it is not required
+  by the current reminder flow (HTTP cron).

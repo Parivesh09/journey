@@ -10,6 +10,11 @@ const config = {
     environment: "node",
     globals: true,
     include: ["**/*.test.ts"],
+    env: {
+      DATABASE_URL:
+        "postgresql://postgres:postgres@localhost:5433/sde_command_center?schema=public",
+      AUTH_SECRET: "test-secret",
+    },
   },
 };
 

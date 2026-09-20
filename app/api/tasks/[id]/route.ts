@@ -2,25 +2,20 @@ import { NextResponse } from "next/server";
 
 import { TaskPriority, TaskStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { isAuthenticated } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
-const demoUserEmail = "user@sdecommand.center";
+function unauthorized() {
+  return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+}
 
 export async function PATCH(
   request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  if (!(await isAuthenticated()))
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await requireUser();
+  if (!user) return unauthorized();
   const { id } = await context.params;
   const body = (await request.json()) as Record<string, unknown>;
-  const user = await prisma.user.findUnique({
-    where: { email: demoUserEmail },
-  });
-
-  if (!user) {
-    return NextResponse.json({ error: "Invalid task update" }, { status: 400 });
-  }
 
   const task = await prisma.task.findFirst({
     where: { id, userId: user.id },
@@ -80,14 +75,9 @@ export async function DELETE(
   _request: Request,
   context: { params: Promise<{ id: string }> },
 ) {
-  if (!(await isAuthenticated()))
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const user = await requireUser();
+  if (!user) return unauthorized();
   const { id } = await context.params;
-  const user = await prisma.user.findUnique({
-    where: { email: demoUserEmail },
-  });
-  if (!user)
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
 
   const task = await prisma.task.findFirst({ where: { id, userId: user.id } });
   if (!task)

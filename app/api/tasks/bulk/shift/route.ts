@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isAuthenticated } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 
 export async function POST(request: Request) {
-  if (!(await isAuthenticated()))
+  const user = await requireUser();
+  if (!user)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const body = (await request.json()) as { days?: number };
   const days = Number(body.days);
@@ -13,11 +14,6 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const user = await prisma.user.findUnique({
-    where: { email: "user@sdecommand.center" },
-  });
-  if (!user)
-    return NextResponse.json({ error: "User not found" }, { status: 404 });
   const result = await prisma.$executeRaw`
     UPDATE "Task"
     SET "dueDate" = "dueDate" + (${days} * INTERVAL '1 day'), "updatedAt" = NOW()

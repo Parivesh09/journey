@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
-import LoginForm from "@/app/login-form";
+import SignupForm from "@/app/signup-form";
 import { isAuthenticated } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
-export default async function LoginPage() {
+export default async function SignupPage() {
   if (await isAuthenticated()) redirect("/");
-  return <LoginForm />;
+  return <SignupForm />;
 }

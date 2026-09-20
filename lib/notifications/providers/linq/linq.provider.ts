@@ -27,10 +27,25 @@ export class LinqNotificationProvider implements NotificationProvider {
     }
 
     try {
+      const to = notification.metadata?.to
+        ? [String(notification.metadata.to)]
+        : process.env.LINQ_TO
+          ? [process.env.LINQ_TO]
+          : [];
+      if (!to.length) {
+        return {
+          success: false,
+          provider: "linq",
+          status: "failed",
+          errorCode: "LINQ_RECIPIENT_MISSING",
+          errorMessage: "No recipient was provided for this message.",
+        };
+      }
       const response = await this.client.send({
-        to: [process.env.LINQ_TO ?? ""],
+        to,
         message: {
-          preferred_service: "SMS",
+          preferred_service:
+            notification.channel === "whatsapp" ? "WHATSAPP" : "SMS",
           parts: [
             {
               type: "text",

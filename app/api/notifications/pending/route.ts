@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 
+import { requireUser } from "@/lib/auth";
 import { getPendingBrowserReminders } from "@/lib/notifications/reminder.service";
 
 export async function GET() {
-  const reminders = await getPendingBrowserReminders();
+  const user = await requireUser();
+  if (!user)
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const reminders = await getPendingBrowserReminders(user.id);
   return NextResponse.json({ reminders });
 }
