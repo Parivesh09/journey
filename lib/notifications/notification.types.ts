@@ -36,7 +36,6 @@ export type NotificationPreference = {
   whatsappEnabled: boolean;
   phoneNumber: string | null;
   reminderSchedule: unknown;
-  overdueRemindersEnabled: boolean;
   excludeCompletedTasks: boolean;
   dailyReminderEnabled: boolean;
   missedTaskReminderEnabled: boolean;

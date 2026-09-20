@@ -38,7 +38,6 @@ type ReminderPreferences = {
   whatsappEnabled: boolean;
   phoneNumber: string | null;
   reminderSchedule: unknown;
-  overdueRemindersEnabled: boolean;
   excludeCompletedTasks: boolean;
   dailyReminderEnabled: boolean;
   missedTaskReminderEnabled: boolean;
@@ -59,7 +58,6 @@ const defaultPreferences: ReminderPreferences = {
   whatsappEnabled: false,
   phoneNumber: null,
   reminderSchedule: DEFAULT_REMINDER_SCHEDULE,
-  overdueRemindersEnabled: false,
   excludeCompletedTasks: true,
   dailyReminderEnabled: false,
   missedTaskReminderEnabled: false,

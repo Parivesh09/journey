@@ -27,6 +27,12 @@ async function main() {
     .trim()
     .toLowerCase();
   const name = process.env.SEED_USER_NAME ?? "SDE User";
+  const timezone = process.env.SEED_USER_TIMEZONE ?? "UTC";
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone });
+  } catch {
+    throw new Error(`SEED_USER_TIMEZONE is not a valid IANA timezone: "${timezone}"`);
+  }
 
   const user =
     (await prisma.user.findUnique({ where: { email } })) ??
@@ -34,6 +40,7 @@ async function main() {
       data: {
         email,
         name,
+        timezone,
         passwordHash: process.env.SEED_USER_PASSWORD
           ? await import("bcryptjs").then(({ hash }) =>
               hash(process.env.SEED_USER_PASSWORD!, 12),
@@ -41,6 +48,11 @@ async function main() {
           : null,
       },
     }));
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { timezone },
+  });
 
   await prisma.notificationPreference.upsert({
     where: { userId: user.id },

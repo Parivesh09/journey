@@ -32,7 +32,6 @@ export const notificationPreferenceSchema = z
     whatsappEnabled: z.boolean().default(false),
     phoneNumber: z.union([phoneSchema, z.literal("")]).optional(),
     reminderSchedule: z.array(reminderScheduleEntrySchema).optional(),
-    overdueRemindersEnabled: z.boolean().default(false),
     excludeCompletedTasks: z.boolean().default(true),
     dailyReminderEnabled: z.boolean().default(false),
     missedTaskReminderEnabled: z.boolean().default(false),
@@ -52,8 +51,7 @@ export const notificationPreferenceSchema = z
     preferredChannel: z
       .enum(["BROWSER", "EMAIL", "TELEGRAM", "LINQ", "SMS", "WHATSAPP"])
       .default("BROWSER"),
-  })
-  .strict();
+  });
 
 export const accountSettingsSchema = z
   .object({

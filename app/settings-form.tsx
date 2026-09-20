@@ -13,7 +13,6 @@ type NotificationSettings = {
   whatsappEnabled: boolean;
   phoneNumber: string | null;
   reminderSchedule: Array<{ key: string; time: string; enabled: boolean }>;
-  overdueRemindersEnabled: boolean;
   excludeCompletedTasks: boolean;
   dailyReminderEnabled: boolean;
   missedTaskReminderEnabled: boolean;
@@ -44,7 +43,6 @@ const defaultNotifications: NotificationSettings = {
   whatsappEnabled: false,
   phoneNumber: null,
   reminderSchedule: defaultSchedule,
-  overdueRemindersEnabled: false,
   excludeCompletedTasks: true,
   dailyReminderEnabled: false,
   missedTaskReminderEnabled: false,
@@ -482,17 +480,6 @@ export default function SettingsForm() {
           ))}
         </div>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <label className="flex items-center gap-3 text-sm text-slate-200">
-            <input
-              type="checkbox"
-              checked={notifications.overdueRemindersEnabled}
-              onChange={(event) =>
-                updateNotification("overdueRemindersEnabled", event.target.checked)
-              }
-              className="h-5 w-5 accent-cyan-400"
-            />
-            Include overdue tasks in reminders
-          </label>
           <label className="flex items-center gap-3 text-sm text-slate-200">
             <input
               type="checkbox"
