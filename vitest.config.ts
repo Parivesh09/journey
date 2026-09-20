@@ -1,7 +1,6 @@
-import { defineConfig } from "vitest/config";
 import path from "node:path";
 
-export default defineConfig({
+const config = {
   resolve: {
     alias: {
       "@": path.resolve(__dirname),
@@ -12,4 +11,6 @@ export default defineConfig({
     globals: true,
     include: ["**/*.test.ts"],
   },
-});
+};
+
+export default config;

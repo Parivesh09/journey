@@ -157,17 +157,16 @@ export default async function HomePage() {
             </div>
             <nav className="space-y-1 text-sm">
               {[
-                ["Dashboard", "/", false],
-
-                ["All tasks", "/tasks", false],
-                ["DSA", "/dsa", true],
-                ["Study", "/study", true],
-                ["Revision", "/revision", true],
-                ["Settings", "/settings"],
-              ].map(([label, href, isDisabled]) => (
+                { label: "Dashboard", href: "/", isDisabled: false },
+                { label: "All tasks", href: "/tasks", isDisabled: false },
+                { label: "DSA", href: "/dsa", isDisabled: true },
+                { label: "Study", href: "/study", isDisabled: true },
+                { label: "Revision", href: "/revision", isDisabled: true },
+                { label: "Settings", href: "/settings", isDisabled: false },
+              ].map(({ label, href, isDisabled }) => (
                 <Link
                   key={label}
-                  href={isDisabled ? "#" : (href as string)}
+                  href={isDisabled ? "#" : href}
                   className={`flex items-center justify-between rounded-lg px-3 py-2.5 transition  ${
                     isDisabled
                       ? "cursor-not-allowed text-slate-600"
