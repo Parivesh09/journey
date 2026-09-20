@@ -19,7 +19,14 @@ export type ReminderScheduleEntry = {
 };
 
 /** The distinct messages a user's reminder preference can produce. */
-export type ReminderType = "daily" | "missedTasks" | "revisionReview";
+export type ReminderType =
+  | "daily"
+  | "missedTasks"
+  | "revisionReview"
+  | "weeklySummary";
+
+/** Reminder types that are evaluated from a task query (weekly uses week stats). */
+export type DailyReminderType = Exclude<ReminderType, "weeklySummary">;
 
 export const DEFAULT_REMINDER_SCHEDULE: ReminderScheduleEntry[] = [
   { key: "morning", time: "08:00", enabled: false },
@@ -42,6 +49,8 @@ type ReminderPreferences = {
   dailyReminderEnabled: boolean;
   missedTaskReminderEnabled: boolean;
   revisionReminderEnabled: boolean;
+  weeklySummaryEnabled: boolean;
+  weeklySummaryDay: number;
   quietHoursEnabled: boolean;
   quietHoursStart: string;
   quietHoursEnd: string;
@@ -62,6 +71,8 @@ const defaultPreferences: ReminderPreferences = {
   dailyReminderEnabled: false,
   missedTaskReminderEnabled: false,
   revisionReminderEnabled: false,
+  weeklySummaryEnabled: false,
+  weeklySummaryDay: 0,
   quietHoursEnabled: true,
   quietHoursStart: "22:00",
   quietHoursEnd: "07:00",
@@ -74,8 +85,8 @@ export function eligibleReminderTypes(preferences: {
   dailyReminderEnabled: boolean;
   missedTaskReminderEnabled: boolean;
   revisionReminderEnabled: boolean;
-}): ReminderType[] {
-  const types: ReminderType[] = [];
+}): DailyReminderType[] {
+  const types: DailyReminderType[] = [];
   if (preferences.dailyReminderEnabled) types.push("daily");
   if (preferences.missedTaskReminderEnabled) types.push("missedTasks");
   if (preferences.revisionReminderEnabled) types.push("revisionReview");
@@ -133,6 +144,16 @@ export type LocalTime = {
 /** UTC Date instance of the user's local midnight. */
 function localDayStart(local: LocalTime) {
   return new Date(Date.UTC(local.year, local.month - 1, local.day));
+}
+
+/** Day-of-week number (0=Sunday .. 6=Saturday) in the user's local timezone. */
+export function localWeekday(local: LocalTime) {
+  return localDayStart(local).getUTCDay();
+}
+
+/** Weekly summary fires only on the user's chosen local weekday. */
+export function weeklySummaryDue(local: LocalTime, day: number) {
+  return Boolean(local && localWeekday(local) === (day ?? 0));
 }
 
 /** Read a date's clock in an arbitrary IANA timezone. */
@@ -243,6 +264,28 @@ export function buildReminderMessage(
   }
 }
 
+/** The weekly-summary message from the past-7-days stats. */
+export function buildWeeklySummaryMessage(params: {
+  completedCount: number;
+  focusMinutes: number;
+  completedTasks: Array<{ title: string }>;
+}): { title: string; message: string } {
+  const taskSuffix = params.completedCount === 1 ? "" : "s";
+  const head = `You completed ${params.completedCount} task${taskSuffix} and logged ${params.focusMinutes} min of study this week.`;
+  const list = params.completedTasks.map(
+    (task, index) => `${index + 1}. ${task.title}`,
+  );
+  return {
+    title: "SDE Command Center — weekly summary",
+    message: [
+      head,
+      ...(list.length ? ["Highlights:"] : []),
+      ...list,
+      "Keep the streak going — your roadmap re-syncs on schedule.",
+    ].join("\n"),
+  };
+}
+
 type RemindableUser = {
   id: string;
   email: string;
@@ -291,7 +334,8 @@ async function collectRemindableUsers(now: Date): Promise<RemindableUser[]> {
     const hasAnyReminderEnabled =
       preferences.dailyReminderEnabled ||
       preferences.missedTaskReminderEnabled ||
-      preferences.revisionReminderEnabled;
+      preferences.revisionReminderEnabled ||
+      preferences.weeklySummaryEnabled;
     if (!isSlotEnabled(schedule, slotIndex, hasAnyReminderEnabled)) {
       return [];
     }
@@ -406,7 +450,7 @@ type ReminderPlan = {
 
 /** All reminder messages a user is opted into that have something to say today. */
 async function buildPlans(user: RemindableUser, now: Date): Promise<ReminderPlan[]> {
-  const whereFor: Record<ReminderType, Prisma.TaskWhereInput> = {
+  const whereFor: Record<DailyReminderType, Prisma.TaskWhereInput> = {
     daily: {
       ...(user.preferences.excludeCompletedTasks
         ? { status: { notIn: ["COMPLETED", "SKIPPED"] } }
@@ -430,7 +474,62 @@ async function buildPlans(user: RemindableUser, now: Date): Promise<ReminderPlan
       message,
     });
   }
+
+  if (
+    user.preferences.weeklySummaryEnabled &&
+    weeklySummaryDue(user.local, user.preferences.weeklySummaryDay)
+  ) {
+    const weekly = await buildWeeklySummaryPlan(user);
+    if (weekly) plans.push(weekly);
+  }
+
   return plans;
+}
+
+/** Past-7-days stats plan; null when the user logged no activity to report. */
+async function buildWeeklySummaryPlan(
+  user: RemindableUser,
+): Promise<ReminderPlan | null> {
+  const weekStart = new Date(localDayStart(user.local).getTime() - 6 * 86400000);
+  const [completedCount, completedTasks, focus] = await Promise.all([
+    prisma.task.count({
+      where: {
+        userId: user.id,
+        status: "COMPLETED",
+        completedAt: { gte: weekStart },
+      },
+    }),
+    prisma.task.findMany({
+      where: {
+        userId: user.id,
+        status: "COMPLETED",
+        completedAt: { gte: weekStart },
+      },
+      orderBy: { completedAt: "desc" },
+      take: 5,
+      select: { id: true, title: true },
+    }),
+    prisma.studySession.aggregate({
+      where: { userId: user.id, startedAt: { gte: weekStart } },
+      _sum: { durationMinutes: true },
+    }),
+  ]);
+
+  const focusMinutes = focus._sum.durationMinutes ?? 0;
+  if (completedCount === 0 && focusMinutes === 0) return null;
+
+  const { title, message } = buildWeeklySummaryMessage({
+    completedCount,
+    focusMinutes,
+    completedTasks,
+  });
+  return {
+    type: "weeklySummary",
+    key: `${dateKeyOf(user.local)}:${user.slotIndex}:weeklySummary`,
+    tasks: completedTasks,
+    title,
+    message,
+  };
 }
 
 type SendResult = {
@@ -502,7 +601,7 @@ async function sendUserReminders(user: RemindableUser, now: Date): Promise<SendR
       reminder = await prisma.notification.create({
         data: {
           userId: user.id,
-          taskId: plan.tasks[0].id,
+          taskId: plan.tasks[0]?.id,
           reminderKey,
           provider: "fanout",
           channel: "BROWSER",
@@ -661,6 +760,8 @@ export async function previewDueReminders(now = new Date()) {
           dailyReminderEnabled: user.preferences.dailyReminderEnabled,
           missedTaskReminderEnabled: user.preferences.missedTaskReminderEnabled,
           revisionReminderEnabled: user.preferences.revisionReminderEnabled,
+          weeklySummaryEnabled: user.preferences.weeklySummaryEnabled,
+          weeklySummaryDay: user.preferences.weeklySummaryDay,
           maxDailyNotifications: user.preferences.maxDailyNotifications,
           excludeCompletedTasks: user.preferences.excludeCompletedTasks,
         },

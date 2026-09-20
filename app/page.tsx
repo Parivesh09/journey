@@ -113,7 +113,7 @@ export default async function HomePage() {
     [
       "Focus time",
       formatMinutes(studyMinutes),
-      `of ${formatMinutes(defaultStudyPlan.dailyStudyMinutes)} target`,
+      `of ${formatMinutes(user.dailyStudyTargetMinutes)} target`,
       Clock3,
       "text-cyan-300",
     ],

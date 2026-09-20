@@ -37,6 +37,7 @@ export const notificationPreferenceSchema = z
     missedTaskReminderEnabled: z.boolean().default(false),
     revisionReminderEnabled: z.boolean().default(false),
     weeklySummaryEnabled: z.boolean().default(false),
+    weeklySummaryDay: z.number().int().min(0).max(6).default(0),
     quietHoursEnabled: z.boolean().default(true),
     quietHoursStart: z
       .string()

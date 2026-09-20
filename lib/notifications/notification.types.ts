@@ -41,6 +41,7 @@ export type NotificationPreference = {
   missedTaskReminderEnabled: boolean;
   revisionReminderEnabled: boolean;
   weeklySummaryEnabled: boolean;
+  weeklySummaryDay: number;
   quietHoursEnabled: boolean;
   quietHoursStart: string;
   quietHoursEnd: string;

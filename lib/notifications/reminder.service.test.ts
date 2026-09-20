@@ -7,11 +7,14 @@ import {
   getLocalTime,
   getReminderSlotIndex,
   isSlotEnabled,
+  localWeekday,
   normalizeSchedule,
   notificationAllowed,
   overdueTasksWhere,
   revisionTasksWhere,
   todayTasksWhere,
+  weeklySummaryDue,
+  buildWeeklySummaryMessage,
 } from "@/lib/notifications/reminder.service";
 
 describe("getReminderSlotIndex", () => {
@@ -154,6 +157,47 @@ describe("eligibleReminderTypes", () => {
         revisionReminderEnabled: false,
       }),
     ).toEqual([]);
+  });
+});
+
+describe("weekly summary", () => {
+  // 2026-09-20 is a Sunday.
+  const sunday = { year: 2026, month: 9, day: 20, hour: 9, minute: 0 };
+  const monday = { year: 2026, month: 9, day: 21, hour: 9, minute: 0 };
+
+  it("localWeekday reflects the user's local calendar day", () => {
+    expect(localWeekday(sunday)).toBe(0);
+    expect(localWeekday(monday)).toBe(1);
+  });
+
+  it("weeklySummaryDue only fires on the chosen weekday", () => {
+    expect(weeklySummaryDue(sunday, 0)).toBe(true);
+    expect(weeklySummaryDue(sunday, 1)).toBe(false);
+    expect(weeklySummaryDue(monday, 1)).toBe(true);
+  });
+
+  it("buildWeeklySummaryMessage reports counts and highlights", () => {
+    const { title, message } = buildWeeklySummaryMessage({
+      completedCount: 3,
+      focusMinutes: 240,
+      completedTasks: [{ title: "Two Sum" }, { title: "LRU Cache" }],
+    });
+    expect(title).toMatch(/weekly summary/i);
+    expect(message).toContain("3 tasks");
+    expect(message).toContain("240 min");
+    expect(message).toContain("1. Two Sum");
+    expect(message).toContain("2. LRU Cache");
+  });
+
+  it("buildWeeklySummaryMessage handles a focus-only week", () => {
+    const { message } = buildWeeklySummaryMessage({
+      completedCount: 0,
+      focusMinutes: 45,
+      completedTasks: [],
+    });
+    expect(message).toContain("0 tasks");
+    expect(message).toContain("45 min");
+    expect(message).not.toContain("Highlights:");
   });
 });
 

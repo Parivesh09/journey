@@ -18,6 +18,7 @@ type NotificationSettings = {
   missedTaskReminderEnabled: boolean;
   revisionReminderEnabled: boolean;
   weeklySummaryEnabled: boolean;
+  weeklySummaryDay: number;
   quietHoursEnabled: boolean;
   quietHoursStart: string;
   quietHoursEnd: string;
@@ -48,6 +49,7 @@ const defaultNotifications: NotificationSettings = {
   missedTaskReminderEnabled: false,
   revisionReminderEnabled: false,
   weeklySummaryEnabled: false,
+  weeklySummaryDay: 0,
   quietHoursEnabled: true,
   quietHoursStart: "22:00",
   quietHoursEnd: "07:00",
@@ -447,6 +449,43 @@ export default function SettingsForm() {
               }
               className="h-5 w-5 accent-cyan-400"
             />
+          </label>
+          <label className="flex items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3">
+            <span className="text-sm text-slate-200">
+              Weekly summary (past 7 days)
+            </span>
+            <span className="flex items-center gap-3">
+              <select
+                value={notifications.weeklySummaryDay}
+                onChange={(event) =>
+                  updateNotification(
+                    "weeklySummaryDay",
+                    Number(event.target.value),
+                  )
+                }
+                disabled={!notifications.weeklySummaryEnabled}
+                className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm disabled:opacity-50"
+              >
+                {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(
+                  (day, index) => (
+                    <option key={day} value={index}>
+                      {day}
+                    </option>
+                  ),
+                )}
+              </select>
+              <input
+                type="checkbox"
+                checked={notifications.weeklySummaryEnabled}
+                onChange={(event) =>
+                  updateNotification(
+                    "weeklySummaryEnabled",
+                    event.target.checked,
+                  )
+                }
+                className="h-5 w-5 accent-cyan-400"
+              />
+            </span>
           </label>
         </div>
         <div className="mt-3 space-y-3">
