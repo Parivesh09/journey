@@ -66,8 +66,11 @@ open `http://localhost:3000`, create an account, and sign in.
 - Notifications are **opt-in**: every channel defaults to OFF. A phone number
   alone never triggers SMS/WhatsApp — the matching channel must be enabled.
 - Reminders are computed per user in their own timezone and deduplicated per
-  `(userId, date, slot)`. Sending always checks: active user → reminder type
-  enabled → channel enabled → valid contact → opted in → not already sent.
+  `(userId, date, slot, type)`. Four reminder types exist: **daily** (today's
+  tasks), **missedTasks** (overdue), **revisionReview** (revision due today),
+  and **weeklySummary** (past-7-days stats, fired only on the user's chosen
+  weekday). Sending always checks: active user → reminder type enabled →
+  channel enabled → valid contact → opted in → not already sent.
 
 ## Reminder cron
 
@@ -93,3 +96,7 @@ browser channel (see `app/notifications/browser-listener.tsx`).
   for it with `SEED_USER_EMAIL`/`SEED_USER_PASSWORD`, or leave it untouched.
 - Redis is provisioned for future rate-limiting/queue work; it is not required
   by the current reminder flow (HTTP cron).
+- External delivery (email via `SMTP_*`, SMS/WhatsApp via Linq, Telegram) is
+  only unit/dry-run tested: without live credentials the providers return clean
+  "disabled" results. The cron is effectively a dry run until those credentials
+  are configured in the runtime environment.
