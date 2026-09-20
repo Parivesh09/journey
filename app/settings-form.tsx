@@ -7,10 +7,7 @@ import { LoaderCircle } from "lucide-react";
 type NotificationSettings = {
   browserEnabled: boolean;
   emailEnabled: boolean;
-  telegramEnabled: boolean;
-  linqEnabled: boolean;
   smsEnabled: boolean;
-  whatsappEnabled: boolean;
   phoneNumber: string | null;
   reminderSchedule: Array<{ key: string; time: string; enabled: boolean }>;
   excludeCompletedTasks: boolean;
@@ -38,10 +35,7 @@ const defaultSchedule = [
 const defaultNotifications: NotificationSettings = {
   browserEnabled: false,
   emailEnabled: false,
-  telegramEnabled: false,
-  linqEnabled: false,
   smsEnabled: false,
-  whatsappEnabled: false,
   phoneNumber: null,
   reminderSchedule: defaultSchedule,
   excludeCompletedTasks: true,
@@ -350,8 +344,6 @@ export default function SettingsForm() {
               ["browserEnabled", "Browser notifications"],
               ["emailEnabled", "Email reminders"],
               ["smsEnabled", "SMS reminders"],
-              ["whatsappEnabled", "WhatsApp reminders"],
-              ["telegramEnabled", "Telegram reminders"],
             ] as const
           ).map(([key, label]) => (
             <label
@@ -369,9 +361,9 @@ export default function SettingsForm() {
           ))}
         </div>
 
-        {(notifications.smsEnabled || notifications.whatsappEnabled) ? (
+        {notifications.smsEnabled ? (
           <label className="mt-5 block text-sm text-slate-300">
-            Phone number (for SMS / WhatsApp)
+            Phone number (for SMS)
             <input
               type="tel"
               value={notifications.phoneNumber ?? ""}

@@ -1,7 +1,7 @@
 export type LinqRequest = {
   to: string[];
   message: {
-    preferred_service: "SMS" | "WHATSAPP";
+    preferred_service: "SMS";
     parts: Array<{ type: "text"; value: string }>;
   };
 };

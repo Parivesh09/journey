@@ -9,13 +9,9 @@ export async function GET() {
   const user = await requireUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const [preferences, telegramIntegration] = await Promise.all([
-    prisma.notificationPreference.findUnique({ where: { userId: user.id } }),
-    prisma.userIntegration.findFirst({
-      where: { userId: user.id, provider: "telegram" },
-      select: { telegramChatId: true },
-    }),
-  ]);
+  const preferences = await prisma.notificationPreference.findUnique({
+    where: { userId: user.id },
+  });
 
   return NextResponse.json({
     user: {
@@ -28,7 +24,6 @@ export async function GET() {
       onboardingDismissedAt: user.onboardingDismissedAt,
     },
     notifications: preferences,
-    telegramLinked: Boolean(telegramIntegration?.telegramChatId),
   });
 }
 

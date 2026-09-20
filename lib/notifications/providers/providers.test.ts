@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { EmailNotificationProvider } from "@/lib/notifications/providers/email/email.provider";
-import { TelegramNotificationProvider } from "@/lib/notifications/providers/telegram/telegram.provider";
 import { LinqNotificationProvider } from "@/lib/notifications/providers/linq/linq.provider";
 import type { NotificationPayload } from "@/lib/notifications/notification.types";
 
@@ -11,7 +10,6 @@ const ENV_KEYS = [
   "SMTP_USER",
   "SMTP_PASSWORD",
   "SMTP_FROM",
-  "TELEGRAM_BOT_TOKEN",
   "LINQ_ENABLED",
   "LINQ_API_KEY",
   "LINQ_API_BASE_URL",
@@ -53,21 +51,6 @@ describe("EmailNotificationProvider", () => {
     const result = await new EmailNotificationProvider().send(payload());
     expect(result.success).toBe(false);
     expect(result.errorCode).toBe("EMAIL_RECIPIENT_MISSING");
-  });
-});
-
-describe("TelegramNotificationProvider", () => {
-  it("reports disabled when no bot token is configured", async () => {
-    const result = await new TelegramNotificationProvider().send(payload());
-    expect(result.success).toBe(false);
-    expect(result.errorCode).toBe("TELEGRAM_NOT_CONFIGURED");
-  });
-
-  it("reports a missing chat link when the token exists", async () => {
-    process.env.TELEGRAM_BOT_TOKEN = "test-token";
-    const result = await new TelegramNotificationProvider().send(payload());
-    expect(result.success).toBe(false);
-    expect(result.errorCode).toBe("TELEGRAM_CHAT_ID_MISSING");
   });
 });
 

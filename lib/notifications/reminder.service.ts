@@ -4,7 +4,6 @@ import { prisma } from "@/lib/prisma";
 import { ensureDailyTasks } from "@/lib/business/daily-plan";
 import { EmailNotificationProvider } from "./providers/email/email.provider";
 import { LinqNotificationProvider } from "./providers/linq/linq.provider";
-import { TelegramNotificationProvider } from "./providers/telegram/telegram.provider";
 import type {
   NotificationPayload,
   NotificationResult,
@@ -39,10 +38,7 @@ export const DEFAULT_REMINDER_SCHEDULE: ReminderScheduleEntry[] = [
 type ReminderPreferences = {
   browserEnabled: boolean;
   emailEnabled: boolean;
-  telegramEnabled: boolean;
-  linqEnabled: boolean;
   smsEnabled: boolean;
-  whatsappEnabled: boolean;
   phoneNumber: string | null;
   reminderSchedule: unknown;
   excludeCompletedTasks: boolean;
@@ -61,10 +57,7 @@ type ReminderPreferences = {
 const defaultPreferences: ReminderPreferences = {
   browserEnabled: false,
   emailEnabled: false,
-  telegramEnabled: false,
-  linqEnabled: false,
   smsEnabled: false,
-  whatsappEnabled: false,
   phoneNumber: null,
   reminderSchedule: DEFAULT_REMINDER_SCHEDULE,
   excludeCompletedTasks: true,
@@ -293,7 +286,6 @@ type RemindableUser = {
   preferences: ReminderPreferences;
   local: LocalTime;
   slotIndex: number;
-  telegramChatId: string | null;
 };
 
 function dateKeyOf(local: LocalTime) {
@@ -319,7 +311,6 @@ async function collectRemindableUsers(now: Date): Promise<RemindableUser[]> {
     where: { isActive: true },
     include: {
       notificationPreferences: true,
-      integrations: true,
     },
   });
 
@@ -339,12 +330,6 @@ async function collectRemindableUsers(now: Date): Promise<RemindableUser[]> {
     if (!isSlotEnabled(schedule, slotIndex, hasAnyReminderEnabled)) {
       return [];
     }
-    const telegramChatId =
-      row.integrations.find(
-        (integration) =>
-          Boolean(integration.telegramChatId) &&
-          integration.provider.toLowerCase() === "telegram",
-      )?.telegramChatId ?? null;
     return [
       {
         id: row.id,
@@ -353,7 +338,6 @@ async function collectRemindableUsers(now: Date): Promise<RemindableUser[]> {
         preferences,
         local,
         slotIndex,
-        telegramChatId,
       },
     ];
   });
@@ -376,8 +360,8 @@ type ChannelGate = {
   key: string;
   enabled: boolean;
   hasContact: boolean;
-  provider: "email" | "linq" | "telegram";
-  channel: "email" | "sms" | "whatsapp" | "telegram";
+  provider: "email" | "linq";
+  channel: "email" | "sms";
   buildPayload: (payload: NotificationPayload) => NotificationPayload;
 };
 
@@ -406,38 +390,12 @@ function channelGatesFor(user: RemindableUser): ChannelGate[] {
         metadata: { ...payload.metadata, to: preferences.phoneNumber },
       }),
     },
-    {
-      key: "whatsapp",
-      enabled: preferences.whatsappEnabled,
-      hasContact: Boolean(preferences.phoneNumber),
-      provider: "linq",
-      channel: "whatsapp",
-      buildPayload: (payload) => ({
-        ...payload,
-        metadata: { ...payload.metadata, to: preferences.phoneNumber },
-      }),
-    },
-    {
-      key: "telegram",
-      enabled: preferences.telegramEnabled,
-      hasContact: Boolean(user.telegramChatId),
-      provider: "telegram",
-      channel: "telegram",
-      buildPayload: (payload) => ({
-        ...payload,
-        metadata: {
-          ...payload.metadata,
-          telegramChatId: user.telegramChatId ?? undefined,
-        },
-      }),
-    },
   ];
 }
 
 const providerByChannel = {
   email: () => new EmailNotificationProvider(),
   linq: () => new LinqNotificationProvider(),
-  telegram: () => new TelegramNotificationProvider(),
 };
 
 type ReminderPlan = {
@@ -641,11 +599,9 @@ async function sendUserReminders(user: RemindableUser, now: Date): Promise<SendR
       );
     }
 
-    const channelTokens: Record<string, "EMAIL" | "TELEGRAM" | "SMS" | "WHATSAPP"> = {
+    const channelTokens: Record<string, "EMAIL" | "SMS"> = {
       email: "EMAIL",
-      telegram: "TELEGRAM",
       sms: "SMS",
-      whatsapp: "WHATSAPP",
     };
     for (let index = 0; index < channelResults.length; index++) {
       const result = channelResults[index];
@@ -743,10 +699,6 @@ export async function previewDueReminders(now = new Date()) {
           sms: Boolean(
             user.preferences.smsEnabled && user.preferences.phoneNumber,
           ),
-          whatsapp: Boolean(
-            user.preferences.whatsappEnabled && user.preferences.phoneNumber,
-          ),
-          telegram: Boolean(user.preferences.telegramEnabled && user.telegramChatId),
         },
         reminders: plans.map((plan) => ({
           type: plan.type,

@@ -44,8 +44,7 @@ export class LinqNotificationProvider implements NotificationProvider {
       const response = await this.client.send({
         to,
         message: {
-          preferred_service:
-            notification.channel === "whatsapp" ? "WHATSAPP" : "SMS",
+          preferred_service: "SMS",
           parts: [
             {
               type: "text",

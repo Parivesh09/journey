@@ -64,7 +64,7 @@ open `http://localhost:3000`, create an account, and sign in.
   authenticated user on the backend.
 - ID tampering (e.g. `/api/tasks/<someone-else's-id>`) returns 404.
 - Notifications are **opt-in**: every channel defaults to OFF. A phone number
-  alone never triggers SMS/WhatsApp — the matching channel must be enabled.
+  alone never triggers SMS — the matching channel must be enabled.
 - Reminders are computed per user in their own timezone and deduplicated per
   `(userId, date, slot, type)`. Four reminder types exist: **daily** (today's
   tasks), **missedTasks** (overdue), **revisionReview** (revision due today),
@@ -96,7 +96,7 @@ browser channel (see `app/notifications/browser-listener.tsx`).
   for it with `SEED_USER_EMAIL`/`SEED_USER_PASSWORD`, or leave it untouched.
 - Redis is provisioned for future rate-limiting/queue work; it is not required
   by the current reminder flow (HTTP cron).
-- External delivery (email via `SMTP_*`, SMS/WhatsApp via Linq, Telegram) is
+- External delivery (email via `SMTP_*`, SMS via Linq) is
   only unit/dry-run tested: without live credentials the providers return clean
   "disabled" results. The cron is effectively a dry run until those credentials
   are configured in the runtime environment.

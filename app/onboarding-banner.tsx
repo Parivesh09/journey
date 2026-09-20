@@ -36,7 +36,7 @@ export default function OnboardingBanner({ show }: { show: boolean }) {
             </h2>
             <p className="mt-1 text-sm leading-6 text-slate-400">
               You can receive reminders about your daily SDE tasks. Configure
-              email, browser, SMS, WhatsApp and other channels from Settings.
+              email, browser, SMS and other channels from Settings.
               Nothing is enabled until you choose it.
             </p>
           </div>

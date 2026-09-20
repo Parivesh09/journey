@@ -31,10 +31,7 @@ export const notificationPreferenceSchema = z
   .object({
     browserEnabled: z.boolean().default(false),
     emailEnabled: z.boolean().default(false),
-    telegramEnabled: z.boolean().default(false),
-    linqEnabled: z.boolean().default(false),
     smsEnabled: z.boolean().default(false),
-    whatsappEnabled: z.boolean().default(false),
     phoneNumber: z.union([phoneSchema, z.literal("")]).optional(),
     reminderSchedule: z.array(reminderScheduleEntrySchema).optional(),
     excludeCompletedTasks: z.boolean().default(true),
@@ -55,7 +52,7 @@ export const notificationPreferenceSchema = z
     maxDailyNotifications: z.number().int().min(1).max(20).default(5),
     minNotificationInterval: z.number().int().min(5).max(1440).default(30),
     preferredChannel: z
-      .enum(["BROWSER", "EMAIL", "TELEGRAM", "LINQ", "SMS", "WHATSAPP"])
+      .enum(["BROWSER", "EMAIL", "SMS"])
       .default("BROWSER"),
   });
 

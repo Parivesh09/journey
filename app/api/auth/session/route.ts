@@ -12,8 +12,6 @@ export async function GET() {
       browserEnabled: true,
       emailEnabled: true,
       smsEnabled: true,
-      whatsappEnabled: true,
-      telegramEnabled: true,
       phoneNumber: true,
       dailyReminderEnabled: true,
     },
