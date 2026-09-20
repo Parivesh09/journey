@@ -2,11 +2,16 @@ import { describe, expect, it } from "vitest";
 
 import {
   DEFAULT_REMINDER_SCHEDULE,
+  buildReminderMessage,
+  eligibleReminderTypes,
   getLocalTime,
   getReminderSlotIndex,
   isSlotEnabled,
   normalizeSchedule,
   notificationAllowed,
+  overdueTasksWhere,
+  revisionTasksWhere,
+  todayTasksWhere,
 } from "@/lib/notifications/reminder.service";
 
 describe("getReminderSlotIndex", () => {
@@ -123,6 +128,88 @@ describe("notificationAllowed", () => {
       allowed: false,
       reason: "ALREADY_SENT",
     });
+  });
+});
+
+describe("eligibleReminderTypes", () => {
+  it("only returns opt-in types in a stable order", () => {
+    expect(
+      eligibleReminderTypes({
+        dailyReminderEnabled: true,
+        missedTaskReminderEnabled: false,
+        revisionReminderEnabled: true,
+      }),
+    ).toEqual(["daily", "revisionReview"]);
+    expect(
+      eligibleReminderTypes({
+        dailyReminderEnabled: false,
+        missedTaskReminderEnabled: true,
+        revisionReminderEnabled: true,
+      }),
+    ).toEqual(["missedTasks", "revisionReview"]);
+    expect(
+      eligibleReminderTypes({
+        dailyReminderEnabled: false,
+        missedTaskReminderEnabled: false,
+        revisionReminderEnabled: false,
+      }),
+    ).toEqual([]);
+  });
+});
+
+describe("task-day filters (local-midnight boundaries)", () => {
+  const local = { year: 2026, month: 9, day: 20, hour: 9, minute: 0 };
+  const start = new Date(Date.UTC(2026, 8, 20)); // Sep 20 00:00 UTC
+
+  it("todayTasksWhere scopes to the local day", () => {
+    const where = todayTasksWhere(local);
+    const due = where.dueDate as { gte: Date; lt: Date };
+    expect(due.gte).toEqual(start);
+    expect(due.lt).toEqual(new Date(start.getTime() + 86400000));
+  });
+
+  it("overdueTasksWhere means before the local day, open only", () => {
+    const where = overdueTasksWhere(local);
+    const due = where.dueDate as { lt: Date };
+    expect(due.lt).toEqual(start);
+    expect(where.status).toEqual({ notIn: ["COMPLETED", "SKIPPED"] });
+  });
+
+  it("revisionTasksWhere targets revision items due within the local day", () => {
+    const where = revisionTasksWhere(local);
+    const due = where.dueDate as { gte: Date; lt: Date };
+    expect(where.taskType).toBe("revision");
+    expect(due.gte).toEqual(start);
+    expect(due.lt).toEqual(new Date(start.getTime() + 86400000));
+  });
+});
+
+describe("buildReminderMessage", () => {
+  const tasks = [
+    { title: "Revise arrays" },
+    { title: "Revise graphs" },
+  ];
+
+  it("builds a daily digest listing the day's tasks", () => {
+    const { title, message } = buildReminderMessage("daily", tasks);
+    expect(title).toContain("reminder");
+    expect(message).toContain("1. Revise arrays");
+    expect(message).toContain("2. Revise graphs");
+  });
+
+  it("flags overdue count for missed-task reminders", () => {
+    const { title, message } = buildReminderMessage("missedTasks", tasks);
+    expect(title).toContain("Missed tasks");
+    expect(message).toContain("2 overdue tasks");
+  });
+
+  it("singularizes counts and pins revision items for revision review", () => {
+    const one = buildReminderMessage("revisionReview", [{ title: "Revise SQL" }]);
+    expect(one.title).toContain("Revision is due today");
+    expect(one.message).toContain("1 revision item");
+    const many = buildReminderMessage("revisionReview", tasks);
+    expect(many.message).toContain("2 revision items");
+    expect(many.message).toContain("Revise arrays");
   });
 });
 

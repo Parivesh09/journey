@@ -18,6 +18,9 @@ export type ReminderScheduleEntry = {
   enabled: boolean;
 };
 
+/** The distinct messages a user's reminder preference can produce. */
+export type ReminderType = "daily" | "missedTasks" | "revisionReview";
+
 export const DEFAULT_REMINDER_SCHEDULE: ReminderScheduleEntry[] = [
   { key: "morning", time: "08:00", enabled: false },
   { key: "midday", time: "13:00", enabled: false },
@@ -38,6 +41,8 @@ type ReminderPreferences = {
   overdueRemindersEnabled: boolean;
   excludeCompletedTasks: boolean;
   dailyReminderEnabled: boolean;
+  missedTaskReminderEnabled: boolean;
+  revisionReminderEnabled: boolean;
   quietHoursEnabled: boolean;
   quietHoursStart: string;
   quietHoursEnd: string;
@@ -57,12 +62,27 @@ const defaultPreferences: ReminderPreferences = {
   overdueRemindersEnabled: false,
   excludeCompletedTasks: true,
   dailyReminderEnabled: false,
+  missedTaskReminderEnabled: false,
+  revisionReminderEnabled: false,
   quietHoursEnabled: true,
   quietHoursStart: "22:00",
   quietHoursEnd: "07:00",
   maxDailyNotifications: 5,
   minNotificationInterval: 30,
 };
+
+/** Which reminder types a user has opted into. */
+export function eligibleReminderTypes(preferences: {
+  dailyReminderEnabled: boolean;
+  missedTaskReminderEnabled: boolean;
+  revisionReminderEnabled: boolean;
+}): ReminderType[] {
+  const types: ReminderType[] = [];
+  if (preferences.dailyReminderEnabled) types.push("daily");
+  if (preferences.missedTaskReminderEnabled) types.push("missedTasks");
+  if (preferences.revisionReminderEnabled) types.push("revisionReview");
+  return types;
+}
 
 /** Parse a user's reminderSchedule JSON leniently; falls back to defaults. */
 export function normalizeSchedule(
@@ -92,13 +112,13 @@ export function getReminderSlotIndex(localHour: number) {
   );
 }
 
-/** A slot is eligible when the digest switch is on or the schedule enables it. */
+/** A slot is eligible when the digest master switch is on or the schedule enables it. */
 export function isSlotEnabled(
   schedule: ReminderScheduleEntry[],
   slotIndex: number,
-  dailyReminderEnabled: boolean,
+  masterEnabled: boolean,
 ) {
-  if (dailyReminderEnabled) return true;
+  if (masterEnabled) return true;
   return schedule.some(
     (entry) => entry.enabled && slotIndexOfTime(entry.time) === slotIndex,
   );
@@ -111,6 +131,11 @@ export type LocalTime = {
   hour: number;
   minute: number;
 };
+
+/** UTC Date instance of the user's local midnight. */
+function localDayStart(local: LocalTime) {
+  return new Date(Date.UTC(local.year, local.month - 1, local.day));
+}
 
 /** Read a date's clock in an arbitrary IANA timezone. */
 export function getLocalTime(date: Date, timeZone = "UTC"): LocalTime {
@@ -157,6 +182,69 @@ export function notificationAllowed(params: {
   return { allowed: true };
 }
 
+/** Tasks due within the user's local day. */
+export function todayTasksWhere(local: LocalTime): Prisma.TaskWhereInput {
+  const start = localDayStart(local);
+  return {
+    dueDate: { gte: start, lt: new Date(start.getTime() + 86400000) },
+  };
+}
+
+/** Tasks whose due date is before the user's local day and still open. */
+export function overdueTasksWhere(local: LocalTime): Prisma.TaskWhereInput {
+  return {
+    status: { notIn: ["COMPLETED", "SKIPPED"] },
+    dueDate: { lt: localDayStart(local) },
+  };
+}
+
+/** Template revision items due within the user's local day that are open. */
+export function revisionTasksWhere(local: LocalTime): Prisma.TaskWhereInput {
+  const start = localDayStart(local);
+  return {
+    status: { notIn: ["COMPLETED", "SKIPPED"] },
+    taskType: "revision",
+    dueDate: { gte: start, lt: new Date(start.getTime() + 86400000) },
+  };
+}
+
+/** The title/body for a given reminder type once its tasks are known. */
+export function buildReminderMessage(
+  type: ReminderType,
+  tasks: Array<{ title: string }>,
+): { title: string; message: string } {
+  const list = tasks.map((task, index) => `${index + 1}. ${task.title}`);
+  const suffix = tasks.length === 1 ? "" : "s";
+  switch (type) {
+    case "missedTasks":
+      return {
+        title: "Missed tasks need your attention",
+        message: [
+          `You have ${tasks.length} overdue task${suffix} not yet completed:`,
+          ...list,
+          "Reschedule or complete them so your plan stays on track.",
+        ].join("\n"),
+      };
+    case "revisionReview":
+      return {
+        title: "Revision is due today",
+        message: [
+          `Review these ${tasks.length} revision item${suffix} before the day ends:`,
+          ...list,
+        ].join("\n"),
+      };
+    default:
+      return {
+        title: "SDE Command Center reminder",
+        message: [
+          "Remaining tasks for today:",
+          ...list,
+          "Complete these tasks before the day ends.",
+        ].join("\n"),
+      };
+  }
+}
+
 type RemindableUser = {
   id: string;
   email: string;
@@ -201,7 +289,12 @@ async function collectRemindableUsers(now: Date): Promise<RemindableUser[]> {
     const preferences: ReminderPreferences =
       row.notificationPreferences ?? defaultPreferences;
     const schedule = normalizeSchedule(preferences.reminderSchedule);
-    if (!isSlotEnabled(schedule, slotIndex, preferences.dailyReminderEnabled)) {
+    // Any enabled type turns the slot machine on (schedule entries still fine-tune it).
+    const hasAnyReminderEnabled =
+      preferences.dailyReminderEnabled ||
+      preferences.missedTaskReminderEnabled ||
+      preferences.revisionReminderEnabled;
+    if (!isSlotEnabled(schedule, slotIndex, hasAnyReminderEnabled)) {
       return [];
     }
     const telegramChatId =
@@ -224,18 +317,14 @@ async function collectRemindableUsers(now: Date): Promise<RemindableUser[]> {
   });
 }
 
-async function loadTodayTasks(userId: string, excludeCompleted: boolean, now: Date) {
+async function loadTasksFor(
+  userId: string,
+  where: Prisma.TaskWhereInput,
+  now: Date,
+) {
   await ensureDailyTasks(userId, now);
-  const nowMidnight = new Date(now);
-  nowMidnight.setHours(0, 0, 0, 0);
-  const dayEnd = new Date(nowMidnight);
-  dayEnd.setDate(dayEnd.getDate() + 1);
   return prisma.task.findMany({
-    where: {
-      userId,
-      ...(excludeCompleted ? { status: { notIn: ["COMPLETED", "SKIPPED"] } } : {}),
-      dueDate: { gte: nowMidnight, lt: dayEnd },
-    },
+    where: { userId, ...where },
     orderBy: { sequenceOrder: "asc" },
     take: 50,
   });
@@ -309,24 +398,64 @@ const providerByChannel = {
   telegram: () => new TelegramNotificationProvider(),
 };
 
-async function sendUserReminder(user: RemindableUser, now: Date) {
-  const { preferences, local, slotIndex } = user;
-  const tasks = await loadTodayTasks(
-    user.id,
-    preferences.excludeCompletedTasks,
-    now,
-  );
-  if (!tasks.length) {
-    return { userId: user.id, sent: false, reason: "NO_INCOMPLETE_TASK_FOR_TODAY" };
-  }
+type ReminderPlan = {
+  type: ReminderType;
+  key: string;
+  tasks: Array<{ id: string; title: string }>;
+  title: string;
+  message: string;
+};
 
-  const reminderKey = `${user.id}:${dateKeyOf(local)}:${slotIndex}`;
-  const existing = await prisma.notification.findUnique({
-    where: { reminderKey },
-    select: { id: true },
-  });
-  if (existing) {
-    return { userId: user.id, sent: false, reason: "ALREADY_SENT_FOR_DAY_AND_SLOT" };
+/** All reminder messages a user is opted into that have something to say today. */
+async function buildPlans(user: RemindableUser, now: Date): Promise<ReminderPlan[]> {
+  const whereFor: Record<ReminderType, Prisma.TaskWhereInput> = {
+    daily: {
+      ...(user.preferences.excludeCompletedTasks
+        ? { status: { notIn: ["COMPLETED", "SKIPPED"] } }
+        : {}),
+      ...todayTasksWhere(user.local),
+    },
+    missedTasks: overdueTasksWhere(user.local),
+    revisionReview: revisionTasksWhere(user.local),
+  };
+
+  const plans: ReminderPlan[] = [];
+  for (const type of eligibleReminderTypes(user.preferences)) {
+    const tasks = await loadTasksFor(user.id, whereFor[type], now);
+    if (!tasks.length) continue;
+    const { title, message } = buildReminderMessage(type, tasks);
+    plans.push({
+      type,
+      key: `${dateKeyOf(user.local)}:${user.slotIndex}:${type}`,
+      tasks,
+      title,
+      message,
+    });
+  }
+  return plans;
+}
+
+type SendResult = {
+  userId: string;
+  type?: ReminderType;
+  sent: boolean;
+  reason?: string;
+  browserQueued?: boolean;
+  taskCount?: number;
+  reminderKey?: string;
+  channels?: Array<{ provider: string; success: boolean }>;
+};
+
+async function sendUserReminders(user: RemindableUser, now: Date): Promise<SendResult[]> {
+  const plans = await buildPlans(user, now);
+  if (!plans.length) {
+    return [
+      {
+        userId: user.id,
+        sent: false,
+        reason: "NOTHING_DUE_FOR_ENABLED_REMINDERS",
+      },
+    ];
   }
 
   const gates = channelGatesFor(user).filter(
@@ -342,100 +471,125 @@ async function sendUserReminder(user: RemindableUser, now: Date) {
       }).allowed,
   );
 
-  const browserEnabled = preferences.browserEnabled;
+  const browserEnabled = user.preferences.browserEnabled;
   if (!browserEnabled && gates.length === 0) {
-    return { userId: user.id, sent: false, reason: "NO_ENABLED_CHANNEL" };
+    return [
+      {
+        userId: user.id,
+        sent: false,
+        reason: "NO_ENABLED_CHANNEL",
+      },
+    ];
   }
 
-  const title = "SDE Command Center reminder";
-  const message = [
-    "Remaining tasks for today:",
-    ...tasks.map((task, index) => `${index + 1}. ${task.title}`),
-    "Complete these tasks before the day ends.",
-  ].join("\n");
-
-  let reminder;
-  try {
-    reminder = await prisma.notification.create({
-      data: {
-        userId: user.id,
-        taskId: tasks[0].id,
-        reminderKey,
-        provider: "fanout",
-        channel: "BROWSER",
-        title,
-        message,
-        scheduledFor: now,
-        status: NotificationStatus.SENT,
-      },
+  const results: SendResult[] = [];
+  for (const plan of plans) {
+    const reminderKey = `${user.id}:${plan.key}`;
+    const existing = await prisma.notification.findUnique({
+      where: { reminderKey },
+      select: { id: true },
     });
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
-    ) {
-      return { userId: user.id, sent: false, reason: "ALREADY_SENT_FOR_DAY_AND_SLOT" };
+    if (existing) {
+      results.push({
+        userId: user.id,
+        type: plan.type,
+        sent: false,
+        reason: "ALREADY_SENT_FOR_DAY_AND_SLOT",
+      });
+      continue;
     }
-    throw error;
-  }
 
-  const results: NotificationResult[] = [];
-  for (const gate of gates) {
-    const base: NotificationPayload = {
-      userId: user.id,
-      title,
-      message,
-      channel: gate.channel,
-      metadata: {},
-    };
-    results.push(
-      await providerByChannel[gate.provider]().send(gate.buildPayload(base)),
-    );
-  }
+    let reminder;
+    try {
+      reminder = await prisma.notification.create({
+        data: {
+          userId: user.id,
+          taskId: plan.tasks[0].id,
+          reminderKey,
+          provider: "fanout",
+          channel: "BROWSER",
+          title: plan.title,
+          message: plan.message,
+          scheduledFor: now,
+          status: NotificationStatus.SENT,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        results.push({
+          userId: user.id,
+          type: plan.type,
+          sent: false,
+          reason: "ALREADY_SENT_FOR_DAY_AND_SLOT",
+        });
+        continue;
+      }
+      throw error;
+    }
 
-  const channelTokens: Record<string, "EMAIL" | "TELEGRAM" | "SMS" | "WHATSAPP"> = {
-    email: "EMAIL",
-    telegram: "TELEGRAM",
-    sms: "SMS",
-    whatsapp: "WHATSAPP",
-  };
-  for (let index = 0; index < results.length; index++) {
-    const result = results[index];
-    const gate = gates[index];
-    await prisma.notificationLog.create({
-      data: {
+    const channelResults: NotificationResult[] = [];
+    for (const gate of gates) {
+      const base: NotificationPayload = {
         userId: user.id,
-        notificationId: reminder.id,
+        title: plan.title,
+        message: plan.message,
+        channel: gate.channel,
+        metadata: {},
+      };
+      channelResults.push(
+        await providerByChannel[gate.provider]().send(gate.buildPayload(base)),
+      );
+    }
+
+    const channelTokens: Record<string, "EMAIL" | "TELEGRAM" | "SMS" | "WHATSAPP"> = {
+      email: "EMAIL",
+      telegram: "TELEGRAM",
+      sms: "SMS",
+      whatsapp: "WHATSAPP",
+    };
+    for (let index = 0; index < channelResults.length; index++) {
+      const result = channelResults[index];
+      const gate = gates[index];
+      await prisma.notificationLog.create({
+        data: {
+          userId: user.id,
+          notificationId: reminder.id,
+          provider: result.provider,
+          providerMessageId: result.providerMessageId,
+          channel: gate ? channelTokens[gate.channel] : "SMS",
+          status: result.success ? "SENT" : "FAILED",
+          title: plan.title,
+          message: plan.message,
+          errorCode: result.errorCode,
+          errorMessage: result.errorMessage,
+          sentAt: result.success ? now : undefined,
+          failedAt: result.success ? undefined : now,
+        },
+      });
+    }
+
+    results.push({
+      userId: user.id,
+      type: plan.type,
+      sent: browserEnabled || channelResults.some((result) => result.success),
+      browserQueued: browserEnabled,
+      taskCount: plan.tasks.length,
+      reminderKey,
+      channels: channelResults.map((result) => ({
         provider: result.provider,
-        providerMessageId: result.providerMessageId,
-        channel: gate ? channelTokens[gate.channel] : "SMS",
-        status: result.success ? "SENT" : "FAILED",
-        title,
-        message,
-        errorCode: result.errorCode,
-        errorMessage: result.errorMessage,
-        sentAt: result.success ? now : undefined,
-        failedAt: result.success ? undefined : now,
-      },
+        success: result.success,
+      })),
     });
   }
-
-  return {
-    userId: user.id,
-    sent: browserEnabled || results.some((result) => result.success),
-    browserQueued: browserEnabled,
-    taskCount: tasks.length,
-    reminderKey,
-    channels: results.map((result) => ({
-      provider: result.provider,
-      success: result.success,
-    })),
-  };
+  return results;
 }
 
 export async function sendDueReminders(now = new Date()) {
   const users = await collectRemindableUsers(now);
-  const results = [];
+  const results: Array<SendResult | { userId: string; sent: boolean; reason: string }> = [];
   for (const user of users) {
     const quietHours = user.preferences.quietHoursEnabled
       ? inLocalQuietHours(
@@ -459,7 +613,7 @@ export async function sendDueReminders(now = new Date()) {
       results.push({ userId: user.id, sent: false, reason: "DAILY_LIMIT_REACHED" });
       continue;
     }
-    results.push(await sendUserReminder(user, now));
+    results.push(...(await sendUserReminders(user, now)));
   }
   return results;
 }
@@ -468,27 +622,24 @@ export async function previewDueReminders(now = new Date()) {
   const users = await collectRemindableUsers(now);
   return Promise.all(
     users.map(async (user) => {
-      const tasks = await loadTodayTasks(
-        user.id,
-        user.preferences.excludeCompletedTasks,
-        now,
+      const plans = await buildPlans(user, now);
+      const existingKeys = new Set(
+        (
+          await prisma.notification.findMany({
+            where: {
+              userId: user.id,
+              reminderKey: { in: plans.map((plan) => `${user.id}:${plan.key}`) },
+            },
+            select: { reminderKey: true },
+          })
+        )
+          .map((row) => row.reminderKey?.replace(`${user.id}:`, ""))
+          .filter((key): key is string => Boolean(key)),
       );
-      const reminderKey = `${user.id}:${dateKeyOf(user.local)}:${user.slotIndex}`;
-      const existingReminder = await prisma.notification.findUnique({
-        where: { reminderKey },
-        select: { id: true },
-      });
       return {
         userId: user.id,
         timezone: user.timezone,
         slotIndex: user.slotIndex,
-        ready: !existingReminder && tasks.length > 0,
-        reason: existingReminder
-          ? "ALREADY_SENT_FOR_DAY_AND_SLOT"
-          : tasks.length
-            ? "READY"
-            : "NO_INCOMPLETE_TASK_FOR_TODAY",
-        taskCount: tasks.length,
         channels: {
           browser: user.preferences.browserEnabled,
           email: Boolean(user.preferences.emailEnabled && user.email),
@@ -500,8 +651,18 @@ export async function previewDueReminders(now = new Date()) {
           ),
           telegram: Boolean(user.preferences.telegramEnabled && user.telegramChatId),
         },
+        reminders: plans.map((plan) => ({
+          type: plan.type,
+          ready: !existingKeys.has(plan.key),
+          reason: existingKeys.has(plan.key)
+            ? "ALREADY_SENT_FOR_DAY_AND_SLOT"
+            : "READY",
+          taskCount: plan.tasks.length,
+        })),
         preferences: {
           dailyReminderEnabled: user.preferences.dailyReminderEnabled,
+          missedTaskReminderEnabled: user.preferences.missedTaskReminderEnabled,
+          revisionReminderEnabled: user.preferences.revisionReminderEnabled,
           maxDailyNotifications: user.preferences.maxDailyNotifications,
           excludeCompletedTasks: user.preferences.excludeCompletedTasks,
         },

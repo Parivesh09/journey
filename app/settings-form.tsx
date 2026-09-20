@@ -418,6 +418,40 @@ export default function SettingsForm() {
           With the master switch off, enable individual reminders below.
         </p>
         <div className="mt-3 space-y-3">
+          <label className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3">
+            <span className="text-sm text-slate-200">
+              Missed-task reminder (overdue tasks)
+            </span>
+            <input
+              type="checkbox"
+              checked={notifications.missedTaskReminderEnabled}
+              onChange={(event) =>
+                updateNotification(
+                  "missedTaskReminderEnabled",
+                  event.target.checked,
+                )
+              }
+              className="h-5 w-5 accent-cyan-400"
+            />
+          </label>
+          <label className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3">
+            <span className="text-sm text-slate-200">
+              Revision review (revision items due today)
+            </span>
+            <input
+              type="checkbox"
+              checked={notifications.revisionReminderEnabled}
+              onChange={(event) =>
+                updateNotification(
+                  "revisionReminderEnabled",
+                  event.target.checked,
+                )
+              }
+              className="h-5 w-5 accent-cyan-400"
+            />
+          </label>
+        </div>
+        <div className="mt-3 space-y-3">
           {notifications.reminderSchedule.map((entry, index) => (
             <div
               key={entry.key}
