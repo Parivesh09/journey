@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bubble, EmptyNote, Stamp } from "@/app/components/ui";
+import { Bubble, EmptyNote, Stamp, FormError } from "@/app/components/ui";
 
 export type DashboardTaskRow = {
   id: string;
@@ -73,11 +73,7 @@ export default function DashboardTaskList({
 
   return (
     <div className="mt-4">
-      {error ? (
-        <p className="mb-3 text-[0.75rem] font-medium text-stamp" role="alert">
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormError>{error}</FormError> : null}
       <div className="border-t border-graphite/25">
         {items.map((row, index) => {
           const busy = updatingId === row.id;

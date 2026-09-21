@@ -47,14 +47,14 @@ export default function OnboardingBanner({ show }: { show: boolean }) {
           <button
             type="button"
             onClick={() => void dismiss(false, "/roadmaps")}
-            className="btn btn-mark flex-1"
+            className="btn btn-primary flex-1"
           >
             Enroll a roadmap
           </button>
           <button
             type="button"
             onClick={() => void dismiss(true)}
-            className="btn btn-line flex-1"
+            className="btn btn-secondary flex-1"
           >
             Set up notifications
           </button>

@@ -3,13 +3,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export function Sheet({
-  className,
-  children,
-}: {
-  className?: string;
-  children: ReactNode;
-}) {
+export function Sheet({ className, children }: { className?: string; children: ReactNode }) {
   return <div className={cn("sheet", className)}>{children}</div>;
 }
 
@@ -38,9 +32,7 @@ export function SectionHead({
               "shrink-0 rounded-md bg-amber/12 px-1.5 py-0.5 text-[0.68rem] font-semibold tabular-nums",
               onPaper ? "text-amber-ink" : "text-amber",
             )}
-          >
-            {index}
-          </span>
+              >{index}</span>
         ) : null}
         <h2
           className={cn(
@@ -105,13 +97,7 @@ export function Stamp({
   );
 }
 
-export function Num({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
+export function Num({ children, className }: { children: ReactNode; className?: string }) {
   return (
     <span className={cn("font-mono tabular-nums", className)}>{children}</span>
   );
@@ -150,13 +136,7 @@ export function Bubble({
   );
 }
 
-export function Loader({
-  label = "Loading",
-  className,
-}: {
-  label?: string;
-  className?: string;
-}) {
+export function Loader({ label = "Loading", className }: { label?: string; className?: string }) {
   return (
     <span
       className={cn(
@@ -194,13 +174,7 @@ export function SkeletonRows({ rows = 3 }: { rows?: number }) {
   );
 }
 
-export function EmptyNote({
-  children,
-  tone = "paper",
-}: {
-  children: ReactNode;
-  tone?: "paper" | "ink";
-}) {
+export function EmptyNote({ children, tone = "paper" }: { children: ReactNode; tone?: "paper" | "ink" }) {
   return (
     <p
       className={cn(
@@ -212,5 +186,49 @@ export function EmptyNote({
     >
       {children}
     </p>
+  );
+}
+
+// Form utilities
+
+export function FormGroup({ label, children, className }: {
+  label: string;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cn("space-y-1", className)}>
+      <label className="label">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+export function FormError({ children }: { children: ReactNode }) {
+  return (
+    <p className="text-[0.72rem] font-medium text-stamp mt-1" role="alert">
+      {children}
+    </p>
+  );
+}
+
+export function FormSuccess({ children }: { children: ReactNode }) {
+  return (
+    <p className="text-[0.72rem] font-medium text-valid mt-1" role="alert">
+      {children}
+    </p>
+  );
+}
+
+// Toast notification
+
+export function Toast({ children, type = "info" }: { children: ReactNode; type?: "info" | "success" | "error" }) {
+  const tone = type === "success" ? "text-valid" : type === "error" ? "text-stamp" : "text-graphite-2";
+  return (
+    <div className="toast">
+      <span className={cn("text-[0.875rem] font-medium", tone)}>
+        {children}
+      </span>
+    </div>
   );
 }

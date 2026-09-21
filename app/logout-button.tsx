@@ -34,7 +34,7 @@ export default function LogoutButton({
         type="button"
         onClick={logout}
         disabled={loading}
-        className="btn btn-line-ink w-full px-3 py-2 text-[0.8125rem] font-medium"
+        className="btn btn-secondary w-full px-3 py-2 text-[0.8125rem] font-medium"
       >
         <LogOut className="h-3.5 w-3.5" aria-hidden />
         {loading ? "Signing out" : "Log out"}

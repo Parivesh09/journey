@@ -79,7 +79,7 @@ export default async function RoadmapsPage() {
                 <Link
                   key={template.id}
                   href={`/roadmaps/${template.id}`}
-                  className="group sheet flex flex-col overflow-hidden border border-rule transition-all duration-200 hover:border-rule-2 hover:-translate-y-0.5"
+                  className="group sheet flex flex-col overflow-hidden transition-all duration-200 hover:-translate-y-0.5"
                 >
                   <div className="flex flex-1 flex-col p-5">
                     <div className="flex items-start justify-between gap-3">

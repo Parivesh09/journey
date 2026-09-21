@@ -356,7 +356,7 @@ export default function SettingsForm() {
           <button
             type="submit"
             disabled={saving === "account"}
-            className="btn btn-mark mt-5"
+            className="btn btn-primary mt-5"
           >
             {saving === "account" ? "Saving" : "Save account"}
           </button>
@@ -408,7 +408,7 @@ export default function SettingsForm() {
           type="button"
           onClick={() => void saveNotifications()}
           disabled={saving === "notifications"}
-          className="btn btn-mark mt-5"
+          className="btn btn-primary mt-5"
         >
           {saving === "notifications" ? "Saving" : "Save notifications"}
         </button>
@@ -557,7 +557,7 @@ export default function SettingsForm() {
           type="button"
           onClick={() => void saveNotifications()}
           disabled={saving === "notifications"}
-          className="btn btn-mark mt-5"
+          className="btn btn-primary mt-5"
         >
           {saving === "notifications" ? "Saving" : "Save schedule"}
         </button>

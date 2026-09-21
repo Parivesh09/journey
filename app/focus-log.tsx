@@ -55,7 +55,7 @@ export default function FocusLog() {
         <button
           type="submit"
           disabled={saving || !minutes}
-          className="btn btn-mark"
+          className="btn btn-primary"
         >
           {saving ? (
             <span

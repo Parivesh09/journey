@@ -42,8 +42,8 @@ export default function SignupForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center px-4 py-10">
-      <form onSubmit={submit} className="sheet w-full max-w-[26rem] px-6 py-8 sm:px-9 sm:py-10">
+    <main className="flex min-h-screen items-center justify-center p-4">
+      <form onSubmit={submit} className="sheet w-full max-w-sm p-6 sm:p-8">
         <div className="flex items-center gap-2.5 border-b border-rule pb-5">
           <span
             aria-hidden
@@ -101,7 +101,7 @@ export default function SignupForm() {
           </p>
         ) : null}
 
-        <button disabled={loading} className="btn btn-mark mt-6 w-full py-3">
+        <button disabled={loading} className="btn btn-primary mt-6 w-full py-3">
           {loading ? "Creating your workspace" : "Create account"}
         </button>
 

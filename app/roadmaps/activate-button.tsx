@@ -46,8 +46,7 @@ const res = await fetch("/api/roadmaps", {
       <button
         type="submit"
         disabled={loading}
-        className="flex items-center gap-2 px-3 py-2 rounded-md font-medium transition-colors
-          bg-amber hover:bg-amber/80 text-white hover:text-bone disabled:opacity-50"
+        className="btn btn-primary px-3 py-1.5 text-xs font-medium"
       >
         {loading ? (
           <>

@@ -95,8 +95,8 @@ export default async function RoadmapDetailsPage({
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-3 gap-3 rounded-xl border border-rule bg-paper/40 p-4 font-mono text-center">
-            <div>
+          <div className="mt-6 grid grid-cols-3 gap-3">
+            <div className="p-4 rounded-lg border border-rule bg-surface">
               <div className="text-[1.2rem] font-bold text-graphite">
                 {totalPhases}
               </div>
@@ -133,7 +133,7 @@ export default async function RoadmapDetailsPage({
                 {template.milestones.map((m) => (
                   <div
                     key={m.id}
-                    className="rounded-xl border border-rule bg-paper/30 p-4"
+                    className="p-4 rounded-lg border border-rule bg-surface"
                   >
                     <h3 className="text-[0.9rem] font-semibold text-graphite">
                       {m.title}
@@ -166,7 +166,7 @@ export default async function RoadmapDetailsPage({
                 return (
                   <div
                     key={phase.id}
-                    className="rounded-xl border border-rule bg-paper/30 p-5"
+                    className="p-5 rounded-lg border border-rule bg-surface"
                   >
                     <div className="flex flex-col justify-between gap-1 sm:flex-row sm:items-center">
                       <div className="flex items-center gap-3">

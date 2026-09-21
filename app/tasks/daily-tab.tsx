@@ -5,6 +5,7 @@ import { Link2, Plus, Search } from "lucide-react";
 import {
   Bubble,
   EmptyNote,
+  FormError,
   SectionHead,
   SkeletonRows,
   Stamp,
@@ -258,12 +259,7 @@ export default function DailyTab() {
   return (
     <div>
       {error ? (
-        <p
-            className="mb-6 rounded-xl border border-stamp/30 bg-stamp/[0.05] px-3 py-2.5 text-[0.78rem] font-medium text-stamp"
-            role="alert"
-          >
-            {error}
-          </p>
+        <FormError>{error}</FormError>
       ) : null}
 
       <section>
@@ -288,7 +284,7 @@ export default function DailyTab() {
             type="submit"
             disabled={adding || !newTitle.trim()}
             aria-label="Add routine"
-            className="btn btn-mark shrink-0"
+            className="btn btn-primary shrink-0"
           >
             <Plus className="h-4 w-4" aria-hidden />
             {adding ? "Adding" : "Add"}
@@ -326,7 +322,7 @@ export default function DailyTab() {
           <button
             type="button"
             onClick={() => setPickerOpen(true)}
-            className="btn btn-line"
+            className="btn btn-secondary"
           >
             <Link2 className="h-4 w-4" aria-hidden />
             From roadmap
@@ -431,12 +427,12 @@ export default function DailyTab() {
                             {task.topicTitle ?? "No topic"}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          disabled={pinned}
-                          onClick={() => connectTask(task)}
-                          className="btn btn-line shrink-0 px-3 py-1.5 text-[0.75rem]"
-                        >
+<button
+            type="button"
+            disabled={pinned}
+            onClick={() => connectTask(task)}
+            className="btn btn-secondary shrink-0 px-3 py-1.5 text-[0.75rem]"
+          >
                           {pinned ? "Connected" : "Connect"}
                         </button>
                       </div>

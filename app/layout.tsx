@@ -16,8 +16,7 @@ const robotoMono = Roboto_Mono({
 
 export const metadata: Metadata = {
   title: "SDE Command Center",
-  description:
-    "A focused workspace for planning and completing your SDE roadmap.",
+  description: "A focused workspace for planning and completing your SDE roadmap.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

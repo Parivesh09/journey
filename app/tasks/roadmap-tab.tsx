@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
 import { Link2, Lock, Plus } from "lucide-react";
 import {
   Bubble,
@@ -8,6 +9,7 @@ import {
   SectionHead,
   SkeletonRows,
   Stamp,
+  FormError,
 } from "@/app/components/ui";
 
 type RoadmapSummary = {
@@ -348,14 +350,7 @@ export default function RoadmapTab({
 
   return (
     <div>
-      {error ? (
-        <p
-          className="mb-6 rounded-xl border border-stamp/30 bg-stamp/[0.05] px-3 py-2.5 text-[0.78rem] font-medium text-stamp"
-          role="alert"
-        >
-          {error}
-        </p>
-      ) : null}
+      {error ? <FormError>{error}</FormError> : null}
 
       <section>
         <SectionHead
@@ -385,7 +380,7 @@ export default function RoadmapTab({
           <button
             type="button"
             onClick={() => setActivateOpen(true)}
-            className="btn btn-line shrink-0"
+            className="btn btn-secondary shrink-0"
           >
             <Plus className="h-4 w-4" aria-hidden />
             Activate
@@ -525,7 +520,7 @@ export default function RoadmapTab({
           <button
             type="button"
             onClick={() => setActivateOpen(true)}
-            className="btn btn-mark mt-4"
+            className="btn btn-primary mt-4"
           >
             <Plus className="h-4 w-4" aria-hidden />
             Activate a roadmap
@@ -574,7 +569,10 @@ export default function RoadmapTab({
                       type="button"
                       disabled={active || activating}
                       onClick={() => activateRoadmap(template.roadmapId)}
-                      className="btn btn-line shrink-0 px-3 py-1.5 text-[0.75rem]"
+                      className={cn(
+                        "btn shrink-0 px-3 py-1.5 text-[0.75rem]",
+                        active ? "btn-secondary" : "btn-primary"
+                      )}
                     >
                       {active ? "Active" : activating ? "Activating" : "Activate"}
                     </button>

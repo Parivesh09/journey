@@ -2,12 +2,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AppShell from "@/app/components/shell";
-import {
-  Num,
-  SectionHead,
-  Sheet,
-  Stamp,
-} from "@/app/components/ui";
+import { Num, SectionHead, Sheet, Stamp } from "@/app/components/ui";
 import DashboardTaskList from "@/app/dashboard-task-list";
 import OnboardingBanner from "@/app/onboarding-banner";
 import FocusLog from "@/app/focus-log";
@@ -117,8 +112,8 @@ export default async function HomePage() {
     done: extra.done ?? task.status === "COMPLETED",
   });
   const todayList = [
-    ...dailyItems.routines.map((task) =>
-      toRow(task, "routine", { done: task.doneToday }),
+    ...dailyItems.routines.map((routine) =>
+      toRow(routine, "routine", { done: routine.doneToday }),
     ),
     ...dailyItems.connected.map(({ task }) => toRow(task, "connected")),
     ...todayTasks
@@ -155,30 +150,30 @@ export default async function HomePage() {
   return (
     <AppShell active="dashboard">
       <OnboardingBanner show={!user.onboardingDismissedAt} />
-      <main className="mx-auto max-w-[1120px] px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+      <main className="container mx-auto max-w-[1120px] px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
         <Sheet className="overflow-hidden px-5 py-7 sm:px-8 sm:py-9">
-          {/* ---------- masthead ---------- */}
+          {/* masthead */}
           <header className="flex flex-col gap-5 border-b border-rule pb-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-[1.6rem] font-bold leading-none tracking-tight text-graphite sm:text-[1.9rem]">
-                Today&rsquo;s plan
+                Today&apos;s plan
               </h1>
               <p className="mt-2.5 text-[0.8125rem] font-medium text-graphite-2">
                 {todayLabel}
               </p>
               <p className="mt-3 max-w-[62ch] text-[0.8125rem] leading-5 text-graphite-2">
-                {defaultStudyPlan.goal} · {defaultStudyPlan.durationDays} days ·{" "}
+                {defaultStudyPlan.goal} · {defaultStudyPlan.durationDays} days · {" "}
                 {formatMinutes(defaultStudyPlan.dailyStudyMinutes)} daily target.
                 Keep it simple — finish a line at a time.
               </p>
             </div>
-            <Link href="/tasks" className="btn btn-mark shrink-0 self-start">
+            <Link href="/tasks" className="btn btn-primary shrink-0 self-start">
               Manage tasks
               <ArrowRight className="h-3.5 w-3.5" aria-hidden />
             </Link>
           </header>
 
-          {/* ---------- summary strip ---------- */}
+          {/* summary strip */}
           <section
             aria-label="Today at a glance"
             className="grid grid-cols-2 border-b border-rule md:grid-cols-4"
@@ -203,7 +198,7 @@ export default async function HomePage() {
             ))}
           </section>
 
-          {/* ---------- the sheet proper ---------- */}
+          {/* today's list */}
           <section className="mt-8">
             <SectionHead
               index="01"
@@ -214,7 +209,7 @@ export default async function HomePage() {
             <DashboardTaskList initialItems={todayList} />
           </section>
 
-          {/* ---------- margin analysis ---------- */}
+          {/* completion and cadence */}
           <section className="mt-10 grid gap-10 border-t border-rule pt-8 md:grid-cols-[1.15fr_0.85fr] md:gap-12">
             <div className="space-y-9">
               <div>
@@ -237,8 +232,7 @@ export default async function HomePage() {
                       className="h-full rounded-full transition-[width] duration-500 ease-out"
                       style={{
                         width: `${progress}%`,
-                        backgroundImage:
-                          "linear-gradient(90deg, var(--color-amber-ink), var(--color-amber))",
+                        backgroundImage: "linear-gradient(90deg, var(--color-amber-ink), var(--color-amber))",
                       }}
                     />
                   </div>
@@ -255,7 +249,7 @@ export default async function HomePage() {
                   title="Cadence"
                   instruction="Completions recorded across the last seven days."
                 />
-                <div className="mt-5 flex h-28 items-end gap-2 rounded-xl border-b border-rule bg-paper/40 pb-px px-2">
+                <div className="mt-5 flex h-28 items-end gap-2 rounded-xl border-b border-rule bg-paper/40 px-2 pb-px">
                   {weeklyCompletion.map((day, index) => (
                     <div
                       key={day.label}
@@ -311,8 +305,7 @@ export default async function HomePage() {
                     className="h-full rounded-full"
                     style={{
                       width: `${overallPercent}%`,
-                      backgroundImage:
-                        "linear-gradient(90deg, var(--color-amber-ink), var(--color-amber))",
+                      backgroundImage: "linear-gradient(90deg, var(--color-amber-ink), var(--color-amber))",
                     }}
                   />
                 </div>
