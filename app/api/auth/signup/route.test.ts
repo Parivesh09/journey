@@ -14,14 +14,10 @@ vi.mock("@/lib/prisma", () => ({
 vi.mock("@/lib/business/roadmap-provision", () => ({
   provisionRoadmapForUser: vi.fn(async () => {}),
 }));
-vi.mock("@/lib/business/daily-plan", () => ({
-  ensureDailyTasks: vi.fn(async () => {}),
-}));
 
 import { POST } from "./route";
 import { prisma as prismaClient } from "@/lib/prisma";
 import { provisionRoadmapForUser } from "@/lib/business/roadmap-provision";
-import { ensureDailyTasks } from "@/lib/business/daily-plan";
 import bcrypt from "bcryptjs";
 
 type Mock = ReturnType<typeof vi.fn>;
@@ -92,7 +88,6 @@ describe("POST /api/auth/signup", () => {
       expect.objectContaining({ data: { userId: "new-user" } }),
     );
     expect(provisionRoadmapForUser).toHaveBeenCalledWith("new-user");
-    expect(ensureDailyTasks).toHaveBeenCalled();
   });
 
   it("defaults an invalid timezone to UTC", async () => {

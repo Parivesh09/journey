@@ -2,7 +2,6 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
-import { ensureDailyTasks } from "../lib/business/daily-plan";
 import { provisionRoadmapForUser } from "../lib/business/roadmap-provision";
 
 const connectionString = process.env.DATABASE_URL;
@@ -62,10 +61,6 @@ async function main() {
   });
 
   const result = await provisionRoadmapForUser(user.id);
-
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  await ensureDailyTasks(user.id, today);
 
   console.log(
     `Seed complete for dev user ${email}: categories=${result.categories}, tasks created=${result.tasksCreated}, existing skipped=${result.tasksSkipped}. Notifications remain OFF (opt-in).`,

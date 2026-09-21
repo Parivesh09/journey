@@ -1,0 +1,417 @@
+{
+  "id": "fullstack-v1",
+  "title": "Full Stack Web Development",
+  "description": "A guided path from HTML, CSS and JavaScript up to a deployed full-stack application with React, Node.js and PostgreSQL.",
+  "milestones": [
+    {
+      "id": "m-web-foundations",
+      "title": "Web Foundations (HTML/CSS/JS)",
+      "description": "The raw materials of the web: semantic markup, responsive styling, and a confident grasp of the JavaScript language.",
+      "phases": ["phase-html", "phase-css", "phase-js"],
+      "prerequisites": []
+    },
+    {
+      "id": "m-react",
+      "title": "React",
+      "description": "Build interactive UIs the React way — components, hooks, state, and a real client-side app.",
+      "phases": ["phase-react-basics", "phase-react-state", "phase-react-app"],
+      "prerequisites": ["m-web-foundations"]
+    },
+    {
+      "id": "m-node-apis",
+      "title": "Node & APIs",
+      "description": "Backend fundamentals: a Node server, Express routes, and authenticated REST APIs your frontend can talk to.",
+      "phases": ["phase-node-basics", "phase-node-express", "phase-node-auth"],
+      "prerequisites": ["m-react"]
+    },
+    {
+      "id": "m-databases",
+      "title": "Databases",
+      "description": "Model, query and persist data — SQL thinking, PostgreSQL, and Prisma as the ORM layer.",
+      "phases": ["phase-db-sql", "phase-db-postgres", "phase-db-prisma"],
+      "prerequisites": ["m-node-apis"]
+    },
+    {
+      "id": "m-build-deploy",
+      "title": "Build & Deploy",
+      "description": "Ship the whole stack: a portfolio-worthy full-stack project, wired to a database, deployed and monitored.",
+      "phases": ["phase-project", "phase-deploy"],
+      "prerequisites": ["m-databases"]
+    }
+  ],
+  "phases": [
+    {
+      "id": "phase-html",
+      "title": "HTML Foundations",
+      "category": "HTML",
+      "topics": [
+        {
+          "id": "html-semantics",
+          "title": "Semantic markup",
+          "category": "HTML",
+          "estimated_days": 2,
+          "tasks": [
+            { "id": "hs-01", "title": "Structure a page with only semantic elements (header, nav, main, section, article, footer)", "type": "practice", "difficulty": "easy" },
+            { "id": "hs-02", "title": "Explain the document outline created by heading hierarchy", "type": "concept", "difficulty": "easy" },
+            { "id": "hs-03", "title": "Build a table and a form with correct labels, fieldsets and input types", "type": "practice", "difficulty": "medium" }
+          ]
+        },
+        {
+          "id": "html-forms",
+          "title": "Forms & validation",
+          "category": "HTML",
+          "estimated_days": 2,
+          "tasks": [
+            { "id": "hf-01", "title": "Write a signup form using native input constraints (required, minlength, type=email)", "type": "practice", "difficulty": "medium" },
+            { "id": "hf-02", "title": "Describe when to use button vs input type=submit vs a link for actions", "type": "concept", "difficulty": "easy" },
+            { "id": "hf-03", "title": "Check your markup with an accessibility audit and fix the issues", "type": "implementation", "difficulty": "medium" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-css",
+      "title": "CSS Styling",
+      "category": "CSS",
+      "topics": [
+        {
+          "id": "css-layout",
+          "title": "Layout & the box model",
+          "category": "CSS",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "cl-01", "title": "Explain the box model and how margin, border and padding interact", "type": "concept", "difficulty": "easy" },
+            { "id": "cl-02", "title": "Recreate a classic three-column layout with flexbox and with grid", "type": "practice", "difficulty": "medium" },
+            { "id": "cl-03", "title": "Build a responsive card grid that adapts at three breakpoints", "type": "implementation", "difficulty": "medium" }
+          ]
+        },
+        {
+          "id": "css-design",
+          "title": "Styling & motion",
+          "category": "CSS",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "cs-01", "title": "Define a typographic scale and spacing rhythm with CSS custom properties", "type": "implementation", "difficulty": "easy" },
+            { "id": "cs-02", "title": "Animate a button press with transform and a 150ms ease-out transition", "type": "implementation", "difficulty": "medium" },
+            { "id": "cs-03", "title": "Make a component respect prefers-reduced-motion", "type": "implementation", "difficulty": "medium" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-js",
+      "title": "JavaScript Essentials",
+      "category": "JavaScript",
+      "topics": [
+        {
+          "id": "js-language",
+          "title": "Language fundamentals",
+          "category": "JavaScript",
+          "estimated_days": 4,
+          "tasks": [
+            { "id": "jl-01", "title": "Explain the difference between var, let and const with scope examples", "type": "concept", "difficulty": "easy" },
+            { "id": "jl-02", "title": "Implement closures, callbacks and a small module pattern from scratch", "type": "practice", "difficulty": "medium" },
+            { "id": "jl-03", "title": "Solve 10 array/object data-shaping exercises using map, filter and reduce", "type": "practice", "difficulty": "medium" }
+          ]
+        },
+        {
+          "id": "js-async",
+          "title": "Async & the event loop",
+          "category": "JavaScript",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "ja-01", "title": "Diagram the event loop: call stack, task queue and microtasks", "type": "concept", "difficulty": "hard" },
+            { "id": "ja-02", "title": "Write a fetch-based retry helper using async/await and Promise.all", "type": "implementation", "difficulty": "medium" },
+            { "id": "ja-03", "title": "Build a debounce util and explain why it prevents request spam", "type": "implementation", "difficulty": "medium" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-react-basics",
+      "title": "React Fundamentals",
+      "category": "React",
+      "topics": [
+        {
+          "id": "rb-components",
+          "title": "Components & JSX",
+          "category": "React",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "rc-01", "title": "Refactor a static HTML page into a tree of React components", "type": "implementation", "difficulty": "medium" },
+            { "id": "rc-02", "title": "Explain props, keys and why lists need stable identities", "type": "concept", "difficulty": "medium" },
+            { "id": "rc-03", "title": "Build presentational components that stay data-driven via props", "type": "practice", "difficulty": "easy" }
+          ]
+        },
+        {
+          "id": "rb-rendering",
+          "title": "Rendering & events",
+          "category": "React",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "rr-01", "title": "Implement conditional rendering and lists with two realistic state shapes", "type": "implementation", "difficulty": "medium" },
+            { "id": "rr-02", "title": "Wire form inputs to controlled components and handle submit", "type": "practice", "difficulty": "medium" },
+            { "id": "rr-03", "title": "Lift state up so sibling components share one source of truth", "type": "implementation", "difficulty": "medium" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-react-state",
+      "title": "State & Hooks",
+      "category": "React",
+      "topics": [
+        {
+          "id": "rs-hooks",
+          "title": "Hooks",
+          "category": "React",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "rh-01", "title": "Rewrite a class component using useState and useEffect", "type": "implementation", "difficulty": "medium" },
+            { "id": "rh-02", "title": "Explain the rules of hooks and dependency-array behavior", "type": "concept", "difficulty": "hard" },
+            { "id": "rh-03", "title": "Extract a useLocalStorage hook and use it in a settings form", "type": "implementation", "difficulty": "medium" }
+          ]
+        },
+        {
+          "id": "rs-data-fetch",
+          "title": "Data fetching & effects",
+          "category": "React",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "rf-01", "title": "Fetch from an API with loading, error and empty states", "type": "implementation", "difficulty": "medium" },
+            { "id": "rf-02", "title": "Cancel an in-flight request when the component unmounts", "type": "implementation", "difficulty": "hard" },
+            { "id": "rf-03", "title": "Derive filtered/sorted data with useMemo instead of mutating state", "type": "practice", "difficulty": "medium" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-react-app",
+      "title": "Build a Client App",
+      "category": "React",
+      "topics": [
+        {
+          "id": "ra-app",
+          "title": "Complete React app",
+          "category": "React",
+          "estimated_days": 5,
+          "tasks": [
+            { "id": "rva-01", "title": "Plan a small feature app (state, routes, components) before writing code", "type": "project", "difficulty": "medium" },
+            { "id": "rva-02", "title": "Add client-side routing with two routes and a shared layout", "type": "implementation", "difficulty": "medium" },
+            { "id": "rva-03", "title": "Implement CRUD against a mock API and persist to localStorage", "type": "project", "difficulty": "hard" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-node-basics",
+      "title": "Node.js Fundamentals",
+      "category": "Node.js",
+      "topics": [
+        {
+          "id": "nb-modules",
+          "title": "Modules & the runtime",
+          "category": "Node.js",
+          "estimated_days": 2,
+          "tasks": [
+            { "id": "nm-01", "title": "Write a CLI script that reads a file and prints JSON to stdout", "type": "practice", "difficulty": "easy" },
+            { "id": "nm-02", "title": "Explain ESM, CommonJS and the event loop inside a Node process", "type": "concept", "difficulty": "medium" },
+            { "id": "nm-03", "title": "Handle process-level errors and uncaught exceptions gracefully", "type": "implementation", "difficulty": "medium" }
+          ]
+        },
+        {
+          "id": "nb-http",
+          "title": "HTTP servers",
+          "category": "Node.js",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "nh-01", "title": "Write a bare Node http server responding to GET and POST", "type": "practice", "difficulty": "easy" },
+            { "id": "nh-02", "title": "Map the request lifecycle: headers, body parsing, status codes, JSON responses", "type": "concept", "difficulty": "medium" },
+            { "id": "nh-03", "title": "Add graceful shutdown and structured logging to the server", "type": "implementation", "difficulty": "medium" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-node-express",
+      "title": "Express APIs",
+      "category": "Backend",
+      "topics": [
+        {
+          "id": "ne-routing",
+          "title": "Routing & middleware",
+          "category": "Backend",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "nr-01", "title": "Stand up an Express API with resource routes and 404 handling", "type": "implementation", "difficulty": "easy" },
+            { "id": "nr-02", "title": "Compose error-handling middleware and validate request bodies", "type": "implementation", "difficulty": "medium" },
+            { "id": "nr-03", "title": "Explain middleware order and write a request logger", "type": "concept", "difficulty": "medium" }
+          ]
+        },
+        {
+          "id": "ne-rest",
+          "title": "REST design",
+          "category": "REST",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "nrest-01", "title": "Design a REST resource with nouns, status codes and pagination", "type": "concept", "difficulty": "medium" },
+            { "id": "nrest-02", "title": "Build a CRUD API for one resource with server-side validation", "type": "implementation", "difficulty": "medium" },
+            { "id": "nrest-03", "title": "Write API tests covering happy path, 400 and 404 responses", "type": "project", "difficulty": "medium" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-node-auth",
+      "title": "Auth & Security",
+      "category": "Authentication",
+      "topics": [
+        {
+          "id": "na-auth",
+          "title": "Authentication",
+          "category": "Authentication",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "na-01", "title": "Implement signup/login with hashed passwords and a session cookie", "type": "implementation", "difficulty": "hard" },
+            { "id": "na-02", "title": "Gate API routes with an auth middleware and ownership checks", "type": "implementation", "difficulty": "medium" },
+            { "id": "na-03", "title": "Explain tokens vs sessions and when to use each", "type": "concept", "difficulty": "medium" }
+          ]
+        },
+        {
+          "id": "na-security",
+          "title": "App security basics",
+          "category": "Backend",
+          "estimated_days": 2,
+          "tasks": [
+            { "id": "ns-01", "title": "Audit an API for the OWASP top-ten risks you can see in the code", "type": "revision", "difficulty": "medium" },
+            { "id": "ns-02", "title": "Apply rate limiting and input size limits to a public endpoint", "type": "implementation", "difficulty": "medium" },
+            { "id": "ns-03", "title": "Explain SQL injection and demonstrate parameterized queries", "type": "concept", "difficulty": "medium" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-db-sql",
+      "title": "SQL",
+      "category": "SQL",
+      "topics": [
+        {
+          "id": "dsl-query",
+          "title": "Querying",
+          "category": "SQL",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "sq-01", "title": "Write SELECT queries with joins, aggregates and GROUP BY", "type": "practice", "difficulty": "medium" },
+            { "id": "sq-02", "title": "Query a dataset and answer 5 business questions with SQL", "type": "practice", "difficulty": "medium" },
+            { "id": "sq-03", "title": "Explain indexing and why a query is slow without one", "type": "concept", "difficulty": "medium" }
+          ]
+        },
+        {
+          "id": "dsl-schema",
+          "title": "Schema design",
+          "category": "SQL",
+          "estimated_days": 2,
+          "tasks": [
+            { "id": "ss-01", "title": "Normalize a schema to 3NF and justify the choices", "type": "practice", "difficulty": "hard" },
+            { "id": "ss-02", "title": "Model a many-to-many relationship with a join table", "type": "practice", "difficulty": "medium" },
+            { "id": "ss-03", "title": "Add constraints (unique, check, FK) that protect data integrity", "type": "implementation", "difficulty": "medium" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-db-postgres",
+      "title": "PostgreSQL",
+      "category": "PostgreSQL",
+      "topics": [
+        {
+          "id": "dbp-core",
+          "title": "Postgres day to day",
+          "category": "PostgreSQL",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "pg-01", "title": "Run Postgres locally with Docker and connect from an app", "type": "implementation", "difficulty": "easy" },
+            { "id": "pg-02", "title": "Write migrations that evolve a schema without losing data", "type": "implementation", "difficulty": "medium" },
+            { "id": "pg-03", "title": "Explain transactions, isolation levels and when to use a transaction", "type": "concept", "difficulty": "hard" }
+          ]
+        },
+        {
+          "id": "dbp-query",
+          "title": "Performance",
+          "category": "PostgreSQL",
+          "estimated_days": 2,
+          "tasks": [
+            { "id": "pgq-01", "title": "Use EXPLAIN to find a slow query and add the right index", "type": "implementation", "difficulty": "hard" },
+            { "id": "pgq-02", "title": "Proactively tune a table with 100k seeded rows", "type": "practice", "difficulty": "medium" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-db-prisma",
+      "title": "Prisma ORM",
+      "category": "Prisma",
+      "topics": [
+        {
+          "id": "dpr-model",
+          "title": "Models & relations",
+          "category": "Prisma",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "dp-01", "title": "Define a Prisma schema with relations matching your PostgreSQL tables", "type": "implementation", "difficulty": "medium" },
+            { "id": "dp-02", "title": "Run a migration and seed the database with test data", "type": "implementation", "difficulty": "easy" },
+            { "id": "dp-03", "title": "Write queries with nested includes, filters, and transactions", "type": "implementation", "difficulty": "medium" }
+          ]
+        },
+        {
+          "id": "dpr-service",
+          "title": "Service layer",
+          "category": "Prisma",
+          "estimated_days": 2,
+          "tasks": [
+            { "id": "dv-01", "title": "Refactor raw SQL into a typed service module over Prisma", "type": "implementation", "difficulty": "medium" },
+            { "id": "dv-02", "title": "Handle unique-violation errors gracefully at the API boundary", "type": "implementation", "difficulty": "medium" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-project",
+      "title": "Full-Stack Project",
+      "category": "PROJECT",
+      "topics": [
+        {
+          "id": "pj-build",
+          "title": "Build the app",
+          "category": "PROJECT",
+          "estimated_days": 7,
+          "tasks": [
+            { "id": "pj-01", "title": "Pick a scope: define users, data model and core flows for one real app", "type": "project", "difficulty": "medium" },
+            { "id": "pj-02", "title": "Implement the schema, API and auth for your app's first feature", "type": "project", "difficulty": "hard" },
+            { "id": "pj-03", "title": "Implement the UI for that feature and connect it to the API", "type": "project", "difficulty": "hard" },
+            { "id": "pj-04", "title": "Write tests for the API and a key UI interaction", "type": "project", "difficulty": "medium" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-deploy",
+      "title": "Deploy & Monitor",
+      "category": "Deployment",
+      "topics": [
+        {
+          "id": "dp-deploy",
+          "title": "Shipping",
+          "category": "Deployment",
+          "estimated_days": 3,
+          "tasks": [
+            { "id": "dd-01", "title": "Deploy the project to a host with an attached PostgreSQL database", "type": "project", "difficulty": "hard" },
+            { "id": "dd-02", "title": "Set up CI so tests gate every push to the main branch", "type": "implementation", "difficulty": "medium" },
+            { "id": "dd-03", "title": "Configure env-based config and document the deployment runbook", "type": "implementation", "difficulty": "medium" },
+            { "id": "dd-04", "title": "Add error monitoring and a basic uptime/availability check", "type": "implementation", "difficulty": "medium" }
+          ]
+        }
+      ]
+    }
+  ]
+}

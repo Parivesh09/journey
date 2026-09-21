@@ -16,7 +16,7 @@ import DashboardTaskList from "@/app/dashboard-task-list";
 import OnboardingBanner from "@/app/onboarding-banner";
 import FocusLog from "@/app/focus-log";
 import { getCurrentUser } from "@/lib/auth";
-import { ensureDailyTasks } from "@/lib/business/daily-plan";
+import { getDailyItems } from "@/lib/business/daily-items";
 import { defaultStudyPlan } from "@/lib/data/mock-data";
 import { prisma } from "@/lib/prisma";
 import { formatMinutes, toPercent } from "@/lib/utils";
@@ -35,9 +35,8 @@ export default async function HomePage() {
   const today = dayStart(new Date());
   const tomorrow = new Date(today.getTime() + 86_400_000);
   const weekStart = new Date(today.getTime() - 6 * 86_400_000);
-  await ensureDailyTasks(user.id, today);
 
-  const [todayTasks, allTasks, studySessions] = await Promise.all([
+  const [todayTasks, allTasks, studySessions, dailyItems] = await Promise.all([
     prisma.task.findMany({
       where: { userId: user.id, dueDate: { gte: today, lt: tomorrow } },
       include: { category: true },
@@ -60,6 +59,7 @@ export default async function HomePage() {
       where: { userId: user.id, startedAt: { gte: today } },
       select: { durationMinutes: true },
     }),
+    getDailyItems(user.id, today),
   ]);
 
   const completedToday = todayTasks.filter(
@@ -103,6 +103,34 @@ export default async function HomePage() {
     month: "long",
     day: "numeric",
   });
+  const pinnedTaskIds = new Set(dailyItems.connected.map((pin) => pin.task.id));
+  const routineTaskIds = new Set(dailyItems.routines.map((routine) => routine.id));
+  const toRow = (
+    task: { id: string; title: string; status: string; priority: string; plannedMinutes: number | null; estimatedMinutes: number | null; dailySlot: string | null; category: { name: string } | null },
+    kind: "task" | "routine" | "connected",
+    extra: { done?: boolean } = {},
+  ) => ({
+    id: task.id,
+    title: task.title,
+    priority: task.priority,
+    plannedMinutes: task.plannedMinutes,
+    estimatedMinutes: task.estimatedMinutes,
+    dailySlot: task.dailySlot,
+    category: task.category,
+    kind,
+    done: extra.done ?? task.status === "COMPLETED",
+  });
+  const todayList = [
+    ...dailyItems.routines.map((task) =>
+      toRow(task, "routine", { done: task.doneToday }),
+    ),
+    ...dailyItems.connected.map(({ task }) => toRow(task, "connected")),
+    ...todayTasks
+      .filter(
+        (task) => !pinnedTaskIds.has(task.id) && !routineTaskIds.has(task.id),
+      )
+      .map((task) => toRow(task, "task")),
+  ];
   const metrics = [
     [
       "Today",
@@ -340,18 +368,19 @@ export default async function HomePage() {
                   Task list
                 </p>
                 <h3 className="mt-1 text-xl font-semibold">
-                  Today&apos;s scheduled work
+                  Today&apos;s list
                 </h3>
                 <p className="mt-1 text-sm text-slate-400">
-                  Mark tasks complete here without leaving the dashboard.
+                  Routines, connected roadmap tasks, and anything scheduled for
+                  today — complete them right here.
                 </p>
               </div>
               <div className="flex items-center gap-2 text-sm text-slate-400">
                 <ListTodo className="h-4 w-4" />
-                {todayTasks.length} scheduled
+                {todayList.length} today
               </div>
             </div>
-            <DashboardTaskList initialTasks={todayTasks} />
+            <DashboardTaskList initialItems={todayList} />
           </section>
         </div>
       </div>

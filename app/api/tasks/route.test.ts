@@ -12,13 +12,19 @@ vi.mock("@/lib/prisma", () => ({
       delete: vi.fn(),
     },
     taskCategory: { findMany: vi.fn() },
+    taskCompletion: { findMany: vi.fn() },
+    dailyTaskPin: { findMany: vi.fn(), deleteMany: vi.fn() },
   },
+}));
+vi.mock("@/lib/business/milestones", () => ({
+  isMilestoneLocked: vi.fn(async () => false),
 }));
 
 import { GET, POST } from "./route";
 import { PATCH, DELETE } from "./[id]/route";
 import { prisma as prismaClient } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { isMilestoneLocked } from "@/lib/business/milestones";
 
 type Mock = ReturnType<typeof vi.fn>;
 
@@ -33,6 +39,8 @@ const prisma = prismaClient as unknown as {
     delete: Mock;
   };
   taskCategory: { findMany: Mock };
+  taskCompletion: { findMany: Mock };
+  dailyTaskPin: { findMany: Mock; deleteMany: Mock };
 };
 
 const userA = { id: "userA", name: "A", email: "a@example.com" };
@@ -55,10 +63,18 @@ beforeEach(() => {
   prisma.task.update.mockReset();
   prisma.task.delete.mockReset();
   prisma.taskCategory.findMany.mockReset();
+  prisma.taskCompletion.findMany.mockReset();
+  prisma.dailyTaskPin.findMany.mockReset();
+  prisma.dailyTaskPin.deleteMany.mockReset();
+  vi.mocked(isMilestoneLocked).mockReset();
 
   prisma.task.count.mockResolvedValue(1);
   prisma.taskCategory.findMany.mockResolvedValue([{ name: "DSA" }]);
   prisma.task.findMany.mockResolvedValue([ownTask]);
+  prisma.taskCompletion.findMany.mockResolvedValue([]);
+  prisma.dailyTaskPin.findMany.mockResolvedValue([]);
+  prisma.dailyTaskPin.deleteMany.mockResolvedValue({ count: 0 });
+  vi.mocked(isMilestoneLocked).mockResolvedValue(false);
   prisma.task.create.mockImplementation(
     ({ data }: { data: { userId: string } }) =>
       Promise.resolve({ id: "new-1", ...data, category: null }),
@@ -94,6 +110,24 @@ describe("GET /api/tasks", () => {
     expect(body.tasks).toHaveLength(1);
   });
 
+  it("returns the daily feed for ?tab=daily", async () => {
+    vi.mocked(requireUser).mockResolvedValue(userA as never);
+    prisma.taskCompletion.findMany.mockResolvedValue([{ taskId: "task-1" }]);
+    const response = await GET(
+      jsonRequest("http://localhost/api/tasks?tab=daily"),
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as {
+      tab: string;
+      routines: { id: string; doneToday: boolean }[];
+      connected: unknown[];
+    };
+    expect(body.tab).toBe("daily");
+    expect(body.routines).toHaveLength(1);
+    expect(body.routines[0]?.doneToday).toBe(true);
+    expect(body.connected).toEqual([]);
+  });
+
   it("rejects unauthenticated requests", async () => {
     vi.mocked(requireUser).mockResolvedValue(null);
     const response = await GET(jsonRequest("http://localhost/api/tasks"));
@@ -125,6 +159,23 @@ describe("POST /api/tasks", () => {
     );
     expect(response.status).toBe(400);
     expect(prisma.task.create).not.toHaveBeenCalled();
+  });
+
+  it("passes through isPersonalDaily", async () => {
+    vi.mocked(requireUser).mockResolvedValue(userA as never);
+    const response = await POST(
+      jsonRequest("http://localhost/api/tasks", {
+        title: "Morning run",
+        priority: "LOW",
+        isPersonalDaily: true,
+      }),
+    );
+    expect(response.status).toBe(201);
+    expect(prisma.task.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ isPersonalDaily: true }),
+      }),
+    );
   });
 });
 
@@ -167,6 +218,36 @@ describe("PATCH /api/tasks/[id]", () => {
       ctx,
     );
     expect(response.status).toBe(401);
+  });
+
+  it("consumes the daily pin when a task is completed", async () => {
+    vi.mocked(requireUser).mockResolvedValue(userA as never);
+    const response = await PATCH(
+      jsonRequest("http://localhost/api/tasks/task-1", { completed: true }),
+      ctx,
+    );
+    expect(response.status).toBe(200);
+    expect(prisma.dailyTaskPin.deleteMany).toHaveBeenCalledWith({
+      where: { userId: "userA", taskId: "task-1" },
+    });
+  });
+
+  it("rejects edits to locked-milestone tasks with 403", async () => {
+    vi.mocked(requireUser).mockResolvedValue(userA as never);
+    prisma.task.findFirst.mockResolvedValue({
+      id: "task-1",
+      userId: "userA",
+      roadmapId: "roadmap-1",
+      milestoneId: "m-3",
+    } as never);
+    vi.mocked(isMilestoneLocked).mockResolvedValue(true);
+    const response = await PATCH(
+      jsonRequest("http://localhost/api/tasks/task-1", { title: "rewrite" }),
+      ctx,
+    );
+    expect(response.status).toBe(403);
+    expect(prisma.task.update).not.toHaveBeenCalled();
+    expect(isMilestoneLocked).toHaveBeenCalledWith("userA", "roadmap-1", "m-3");
   });
 });
 

@@ -67,6 +67,10 @@ model User {
   updatedAt               DateTime  @updatedAt
 
   tasks                   Task[]
+  taskCompletions         TaskCompletion[]
+  dailyTaskPins           DailyTaskPin[]
+  userRoadmaps            UserRoadmap[]
+  userMilestones          UserMilestone[]
   studySessions           StudySession[]
   notifications           Notification[]
   notificationPreferences NotificationPreference?
@@ -102,10 +106,14 @@ model Task {
   phaseTitle       String?
   topicId          String?
   topicTitle       String?
+  roadmapId        String?
+  milestoneId      String?
+  milestoneTitle   String?
   sequenceOrder    Int          @default(0)
   dailySlot        String?
   plannedMinutes   Int?
   isDailyTask      Boolean      @default(false)
+  isPersonalDaily  Boolean      @default(false)
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
 
@@ -113,6 +121,8 @@ model Task {
   category      TaskCategory?  @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   studySessions StudySession[]
   notifications Notification[]
+  completions   TaskCompletion[]
+  dailyPins     DailyTaskPin[]
 
   @@unique([userId, sourceId])
   @@index([userId, sequenceOrder])
@@ -120,6 +130,7 @@ model Task {
   @@index([userId, topicId])
   @@index([userId, dueDate])
   @@index([userId, dueDate, isDailyTask])
+  @@index([userId, roadmapId, isPersonalDaily])
 }
 
 model StudyPlan {
@@ -165,6 +176,47 @@ model TaskCompletion {
   taskId      String
   completedAt DateTime @default(now())
   createdAt   DateTime @default(now())
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taskId, completedAt])
+}
+
+model DailyTaskPin {
+  id        String   @id @default(cuid())
+  userId    String
+  taskId    String
+  createdAt DateTime @default(now())
+
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task Task  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taskId])
+  @@index([userId, createdAt])
+}
+
+model UserRoadmap {
+  id          String   @id @default(cuid())
+  userId      String
+  roadmapId   String
+  activatedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roadmapId])
+}
+
+model UserMilestone {
+  id                  String    @id @default(cuid())
+  userId              String
+  roadmapId           String
+  milestoneId         String
+  manuallyCompletedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roadmapId, milestoneId])
 }
 
 model Notification {

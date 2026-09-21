@@ -1,82 +1,10 @@
-import fs from "node:fs";
-import path from "node:path";
-
 import { prisma } from "@/lib/prisma";
-
-export const ROADMAP_PATH = path.resolve(
-  process.cwd(),
-  "sde-master-roadmap.json",
-);
-
-export type RoadmapTask = {
-  id: string;
-  title: string;
-  type?: string;
-  difficulty?: string;
-  status?: string;
-};
-
-export type RoadmapTopic = {
-  id: string;
-  title: string;
-  category?: string;
-  estimated_days?: number;
-  tasks?: RoadmapTask[];
-};
-
-export type RoadmapPhase = {
-  id: string;
-  title: string;
-  category?: string;
-  topics?: RoadmapTopic[];
-};
-
-export type Roadmap = { phases?: RoadmapPhase[] };
-
-export function readRoadmap(): Roadmap {
-  return JSON.parse(fs.readFileSync(ROADMAP_PATH, "utf-8")) as Roadmap;
-}
-
-export const dailyBlocks = [
-  {
-    slot: "DSA_PRACTICE",
-    title: "DSA practice: solve 3 questions",
-    description:
-      "Solve three DSA questions and record the pattern, complexity, and mistakes.",
-    category: "DSA",
-    taskType: "practice",
-    minutes: 60,
-    order: -4,
-  },
-  {
-    slot: "SYSTEM_DESIGN",
-    title: "System design study",
-    description: "Spend one focused hour on the next system design topic.",
-    category: "System Design",
-    taskType: "concept",
-    minutes: 60,
-    order: -3,
-  },
-  {
-    slot: "NEW_DSA_LEARNING",
-    title: "New DSA learning",
-    description: "Learn and explain one new DSA concept without notes.",
-    category: "DSA",
-    taskType: "concept",
-    minutes: 60,
-    order: -2,
-  },
-  {
-    slot: "DEVELOPMENT",
-    title: "Development study",
-    description:
-      "Spend one focused hour on the next development topic or implementation task.",
-    category: "DEVELOPMENT",
-    taskType: "implementation",
-    minutes: 60,
-    order: -1,
-  },
-] as const;
+import {
+  DEFAULT_ROADMAP_ID,
+  milestoneForPhase,
+  readRoadmap,
+  type RoadmapTemplate,
+} from "@/lib/business/roadmap-templates";
 
 const defaultCategories = [
   "DSA",
@@ -89,7 +17,7 @@ const defaultCategories = [
   "OTHER",
 ];
 
-function categoryNamesFor(roadmap: Roadmap) {
+function categoryNamesFor(roadmap: RoadmapTemplate) {
   const names = new Set(defaultCategories);
   for (const phase of roadmap.phases ?? []) {
     if (phase.category) names.add(phase.category);
@@ -101,16 +29,24 @@ function categoryNamesFor(roadmap: Roadmap) {
 }
 
 /**
- * Copies the default SDE roadmap from the master JSON into a user's own task
- * instances. Idempotent and create-only: existing user tasks (recognized by
- * `sourceId`) are never overwritten, so user customization is preserved.
- * Returns counts of created rows.
+ * Activates a roadmap template for the user (create-only, idempotent) and
+ * clones its tasks into per-user Task rows. Existing user tasks recognized by
+ * `sourceId` are never overwritten, so user customization is preserved. Each
+ * task carries its roadmap + milestone identity for progress tracking.
  */
 export async function provisionRoadmapForUser(
   userId: string,
+  roadmapId: string = DEFAULT_ROADMAP_ID,
   startDate = new Date(),
 ) {
-  const roadmap = readRoadmap();
+  const roadmap = readRoadmap(roadmapId);
+
+  await prisma.userRoadmap.upsert({
+    where: { userId_roadmapId: { userId, roadmapId: roadmap.id } },
+    create: { userId, roadmapId: roadmap.id },
+    update: {},
+  });
+
   const existingCategories = await prisma.taskCategory.findMany({
     where: { userId },
   });
@@ -135,6 +71,7 @@ export async function provisionRoadmapForUser(
 
   for (const phase of roadmap.phases ?? []) {
     const phaseStartOffset = scheduleOffset;
+    const milestone = milestoneForPhase(roadmap, phase.id);
     for (const topic of phase.topics ?? []) {
       const topicDate = new Date(scheduleStart);
       topicDate.setDate(topicDate.getDate() + scheduleOffset);
@@ -157,6 +94,9 @@ export async function provisionRoadmapForUser(
               taskType: task.type,
               difficulty: task.difficulty,
               sourceId: task.id,
+              roadmapId: roadmap.id,
+              milestoneId: milestone?.id,
+              milestoneTitle: milestone?.title,
               phaseId: phase.id,
               phaseTitle: phase.title,
               topicId: topic.id,
@@ -183,15 +123,10 @@ export async function provisionRoadmapForUser(
     if (scheduleOffset === phaseStartOffset) scheduleOffset += 1;
   }
 
-  return { categories: categoryMap.size, tasksCreated, tasksSkipped };
-}
-
-export function dailyBlockSourceId(dateKey: string, slot: string) {
-  return `daily-${dateKey}-${slot}`;
-}
-
-export function dateKey(date: Date) {
-  const day = new Date(date);
-  day.setHours(0, 0, 0, 0);
-  return day.toISOString().slice(0, 10);
+  return {
+    roadmapId: roadmap.id,
+    categories: categoryMap.size,
+    tasksCreated,
+    tasksSkipped,
+  };
 }

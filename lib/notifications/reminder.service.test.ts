@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_REMINDER_SCHEDULE,
   buildReminderMessage,
+  dailyDigestTasksWhere,
   eligibleReminderTypes,
   getLocalTime,
   getReminderSlotIndex,
@@ -12,7 +13,6 @@ import {
   notificationAllowed,
   overdueTasksWhere,
   revisionTasksWhere,
-  todayTasksWhere,
   weeklySummaryDue,
   buildWeeklySummaryMessage,
 } from "@/lib/notifications/reminder.service";
@@ -205,11 +205,25 @@ describe("task-day filters (local-midnight boundaries)", () => {
   const local = { year: 2026, month: 9, day: 20, hour: 9, minute: 0 };
   const start = new Date(Date.UTC(2026, 8, 20)); // Sep 20 00:00 UTC
 
-  it("todayTasksWhere scopes to the local day", () => {
-    const where = todayTasksWhere(local);
-    const due = where.dueDate as { gte: Date; lt: Date };
-    expect(due.gte).toEqual(start);
-    expect(due.lt).toEqual(new Date(start.getTime() + 86400000));
+  it("dailyDigestTasksWhere targets routines and pinned tasks, excluding done-today", () => {
+    const where = dailyDigestTasksWhere("userA", local, true);
+    expect(where.OR).toEqual([
+      { isPersonalDaily: true },
+      { dailyPins: { some: { userId: "userA" } } },
+    ]);
+    const status = where.status as { notIn: string[] };
+    expect(status.notIn).toEqual(["COMPLETED", "SKIPPED"]);
+    const completions = where.completions as { none: { completedAt: { gte: Date; lt: Date } } };
+    expect(completions.none.completedAt.gte).toEqual(start);
+    expect(completions.none.completedAt.lt).toEqual(
+      new Date(start.getTime() + 86400000),
+    );
+  });
+
+  it("dailyDigestTasksWhere keeps completed tasks when opted in", () => {
+    const where = dailyDigestTasksWhere("userA", local, false);
+    expect(where.status).toBeUndefined();
+    expect(where.completions).toBeUndefined();
   });
 
   it("overdueTasksWhere means before the local day, open only", () => {

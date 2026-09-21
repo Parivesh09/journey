@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { Prisma, TaskPriority, TaskStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { getDailyItems } from "@/lib/business/daily-items";
 
 const pageSizeLimit = 50;
 
@@ -20,6 +21,13 @@ export async function GET(request: Request) {
   const user = await requireUser();
   if (!user) return unauthorized();
   const url = new URL(request.url);
+  const tab = url.searchParams.get("tab");
+
+  if (tab === "daily") {
+    const { routines, connected } = await getDailyItems(user.id);
+    return NextResponse.json({ tab: "daily", routines, connected });
+  }
+
   const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
   const pageSize = Math.min(
     pageSizeLimit,
@@ -38,6 +46,7 @@ export async function GET(request: Request) {
 
   const where: Prisma.TaskWhereInput = {
     userId: user.id,
+    isPersonalDaily: false,
     ...(category ? { category: { name: category } } : {}),
     ...(phaseId ? { phaseId } : {}),
     ...(topicId ? { topicId } : {}),
@@ -124,7 +133,10 @@ export async function POST(request: Request) {
     );
   }
 
-  const dueDate = parseDate(body.dueDate) ?? new Date();
+  const dueDate =
+    body.isPersonalDaily === true
+      ? parseDate(body.dueDate)
+      : parseDate(body.dueDate) ?? new Date();
   const task = await prisma.task.create({
     data: {
       userId: user.id,
@@ -154,6 +166,7 @@ export async function POST(request: Request) {
       dailySlot:
         typeof body.dailySlot === "string" ? body.dailySlot : undefined,
       isDailyTask: body.isDailyTask === true,
+      isPersonalDaily: body.isPersonalDaily === true,
       // Int column max minus margin so the row always sorts last.
       sequenceOrder: 2147483646,
     },

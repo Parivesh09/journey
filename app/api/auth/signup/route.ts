@@ -1,7 +1,6 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { createSessionValue, sessionCookie, sessionCookieOptions } from "@/lib/auth";
-import { ensureDailyTasks } from "@/lib/business/daily-plan";
 import { provisionRoadmapForUser } from "@/lib/business/roadmap-provision";
 import { prisma } from "@/lib/prisma";
 
@@ -35,7 +34,6 @@ export async function POST(request: Request) {
 
   await prisma.notificationPreference.create({ data: { userId: user.id } });
   await provisionRoadmapForUser(user.id);
-  await ensureDailyTasks(user.id, new Date());
 
   const response = NextResponse.json(
     { user: { id: user.id, name: user.name, email: user.email } },

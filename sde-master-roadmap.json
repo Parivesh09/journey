@@ -6800,5 +6800,79 @@
       "IndexedDB for larger offline data",
       "PostgreSQL for multi-device authenticated version"
     ]
-  }
+  },
+  "milestones": [
+    {
+      "id": "m1-foundations",
+      "title": "Foundations & Core DSA",
+      "description": "Setup the environment, establish a baseline, and build a strong core DSA foundation.",
+      "phases": [
+        "phase-00",
+        "phase-01",
+        "phase-02"
+      ],
+      "prerequisites": []
+    },
+    {
+      "id": "m2-languages",
+      "title": "Languages & Advanced DSA",
+      "description": "Master C++/OOP, JavaScript deeply, TypeScript, and the harder DSA patterns.",
+      "phases": [
+        "phase-03",
+        "phase-04",
+        "phase-05",
+        "phase-06"
+      ],
+      "prerequisites": [
+        "m1-foundations"
+      ]
+    },
+    {
+      "id": "m3-data-apps",
+      "title": "Frontend, Backend & Data Stores",
+      "description": "React, Node.js, REST/auth, SQL/PostgreSQL, MongoDB and Redis — the application layer.",
+      "phases": [
+        "phase-07",
+        "phase-08",
+        "phase-09",
+        "phase-10",
+        "phase-11",
+        "phase-16"
+      ],
+      "prerequisites": [
+        "m2-languages"
+      ]
+    },
+    {
+      "id": "m4-cs-infra",
+      "title": "Computer Science & Infrastructure",
+      "description": "Networks, OS, Linux/Git, Docker/CI-CD and production engineering.",
+      "phases": [
+        "phase-12",
+        "phase-13",
+        "phase-14",
+        "phase-15",
+        "phase-20"
+      ],
+      "prerequisites": [
+        "m3-data-apps"
+      ]
+    },
+    {
+      "id": "m5-design-projects",
+      "title": "Design, Projects & Interviews",
+      "description": "Low-level and high-level design, projects, and interview readiness.",
+      "phases": [
+        "phase-17",
+        "phase-18",
+        "phase-19",
+        "phase-21",
+        "phase-22",
+        "phase-23"
+      ],
+      "prerequisites": [
+        "m4-cs-infra"
+      ]
+    }
+  ]
 }

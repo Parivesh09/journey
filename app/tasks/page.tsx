@@ -1,13 +1,21 @@
-import TaskBrowser from "./task-browser";
+import TasksWorkspace from "./tasks-workspace";
 import { isAuthenticated } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
-export default async function TasksPage() {
+export default async function TasksPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string; category?: string; taskType?: string }>;
+}) {
   if (!(await isAuthenticated())) redirect("/login");
+  const { tab, category, taskType } = await searchParams;
   return (
-    <TaskBrowser
-      title="All roadmap tasks"
-      description="Search, filter, schedule, and complete every item from your imported SDE roadmap."
+    <TasksWorkspace
+      initialTab={tab === "daily" ? "daily" : "roadmap"}
+      initialFilters={{
+        category: category ?? "",
+        taskType: taskType ?? "",
+      }}
     />
   );
 }

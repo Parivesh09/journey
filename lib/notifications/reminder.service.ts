@@ -1,7 +1,6 @@
 import { NotificationStatus, Prisma } from "@prisma/client";
 
 import { prisma } from "@/lib/prisma";
-import { ensureDailyTasks } from "@/lib/business/daily-plan";
 import { EmailNotificationProvider } from "./providers/email/email.provider";
 import { LinqNotificationProvider } from "./providers/linq/linq.provider";
 import type {
@@ -194,11 +193,25 @@ export function notificationAllowed(params: {
   return { allowed: true };
 }
 
-/** Tasks due within the user's local day. */
-export function todayTasksWhere(local: LocalTime): Prisma.TaskWhereInput {
+/** Personal daily routines plus roadmap tasks explicitly pinned to the day. */
+export function dailyDigestTasksWhere(
+  userId: string,
+  local: LocalTime,
+  excludeCompleted: boolean,
+): Prisma.TaskWhereInput {
   const start = localDayStart(local);
   return {
-    dueDate: { gte: start, lt: new Date(start.getTime() + 86400000) },
+    OR: [{ isPersonalDaily: true }, { dailyPins: { some: { userId } } }],
+    ...(excludeCompleted
+      ? {
+          status: { notIn: ["COMPLETED", "SKIPPED"] },
+          completions: {
+            none: {
+              completedAt: { gte: start, lt: new Date(start.getTime() + 86400000) },
+            },
+          },
+        }
+      : {}),
   };
 }
 
@@ -343,12 +356,7 @@ async function collectRemindableUsers(now: Date): Promise<RemindableUser[]> {
   });
 }
 
-async function loadTasksFor(
-  userId: string,
-  where: Prisma.TaskWhereInput,
-  now: Date,
-) {
-  await ensureDailyTasks(userId, now);
+async function loadTasksFor(userId: string, where: Prisma.TaskWhereInput) {
   return prisma.task.findMany({
     where: { userId, ...where },
     orderBy: { sequenceOrder: "asc" },
@@ -407,21 +415,20 @@ type ReminderPlan = {
 };
 
 /** All reminder messages a user is opted into that have something to say today. */
-async function buildPlans(user: RemindableUser, now: Date): Promise<ReminderPlan[]> {
+async function buildPlans(user: RemindableUser): Promise<ReminderPlan[]> {
   const whereFor: Record<DailyReminderType, Prisma.TaskWhereInput> = {
-    daily: {
-      ...(user.preferences.excludeCompletedTasks
-        ? { status: { notIn: ["COMPLETED", "SKIPPED"] } }
-        : {}),
-      ...todayTasksWhere(user.local),
-    },
+    daily: dailyDigestTasksWhere(
+      user.id,
+      user.local,
+      user.preferences.excludeCompletedTasks,
+    ),
     missedTasks: overdueTasksWhere(user.local),
     revisionReview: revisionTasksWhere(user.local),
   };
 
   const plans: ReminderPlan[] = [];
   for (const type of eligibleReminderTypes(user.preferences)) {
-    const tasks = await loadTasksFor(user.id, whereFor[type], now);
+    const tasks = await loadTasksFor(user.id, whereFor[type]);
     if (!tasks.length) continue;
     const { title, message } = buildReminderMessage(type, tasks);
     plans.push({
@@ -502,7 +509,7 @@ type SendResult = {
 };
 
 async function sendUserReminders(user: RemindableUser, now: Date): Promise<SendResult[]> {
-  const plans = await buildPlans(user, now);
+  const plans = await buildPlans(user);
   if (!plans.length) {
     return [
       {
@@ -675,7 +682,7 @@ export async function previewDueReminders(now = new Date()) {
   const users = await collectRemindableUsers(now);
   return Promise.all(
     users.map(async (user) => {
-      const plans = await buildPlans(user, now);
+      const plans = await buildPlans(user);
       const existingKeys = new Set(
         (
           await prisma.notification.findMany({

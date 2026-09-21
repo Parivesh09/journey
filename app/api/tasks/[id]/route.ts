@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { TaskPriority, TaskStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
+import { isMilestoneLocked } from "@/lib/business/milestones";
 
 function unauthorized() {
   return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -23,6 +24,18 @@ export async function PATCH(
 
   if (!task) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 });
+  }
+
+  if (task.roadmapId && task.milestoneId) {
+    const hasMutation = Object.keys(body).some((key) =>
+      ["title", "description", "completed", "status", "categoryId", "dueDate", "priority", "estimatedMinutes", "plannedMinutes", "dailySlot"].includes(key),
+    );
+    if (hasMutation && (await isMilestoneLocked(user.id, task.roadmapId, task.milestoneId))) {
+      return NextResponse.json(
+        { error: "Locked milestone: complete its prerequisites before editing these tasks" },
+        { status: 403 },
+      );
+    }
   }
 
   const hasCompleted = typeof body.completed === "boolean";
@@ -67,6 +80,12 @@ export async function PATCH(
     },
     include: { category: true },
   });
+
+  if (updatedTask.status === "COMPLETED") {
+    await prisma.dailyTaskPin.deleteMany({
+      where: { userId: user.id, taskId: updatedTask.id },
+    });
+  }
 
   return NextResponse.json({ task: updatedTask });
 }
