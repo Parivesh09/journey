@@ -122,7 +122,8 @@ export default function DailyTab() {
         setError("");
       })
       .catch(() => {
-        if (!cancelled) setError("Unable to load your daily feed. Please try again.");
+        if (!cancelled)
+          setError("Unable to load your daily feed. Please try again.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -142,11 +143,18 @@ export default function DailyTab() {
       const response = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, priority: "MEDIUM", isPersonalDaily: true }),
+        body: JSON.stringify({
+          title,
+          priority: "MEDIUM",
+          isPersonalDaily: true,
+        }),
       });
       if (!response.ok) throw new Error("create");
       const data = (await response.json()) as { task: Routine };
-      setRoutines((current) => [{ ...data.task, doneToday: false }, ...current]);
+      setRoutines((current) => [
+        { ...data.task, doneToday: false },
+        ...current,
+      ]);
       setNewTitle("");
     } catch {
       setError("Unable to add that routine. Please try again.");
@@ -167,7 +175,9 @@ export default function DailyTab() {
       const data = (await response.json()) as { doneToday: boolean };
       setRoutines((current) =>
         current.map((item) =>
-          item.id === routine.id ? { ...item, doneToday: data.doneToday } : item,
+          item.id === routine.id
+            ? { ...item, doneToday: data.doneToday }
+            : item,
         ),
       );
     } catch {
@@ -216,13 +226,12 @@ export default function DailyTab() {
         throw new Error(data.error ?? "pin");
       }
       const data = (await response.json()) as { pin: { id: string } };
-      setConnected((current) => [
-        ...current,
-        { pinId: data.pin.id, task },
-      ]);
+      setConnected((current) => [...current, { pinId: data.pin.id, task }]);
     } catch (reason) {
       setError(
-        reason instanceof Error ? reason.message : "Unable to connect that task.",
+        reason instanceof Error
+          ? reason.message
+          : "Unable to connect that task.",
       );
     }
   }
@@ -258,9 +267,7 @@ export default function DailyTab() {
 
   return (
     <div>
-      {error ? (
-        <FormError>{error}</FormError>
-      ) : null}
+      {error ? <FormError>{error}</FormError> : null}
 
       <section>
         <SectionHead
@@ -372,7 +379,7 @@ export default function DailyTab() {
           aria-labelledby="roadmap-picker-title"
         >
           <div className="panel w-full max-w-2xl overflow-hidden p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4 border-b border-rule pb-4">
+            <div className="flex items-start justify-between gap-4 border-b border-stone-400 pb-4">
               <h2
                 id="roadmap-picker-title"
                 className="text-[1.15rem] font-semibold tracking-tight text-graphite"
@@ -427,12 +434,12 @@ export default function DailyTab() {
                             {task.topicTitle ?? "No topic"}
                           </p>
                         </div>
-<button
-            type="button"
-            disabled={pinned}
-            onClick={() => connectTask(task)}
-            className="btn btn-secondary shrink-0 px-3 py-1.5 text-[0.75rem]"
-          >
+                        <button
+                          type="button"
+                          disabled={pinned}
+                          onClick={() => connectTask(task)}
+                          className="btn btn-secondary shrink-0 px-3 py-1.5 text-[0.75rem]"
+                        >
                           {pinned ? "Connected" : "Connect"}
                         </button>
                       </div>

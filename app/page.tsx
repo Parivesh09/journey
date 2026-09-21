@@ -95,9 +95,20 @@ export default async function HomePage() {
     day: "numeric",
   });
   const pinnedTaskIds = new Set(dailyItems.connected.map((pin) => pin.task.id));
-  const routineTaskIds = new Set(dailyItems.routines.map((routine) => routine.id));
+  const routineTaskIds = new Set(
+    dailyItems.routines.map((routine) => routine.id),
+  );
   const toRow = (
-    task: { id: string; title: string; status: string; priority: string; plannedMinutes: number | null; estimatedMinutes: number | null; dailySlot: string | null; category: { name: string } | null },
+    task: {
+      id: string;
+      title: string;
+      status: string;
+      priority: string;
+      plannedMinutes: number | null;
+      estimatedMinutes: number | null;
+      dailySlot: string | null;
+      category: { name: string } | null;
+    },
     kind: "task" | "routine" | "connected",
     extra: { done?: boolean } = {},
   ) => ({
@@ -153,7 +164,7 @@ export default async function HomePage() {
       <main className="container mx-auto max-w-[1120px] px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
         <Sheet className="overflow-hidden px-5 py-7 sm:px-8 sm:py-9">
           {/* masthead */}
-          <header className="flex flex-col gap-5 border-b border-rule pb-6 sm:flex-row sm:items-start sm:justify-between">
+          <header className="flex flex-col gap-5 border-b border-stone-400 pb-6 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <h1 className="text-[1.6rem] font-bold leading-none tracking-tight text-graphite sm:text-[1.9rem]">
                 Today&apos;s plan
@@ -162,9 +173,9 @@ export default async function HomePage() {
                 {todayLabel}
               </p>
               <p className="mt-3 max-w-[62ch] text-[0.8125rem] leading-5 text-graphite-2">
-                {defaultStudyPlan.goal} · {defaultStudyPlan.durationDays} days · {" "}
-                {formatMinutes(defaultStudyPlan.dailyStudyMinutes)} daily target.
-                Keep it simple — finish a line at a time.
+                {defaultStudyPlan.goal} · {defaultStudyPlan.durationDays} days ·{" "}
+                {formatMinutes(defaultStudyPlan.dailyStudyMinutes)} daily
+                target. Keep it simple — finish a line at a time.
               </p>
             </div>
             <Link href="/tasks" className="btn btn-primary shrink-0 self-start">
@@ -176,14 +187,14 @@ export default async function HomePage() {
           {/* summary strip */}
           <section
             aria-label="Today at a glance"
-            className="grid grid-cols-2 border-b border-rule md:grid-cols-4"
+            className="grid grid-cols-2 border-b border-stone-400 md:grid-cols-4"
           >
             {metrics.map((metric, index) => (
               <div
                 key={metric.label}
                 className={`px-1 py-4 sm:px-4 ${
-                  index > 0 ? "md:border-l md:border-rule" : ""
-                } ${index % 2 === 1 ? "border-l border-rule" : ""}`}
+                  index > 0 ? "md:border-l md:border-stone-400" : ""
+                } ${index % 2 === 1 ? "border-l border-stone-400" : ""}`}
               >
                 <p className="text-[0.72rem] font-medium text-graphite-2">
                   {metric.label}
@@ -210,7 +221,7 @@ export default async function HomePage() {
           </section>
 
           {/* completion and cadence */}
-          <section className="mt-10 grid gap-10 border-t border-rule pt-8 md:grid-cols-[1.15fr_0.85fr] md:gap-12">
+          <section className="mt-10 grid gap-10 border-t border-stone-400 pt-8 md:grid-cols-[1.15fr_0.85fr] md:gap-12">
             <div className="space-y-9">
               <div>
                 <SectionHead
@@ -232,13 +243,16 @@ export default async function HomePage() {
                       className="h-full rounded-full transition-[width] duration-500 ease-out"
                       style={{
                         width: `${progress}%`,
-                        backgroundImage: "linear-gradient(90deg, var(--color-amber-ink), var(--color-amber))",
+                        backgroundImage:
+                          "linear-gradient(90deg, var(--color-amber-ink), var(--color-amber))",
                       }}
                     />
                   </div>
                   <div className="mt-3 flex items-baseline justify-between font-mono text-[0.72rem] tabular-nums text-graphite-2">
                     <span>{completedToday} finished</span>
-                    <span className="text-graphite">{remainingToday} remaining</span>
+                    <span className="text-graphite">
+                      {remainingToday} remaining
+                    </span>
                   </div>
                 </div>
               </div>
@@ -249,7 +263,7 @@ export default async function HomePage() {
                   title="Cadence"
                   instruction="Completions recorded across the last seven days."
                 />
-                <div className="mt-5 flex h-28 items-end gap-2 rounded-xl border-b border-rule bg-paper/40 px-2 pb-px">
+                <div className="mt-5 flex h-28 items-end gap-2 rounded-xl border-b border-stone-400 bg-paper/40 px-2 pb-px">
                   {weeklyCompletion.map((day, index) => (
                     <div
                       key={day.label}
@@ -285,7 +299,7 @@ export default async function HomePage() {
             </div>
 
             {/* margin notes */}
-            <div className="space-y-7 md:border-l md:border-rule md:pl-10">
+            <div className="space-y-7 md:border-l md:border-stone-400 md:pl-10">
               <div>
                 <SectionHead
                   index="04"
@@ -305,13 +319,14 @@ export default async function HomePage() {
                     className="h-full rounded-full"
                     style={{
                       width: `${overallPercent}%`,
-                      backgroundImage: "linear-gradient(90deg, var(--color-amber-ink), var(--color-amber))",
+                      backgroundImage:
+                        "linear-gradient(90deg, var(--color-amber-ink), var(--color-amber))",
                     }}
                   />
                 </div>
               </div>
 
-              <div className="rounded-xl border border-rule bg-paper/50 p-4">
+              <div className="rounded-xl border border-stone-400 bg-paper/50 p-4">
                 <div className="flex items-center justify-between gap-3">
                   <h3 className="text-[0.95rem] font-semibold text-graphite">
                     Next best move

@@ -7,6 +7,7 @@ import { readRoadmap } from "@/lib/business/roadmap-templates";
 import AppShell from "@/app/components/shell";
 import { SectionHead, Stamp } from "@/app/components/ui";
 import ActivateButton from "../activate-button";
+import TemplateAccordion from "../template-accordion";
 
 export const metadata: Metadata = {
   title: "Roadmap Details",
@@ -36,21 +37,19 @@ export default async function RoadmapDetailsPage({
   });
 
   const template = readRoadmap(rawId);
+  console.log("template", template);
   const activated = !!userActivated;
 
   const totalPhases = template.phases.length;
   const totalTopics = template.phases.reduce(
     (sum, p) => sum + (p.topics ?? []).length,
-    0
+    0,
   );
   const totalTasks = template.phases.reduce(
     (sum, p) =>
       sum +
-      (p.topics ?? []).reduce(
-        (tSum, t) => tSum + (t.tasks ?? []).length,
-        0
-      ),
-    0
+      (p.topics ?? []).reduce((tSum, t) => tSum + (t.tasks ?? []).length, 0),
+    0,
   );
 
   return (
@@ -65,7 +64,7 @@ export default async function RoadmapDetailsPage({
             Back to roadmaps
           </Link>
 
-          <div className="flex flex-col gap-4 border-b border-rule pb-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-4 border-b border-stone-400 pb-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-3">
                 <h1 className="text-2xl font-bold tracking-tight text-graphite sm:text-3xl">
@@ -86,7 +85,7 @@ export default async function RoadmapDetailsPage({
 
             <div className="shrink-0">
               {activated ? (
-                <span className="inline-flex items-center gap-1.5 font-mono text-[0.75rem] font-medium text-valid">
+                <span className="inline-flex  items-center gap-1.5 font-mono text-[0.75rem] font-medium text-valid">
                   ✓ Active in your workspace
                 </span>
               ) : (
@@ -96,7 +95,7 @@ export default async function RoadmapDetailsPage({
           </div>
 
           <div className="mt-6 grid grid-cols-3 gap-3">
-            <div className="p-4 rounded-lg border border-rule bg-surface">
+            <div className="p-4 rounded-lg border border-stone-400 bg-[#101927]">
               <div className="text-[1.2rem] font-bold text-graphite">
                 {totalPhases}
               </div>
@@ -123,33 +122,27 @@ export default async function RoadmapDetailsPage({
           </div>
 
           {template.milestones.length > 0 && (
-            <section className="mt-8 border-t border-rule pt-6">
+            <section className="mt-8 border-t border-stone-400 pt-6">
               <SectionHead
                 index="01"
                 title="Milestones"
                 instruction="High-level target checkpoints in this roadmap."
               />
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {template.milestones.map((m) => (
-                  <div
-                    key={m.id}
-                    className="p-4 rounded-lg border border-rule bg-surface"
-                  >
-                    <h3 className="text-[0.9rem] font-semibold text-graphite">
-                      {m.title}
-                    </h3>
-                    {m.description && (
-                      <p className="mt-1 text-[0.78rem] text-graphite-2">
-                        {m.description}
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
+
+              <TemplateAccordion
+                milestones={template.milestones}
+                phases={template.phases}
+              />
             </section>
           )}
+        </div>
+      </main>
+    </AppShell>
+  );
+}
 
-          <section className="mt-8 border-t border-rule pt-6">
+{
+  /* <section className="mt-8 border-t border-stone-400 pt-6">
             <SectionHead
               index="02"
               title="Full Syllabus"
@@ -160,13 +153,13 @@ export default async function RoadmapDetailsPage({
                 const phaseTopics = phase.topics ?? [];
                 const phaseTaskCount = phaseTopics.reduce(
                   (sum, t) => sum + (t.tasks ?? []).length,
-                  0
+                  0,
                 );
 
                 return (
                   <div
                     key={phase.id}
-                    className="p-5 rounded-lg border border-rule bg-surface"
+                    className="p-5 rounded-lg border border-stone-400 bg-[#101927]"
                   >
                     <div className="flex flex-col justify-between gap-1 sm:flex-row sm:items-center">
                       <div className="flex items-center gap-3">
@@ -188,7 +181,7 @@ export default async function RoadmapDetailsPage({
                         return (
                           <div
                             key={topic.id}
-                            className="flex items-center justify-between rounded-lg border border-rule bg-ink-2 px-3 py-2 text-[0.8rem]"
+                            className="flex items-center justify-between rounded-lg border border-stone-400 bg-ink-2 px-3 py-2 text-[0.8rem]"
                           >
                             <span
                               className="truncate font-medium text-graphite"
@@ -207,9 +200,5 @@ export default async function RoadmapDetailsPage({
                 );
               })}
             </div>
-          </section>
-        </div>
-      </main>
-    </AppShell>
-  );
+          </section> */
 }

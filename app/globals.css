@@ -1,10 +1,5 @@
 @import "tailwindcss";
 
-/* ============================================================
-   SDE Command Center — Apple-inspired minimal design
-   Clean, minimal, refined, premium productivity interface
-   ============================================================ */
-
 :root {
   --text-xs: 0.75rem;
   --text-sm: 0.875rem;
@@ -39,12 +34,20 @@
   --color-stamp-on-ink: #dc3545;
 
   /* Typography scale - use these in component styles */
-  --font-display: 700 var(--text-xl) / 1 -0.015em 'Archivo', ui-sans-serif, system-ui, sans-serif;
-  --font-headline: 600 var(--text-lg) / 1.2 -0.01em 'Archivo', ui-sans-serif, system-ui, sans-serif;
-  --font-title: 600 var(--text-base) / 1.2 'Archivo', ui-sans-serif, system-ui, sans-serif;
-  --font-body: 400 var(--text-sm) / 1.5 'Archivo', ui-sans-serif, system-ui, sans-serif;
-  --font-label: 600 var(--text-xs) / 1.1 0.1em 'Archivo', ui-sans-serif, system-ui, sans-serif;
-  --font-data: 400 var(--text-xs) / 1.4 'Roboto Mono', ui-monospace, monospace;
+  --font-display:
+    700 var(--text-xl) / 1 -0.015em "Archivo", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-headline:
+    600 var(--text-lg) / 1.2 -0.01em "Archivo", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-title:
+    600 var(--text-base) / 1.2 "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-body:
+    400 var(--text-sm) / 1.5 "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --font-label:
+    600 var(--text-xs) / 1.1 0.1em "Archivo", ui-sans-serif, system-ui,
+    sans-serif;
+  --font-data: 400 var(--text-xs) / 1.4 "Roboto Mono", ui-monospace, monospace;
 
   /* Motion */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
@@ -55,7 +58,8 @@
   --card-radius: 10px;
   --control-radius: 8px;
   --pill-radius: 20px;
-  --focus-ring: 3px solid color-mix(in oklab, var(--color-amber) 60%, transparent);
+  --focus-ring: 3px solid
+    color-mix(in oklab, var(--color-amber) 60%, transparent);
 
   /* Shadows - subtle */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -74,13 +78,13 @@
   --color-bone: #e6eaf3;
   --color-bone-2: #9aa3b6;
   --color-bone-3: #6b7488;
-  --color-paper: #131824;
+  --color-paper: #070b15;
   --color-paper-2: #181e2b;
   --color-graphite: #e6eaf3;
   --color-graphite-2: #9aa3b6;
   --color-graphite-3: #6d7690;
   --color-amber-ink: #a5a4ff;
-  --color-amber: #a5a4ff;
+  --color-amber: #16153c;
   --color-valid: #38c18b;
   --color-valid-on-ink: #38c18b;
   --color-stamp: #f0648c;
@@ -121,7 +125,7 @@ body {
   color: var(--color-graphite);
 }
 
-.sheet::before {
+/* .sheet::before {
   content: "";
   position: absolute;
   inset: 0;
@@ -143,7 +147,7 @@ body {
     transparent 100%
   );
   pointer-events: none;
-}
+} */
 
 .btn {
   display: inline-flex;
@@ -155,7 +159,12 @@ body {
   font: var(--font-body);
   font-weight: 600;
   letter-spacing: -0.005em;
-  transition: transform 140ms var(--ease-out), background-color 140ms var(--ease-out), color 140ms var(--ease-out), border-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 140ms var(--ease-out),
+    color 140ms var(--ease-out),
+    border-color 140ms var(--ease-out),
+    box-shadow 140ms var(--ease-out);
 }
 
 .btn:active {
@@ -172,11 +181,12 @@ body {
   color: #fff;
   border: 1px solid var(--color-amber);
   box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
 }
 
 .btn-primary:hover {
-  background: color-mix(in oklab, var(--color-amber) 15%, black);
-  border-color: color-mix(in oklab, var(--color-amber) 15%, black);
+  background: color-mix(in oklab, var(--color-amber) 15%);
+  border-color: color-mix(in oklab, var(--color-amber) 15%, #16153c);
 }
 
 .btn-secondary {
@@ -215,12 +225,15 @@ body {
   width: 100%;
   background: transparent;
   border: none;
-  border-bottom: 1px solid color-mix(in oklab, var(--color-graphite) 30%, transparent);
+  border-bottom: 1px solid
+    color-mix(in oklab, var(--color-graphite) 30%, transparent);
   border-radius: 0;
   padding: 0.5rem 0.1rem;
   color: var(--color-graphite);
   font: var(--font-body);
-  transition: border-color 160ms var(--ease-out), box-shadow 160ms var(--ease-out);
+  transition:
+    border-color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out);
 }
 
 .field::placeholder {

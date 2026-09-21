@@ -33,7 +33,7 @@ export default async function AppShell({
 
   return (
     <div className="min-h-screen flex flex-col gap-6 bg-ink text-bone">
-      <header className="sticky top-0 z-40 border-b border-rule bg-surface/80 backdrop-blur-sm">
+      <header className="sticky top-0 z-40 border-b border-stone-400 bg-[#101927]/80 backdrop-blur-sm">
         <div className="container mx-auto flex items-center gap-3 px-4 py-3 sm:px-6 lg:px-10">
           <Link
             href="/"
@@ -87,7 +87,7 @@ export default async function AppShell({
       <div className="min-w-0 flex-1">{children}</div>
 
       {user ? (
-        <div className="flex items-center justify-between gap-3 border-t border-rule bg-surface/80 px-5 py-3 lg:hidden">
+        <div className="flex items-center justify-between gap-3 border-t border-stone-400 bg-[#101927]/80 px-5 py-3 lg:hidden">
           <p className="truncate font-mono text-[0.7rem] text-bone-3">
             {user.email}
           </p>

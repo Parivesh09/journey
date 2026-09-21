@@ -74,7 +74,7 @@ export function readRoadmap(
   if (!file || !fs.existsSync(file)) {
     throw new Error(`Unknown roadmap template: ${roadmapId}`);
   }
-  const raw = JSON.parse(fs.readFileSync(file, "utf-8")) as {
+  const raw = JSON.parse(fs.readFileSync(/*turbopackIgnore: true*/ file, "utf-8")) as {
     id?: string;
     title?: string;
     description?: string;

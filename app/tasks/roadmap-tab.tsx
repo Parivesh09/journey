@@ -138,9 +138,7 @@ export default function RoadmapTab({
         pins: Array<{ id: string; taskId: string }>;
       };
       setPinnedById(
-        Object.fromEntries(
-          pinBody.pins.map((pin) => [pin.taskId, pin.id]),
-        ),
+        Object.fromEntries(pinBody.pins.map((pin) => [pin.taskId, pin.id])),
       );
     } catch {
       setData(null);
@@ -158,10 +156,11 @@ export default function RoadmapTab({
         if (!response.ok) throw new Error("load");
         return response.json() as Promise<MilestonesData>;
       }),
-      fetch("/api/daily-pins").then((response) =>
-        response.json() as Promise<{
-          pins: Array<{ id: string; taskId: string }>;
-        }>,
+      fetch("/api/daily-pins").then(
+        (response) =>
+          response.json() as Promise<{
+            pins: Array<{ id: string; taskId: string }>;
+          }>,
       ),
     ])
       .then(([milestones, pinBody]) => {
@@ -215,7 +214,14 @@ export default function RoadmapTab({
   }
 
   const facets = useMemo(() => {
-    if (!data) return { categories: [], phases: [], topics: [], taskTypes: [], difficulties: [] };
+    if (!data)
+      return {
+        categories: [],
+        phases: [],
+        topics: [],
+        taskTypes: [],
+        difficulties: [],
+      };
     const categories = new Set<string>();
     const phases = new Set<{ id: string; title: string }>();
     const topics = new Set<{ id: string; title: string; phaseId: string }>();
@@ -248,8 +254,9 @@ export default function RoadmapTab({
     return data.milestones.reduce((total, milestone) => {
       for (const phase of visiblePhases(milestone, filters)) {
         for (const topic of phase.topics) {
-          total += topic.tasks.filter((task) => taskMatches(task, filters))
-            .length;
+          total += topic.tasks.filter((task) =>
+            taskMatches(task, filters),
+          ).length;
         }
       }
       return total;
@@ -272,7 +279,9 @@ export default function RoadmapTab({
       }
       await loadMilestones(selectedId);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to update the task.");
+      setError(
+        reason instanceof Error ? reason.message : "Unable to update the task.",
+      );
     } finally {
       setMutating(null);
     }
@@ -302,7 +311,9 @@ export default function RoadmapTab({
       }
       await loadMilestones(selectedId);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to update the pin.");
+      setError(
+        reason instanceof Error ? reason.message : "Unable to update the pin.",
+      );
     } finally {
       setMutating(null);
     }
@@ -323,7 +334,11 @@ export default function RoadmapTab({
       }
       await loadMilestones(selectedId);
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Unable to complete the milestone.");
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Unable to complete the milestone.",
+      );
     } finally {
       setCompletingMilestone(null);
     }
@@ -406,7 +421,7 @@ export default function RoadmapTab({
 
           <section
             aria-label="Filters"
-            className="mt-7 grid gap-x-4 gap-y-3 border-y border-rule py-5 sm:grid-cols-2 lg:grid-cols-4"
+            className="mt-7 grid gap-x-4 gap-y-3 border-y border-stone-400 py-5 sm:grid-cols-2 lg:grid-cols-4"
           >
             <input
               value={filters.q}
@@ -436,7 +451,10 @@ export default function RoadmapTab({
             >
               <option value="">All topics</option>
               {facets.topics
-                .filter((topic) => !filters.phaseId || topic.phaseId === filters.phaseId)
+                .filter(
+                  (topic) =>
+                    !filters.phaseId || topic.phaseId === filters.phaseId,
+                )
                 .map((topic) => (
                   <option key={topic.id} value={topic.id}>
                     {topic.title}
@@ -479,7 +497,9 @@ export default function RoadmapTab({
             </select>
             <select
               value={filters.difficulty}
-              onChange={(event) => updateFilter("difficulty", event.target.value)}
+              onChange={(event) =>
+                updateFilter("difficulty", event.target.value)
+              }
               aria-label="Filter by difficulty"
               className="field appearance-none pr-6"
             >
@@ -536,7 +556,7 @@ export default function RoadmapTab({
           aria-labelledby="activate-roadmap-title"
         >
           <div className="panel w-full max-w-md overflow-hidden p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4 border-b border-rule pb-4">
+            <div className="flex items-start justify-between gap-4 border-b border-stone-400 pb-4">
               <h2
                 id="activate-roadmap-title"
                 className="text-[1.15rem] font-semibold tracking-tight text-graphite"
@@ -552,7 +572,7 @@ export default function RoadmapTab({
                 ×
               </button>
             </div>
-            <div className="mt-4 border-t border-rule">
+            <div className="mt-4 border-t border-stone-400">
               {KNOWN_TEMPLATES.map((template) => {
                 const active = roadmaps.some(
                   (roadmap) => roadmap.id === template.roadmapId,
@@ -560,7 +580,7 @@ export default function RoadmapTab({
                 return (
                   <div
                     key={template.roadmapId}
-                    className="flex items-center justify-between gap-3 border-b border-rule py-3"
+                    className="flex items-center justify-between gap-3 border-b border-stone-400 py-3"
                   >
                     <span className="text-[0.9rem] font-medium text-graphite">
                       {template.title}
@@ -571,10 +591,14 @@ export default function RoadmapTab({
                       onClick={() => activateRoadmap(template.roadmapId)}
                       className={cn(
                         "btn shrink-0 px-3 py-1.5 text-[0.75rem]",
-                        active ? "btn-secondary" : "btn-primary"
+                        active ? "btn-secondary" : "btn-primary",
                       )}
                     >
-                      {active ? "Active" : activating ? "Activating" : "Activate"}
+                      {active
+                        ? "Active"
+                        : activating
+                          ? "Activating"
+                          : "Activate"}
                     </button>
                   </div>
                 );
@@ -617,9 +641,10 @@ function visiblePhases(milestone: Milestone, filters: Filters) {
     }));
 }
 
-function statusPill(
-  milestone: Milestone,
-): { label: string; tone: "neutral" | "valid" | "amber" } {
+function statusPill(milestone: Milestone): {
+  label: string;
+  tone: "neutral" | "valid" | "amber";
+} {
   if (milestone.status === "LOCKED")
     return { label: "Locked", tone: "neutral" };
   if (milestone.status === "DONE")
@@ -658,16 +683,16 @@ function MilestoneCard({
   );
   const anyFilterActive = Boolean(
     filters.q ||
-      filters.phaseId ||
-      filters.topicId ||
-      filters.category ||
-      filters.taskType ||
-      filters.status ||
-      filters.difficulty,
+    filters.phaseId ||
+    filters.topicId ||
+    filters.category ||
+    filters.taskType ||
+    filters.status ||
+    filters.difficulty,
   );
 
   return (
-    <section className="border-t border-rule pt-6">
+    <section className="border-t border-stone-400 pt-6">
       <header>
         <div className="flex flex-wrap items-center gap-3">
           <span className="rounded-md bg-amber/12 px-1.5 py-0.5 font-mono text-[0.68rem] font-semibold tabular-nums text-amber-ink">
@@ -677,9 +702,7 @@ function MilestoneCard({
             {milestone.title}
           </h3>
           <Stamp tone={pill.tone}>
-            {locked ? (
-              <Lock className="h-3 w-3" aria-hidden />
-            ) : null}
+            {locked ? <Lock className="h-3 w-3" aria-hidden /> : null}
             {pill.label}
           </Stamp>
         </div>
@@ -717,7 +740,9 @@ function MilestoneCard({
             <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
             <span>
               Complete{" "}
-              {blockedPrereqs.map((prereq) => `"${prereq.title}"`).join(" and ")}{" "}
+              {blockedPrereqs
+                .map((prereq) => `"${prereq.title}"`)
+                .join(" and ")}{" "}
               first to unlock this milestone.
             </span>
           </p>
@@ -744,7 +769,7 @@ function MilestoneCard({
           return (
             <details
               key={phase.id}
-              className="group border-b border-rule"
+              className="group border-b border-stone-400"
               open={anyFilterActive}
             >
               <summary className="flex items-center gap-3 py-3 text-[0.9rem] font-semibold text-graphite">
@@ -766,20 +791,16 @@ function MilestoneCard({
                     <p className="pt-2 text-[0.72rem] font-semibold text-graphite-2">
                       {topic.title}
                     </p>
-                    <div className="border-t border-rule">
+                    <div className="border-t border-stone-400">
                       {topic.tasks.map((task, taskIndex) => {
                         const isDone = task.status === "COMPLETED";
                         const pinned = Boolean(pinnedById[task.id]);
                         return (
                           <div
                             key={task.id}
-                            className="relative border-b border-rule last:border-b-0"
+                            className="relative border-b border-stone-400 last:border-b-0"
                           >
-                            <span
-                              className="hl"
-                              data-on={isDone}
-                              aria-hidden
-                            />
+                            <span className="hl" data-on={isDone} aria-hidden />
                             <div className="relative z-10 flex items-center gap-3 py-2.5 pl-1">
                               <span className="w-5 shrink-0 font-mono text-[0.62rem] tabular-nums text-graphite-3">
                                 {String(taskIndex + 1).padStart(2, "0")}
@@ -806,7 +827,11 @@ function MilestoneCard({
                                   {task.title}
                                 </p>
                                 <p className="mt-0.5 truncate font-mono text-[0.65rem] text-graphite-2">
-                                  {[task.taskType, task.difficulty, task.priority]
+                                  {[
+                                    task.taskType,
+                                    task.difficulty,
+                                    task.priority,
+                                  ]
                                     .filter(Boolean)
                                     .join(" · ")}
                                 </p>

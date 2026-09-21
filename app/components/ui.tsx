@@ -3,7 +3,13 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export function Sheet({ className, children }: { className?: string; children: ReactNode }) {
+export function Sheet({
+  className,
+  children,
+}: {
+  className?: string;
+  children: ReactNode;
+}) {
   return <div className={cn("sheet", className)}>{children}</div>;
 }
 
@@ -32,7 +38,9 @@ export function SectionHead({
               "shrink-0 rounded-md bg-amber/12 px-1.5 py-0.5 text-[0.68rem] font-semibold tabular-nums",
               onPaper ? "text-amber-ink" : "text-amber",
             )}
-              >{index}</span>
+          >
+            {index}
+          </span>
         ) : null}
         <h2
           className={cn(
@@ -97,7 +105,13 @@ export function Stamp({
   );
 }
 
-export function Num({ children, className }: { children: ReactNode; className?: string }) {
+export function Num({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <span className={cn("font-mono tabular-nums", className)}>{children}</span>
   );
@@ -136,7 +150,13 @@ export function Bubble({
   );
 }
 
-export function Loader({ label = "Loading", className }: { label?: string; className?: string }) {
+export function Loader({
+  label = "Loading",
+  className,
+}: {
+  label?: string;
+  className?: string;
+}) {
   return (
     <span
       className={cn(
@@ -161,7 +181,7 @@ export function SkeletonRows({ rows = 3 }: { rows?: number }) {
       {Array.from({ length: rows }).map((_, index) => (
         <div
           key={index}
-          className="flex items-center gap-3 border-b border-rule py-3"
+          className="flex items-center gap-3 border-b border-stone-400 py-3"
         >
           <span className="bubble" />
           <span
@@ -174,14 +194,20 @@ export function SkeletonRows({ rows = 3 }: { rows?: number }) {
   );
 }
 
-export function EmptyNote({ children, tone = "paper" }: { children: ReactNode; tone?: "paper" | "ink" }) {
+export function EmptyNote({
+  children,
+  tone = "paper",
+}: {
+  children: ReactNode;
+  tone?: "paper" | "ink";
+}) {
   return (
     <p
       className={cn(
         "mt-4 rounded-xl border border-dashed px-4 py-4 text-[0.8125rem] leading-5",
         tone === "paper"
-          ? "border-rule bg-paper/50 text-graphite-2"
-          : "border-rule-2 text-bone-2",
+          ? "border-stone-400 bg-paper/50 text-graphite-2"
+          : "border-stone-400-2 text-bone-2",
       )}
     >
       {children}
@@ -191,7 +217,11 @@ export function EmptyNote({ children, tone = "paper" }: { children: ReactNode; t
 
 // Form utilities
 
-export function FormGroup({ label, children, className }: {
+export function FormGroup({
+  label,
+  children,
+  className,
+}: {
   label: string;
   children: ReactNode;
   className?: string;
@@ -222,8 +252,19 @@ export function FormSuccess({ children }: { children: ReactNode }) {
 
 // Toast notification
 
-export function Toast({ children, type = "info" }: { children: ReactNode; type?: "info" | "success" | "error" }) {
-  const tone = type === "success" ? "text-valid" : type === "error" ? "text-stamp" : "text-graphite-2";
+export function Toast({
+  children,
+  type = "info",
+}: {
+  children: ReactNode;
+  type?: "info" | "success" | "error";
+}) {
+  const tone =
+    type === "success"
+      ? "text-valid"
+      : type === "error"
+        ? "text-stamp"
+        : "text-graphite-2";
   return (
     <div className="toast">
       <span className={cn("text-[0.875rem] font-medium", tone)}>

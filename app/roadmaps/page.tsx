@@ -3,7 +3,11 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { readRoadmap, ROADMAP_IDS, type RoadmapTemplate } from "@/lib/business/roadmap-templates";
+import {
+  readRoadmap,
+  ROADMAP_IDS,
+  type RoadmapTemplate,
+} from "@/lib/business/roadmap-templates";
 import AppShell from "@/app/components/shell";
 import { SectionHead, Stamp } from "@/app/components/ui";
 import ActivateButton from "./activate-button";
@@ -40,11 +44,11 @@ export default async function RoadmapsPage() {
         console.error(`Failed to load template ${publicId}:`, error);
         return null;
       }
-    })
+    }),
   );
 
   const validTemplates = templates.filter(
-    (t): t is { template: RoadmapTemplate; activated: boolean } => t !== null
+    (t): t is { template: RoadmapTemplate; activated: boolean } => t !== null,
   );
 
   return (
@@ -63,16 +67,16 @@ export default async function RoadmapsPage() {
               const totalPhases = template.phases.length;
               const totalTopics = template.phases.reduce(
                 (sum, p) => sum + (p.topics ?? []).length,
-                0
+                0,
               );
               const totalTasks = template.phases.reduce(
                 (sum, p) =>
                   sum +
                   (p.topics ?? []).reduce(
                     (tSum, t) => tSum + (t.tasks ?? []).length,
-                    0
+                    0,
                   ),
-                0
+                0,
               );
 
               return (
@@ -94,14 +98,18 @@ export default async function RoadmapsPage() {
                         )}
                       </div>
                       {activated ? (
-                        <Stamp tone="valid" className="shrink-0">Enrolled</Stamp>
+                        <Stamp tone="valid" className="shrink-0">
+                          Enrolled
+                        </Stamp>
                       ) : (
-                        <Stamp tone="amber" className="shrink-0">Available</Stamp>
+                        <Stamp tone="amber" className="shrink-0">
+                          Available
+                        </Stamp>
                       )}
                     </div>
 
                     <div className="mt-4 grid grid-cols-3 gap-2">
-                      <div className="rounded-lg border border-rule bg-paper/40 px-2 py-2 text-center">
+                      <div className="rounded-lg border border-stone-400 bg-paper/40 px-2 py-2 text-center">
                         <div className="font-mono text-[1.05rem] font-bold text-graphite">
                           {totalPhases}
                         </div>
@@ -109,7 +117,7 @@ export default async function RoadmapsPage() {
                           Phases
                         </div>
                       </div>
-                      <div className="rounded-lg border border-rule bg-paper/40 px-2 py-2 text-center">
+                      <div className="rounded-lg border border-stone-400 bg-paper/40 px-2 py-2 text-center">
                         <div className="font-mono text-[1.05rem] font-bold text-graphite">
                           {totalTopics}
                         </div>
@@ -117,7 +125,7 @@ export default async function RoadmapsPage() {
                           Topics
                         </div>
                       </div>
-                      <div className="rounded-lg border border-rule bg-paper/40 px-2 py-2 text-center">
+                      <div className="rounded-lg border border-stone-400 bg-paper/40 px-2 py-2 text-center">
                         <div className="font-mono text-[1.05rem] font-bold text-graphite">
                           {totalTasks}
                         </div>
@@ -139,7 +147,7 @@ export default async function RoadmapsPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between border-t border-rule bg-paper/50 px-5 py-3">
+                  <div className="flex items-center justify-between border-t border-stone-400 bg-paper/50 px-5 py-3">
                     <span className="font-mono text-[0.68rem] text-graphite-3">
                       {template.milestones.length} milestones
                     </span>

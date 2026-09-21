@@ -30,12 +30,13 @@ export default function TasksWorkspace({
   return (
     <main className="container mx-auto max-w-[1120px] px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
       <Sheet className="overflow-hidden px-5 py-7 sm:px-8 sm:py-9">
-        <header className="border-b border-rule pb-5">
+        <header className="border-b border-stone-400 pb-5">
           <h1 className="text-[1.6rem] font-bold leading-none tracking-tight text-graphite sm:text-[1.9rem]">
             Tasks
           </h1>
           <p className="mt-3 max-w-[62ch] text-[0.8125rem] leading-5 text-graphite-2">
-            Your personal daily routines live next to the roadmap that feeds them.
+            Your personal daily routines live next to the roadmap that feeds
+            them.
           </p>
         </header>
 

@@ -27,7 +27,12 @@ export default function SignupForm() {
     const response = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password, timezone: browserTimezone() }),
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+        timezone: browserTimezone(),
+      }),
     });
     const data = (await response.json().catch(() => null)) as {
       error?: string;
@@ -44,7 +49,7 @@ export default function SignupForm() {
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
       <form onSubmit={submit} className="sheet w-full max-w-sm p-6 sm:p-8">
-        <div className="flex items-center gap-2.5 border-b border-rule pb-5">
+        <div className="flex items-center gap-2.5 border-b border-stone-400 pb-5">
           <span
             aria-hidden
             className="grid h-6 w-6 place-items-center rounded-lg bg-amber text-[0.62rem] font-bold text-white"
@@ -96,7 +101,10 @@ export default function SignupForm() {
         </label>
 
         {error ? (
-          <p className="mt-4 text-[0.78rem] font-medium text-stamp" role="alert">
+          <p
+            className="mt-4 text-[0.78rem] font-medium text-stamp"
+            role="alert"
+          >
             {error}
           </p>
         ) : null}
@@ -105,7 +113,7 @@ export default function SignupForm() {
           {loading ? "Creating your workspace" : "Create account"}
         </button>
 
-        <p className="mt-6 border-t border-rule pt-4 text-center text-[0.8125rem] text-graphite-2">
+        <p className="mt-6 border-t border-stone-400 pt-4 text-center text-[0.8125rem] text-graphite-2">
           Already have an account?{" "}
           <Link
             href="/login"

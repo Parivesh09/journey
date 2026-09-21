@@ -69,8 +69,7 @@ const timezones = (() => {
   }
 })();
 
-const labelClass =
-  "block text-[0.72rem] font-semibold text-graphite-2";
+const labelClass = "block text-[0.72rem] font-semibold text-graphite-2";
 
 function ToggleRow({
   label,
@@ -109,9 +108,8 @@ export default function SettingsForm() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [user, setUser] = useState<UserSettings | null>(null);
-  const [notifications, setNotifications] = useState<NotificationSettings>(
-    defaultNotifications,
-  );
+  const [notifications, setNotifications] =
+    useState<NotificationSettings>(defaultNotifications);
   const [password, setPassword] = useState({ current: "", next: "" });
 
   const load = useCallback(async (): Promise<boolean> => {
@@ -120,9 +118,11 @@ export default function SettingsForm() {
       if (!response.ok) throw new Error("Unable to load settings");
       const data = (await response.json()) as {
         user: UserSettings;
-        notifications: (Partial<NotificationSettings> & {
-          reminderSchedule?: unknown;
-        }) | null;
+        notifications:
+          | (Partial<NotificationSettings> & {
+              reminderSchedule?: unknown;
+            })
+          | null;
       };
       setUser(data.user);
       if (data.notifications) {
@@ -153,9 +153,11 @@ export default function SettingsForm() {
         if (!response.ok) throw new Error("Unable to load settings");
         const data = (await response.json()) as {
           user: UserSettings;
-          notifications: (Partial<NotificationSettings> & {
-            reminderSchedule?: unknown;
-          }) | null;
+          notifications:
+            | (Partial<NotificationSettings> & {
+                reminderSchedule?: unknown;
+              })
+            | null;
         };
         if (cancelled) return;
         setUser(data.user);
@@ -211,7 +213,9 @@ export default function SettingsForm() {
         : {}),
     });
     if (!response.ok) {
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+      const data = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
       setError(data?.error ?? "Unable to save account settings.");
       setSaving("");
       return;
@@ -233,7 +237,9 @@ export default function SettingsForm() {
       body: JSON.stringify(notifications),
     });
     if (!response.ok) {
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+      const data = (await response.json().catch(() => null)) as {
+        error?: string;
+      } | null;
       setError(data?.error ?? "Unable to save notification settings.");
       setSaving("");
       return;
@@ -249,7 +255,10 @@ export default function SettingsForm() {
     setNotifications((current) => ({ ...current, [key]: value }));
   }
 
-  function updateSchedule(index: number, patch: Partial<{ time: string; enabled: boolean }>) {
+  function updateSchedule(
+    index: number,
+    patch: Partial<{ time: string; enabled: boolean }>,
+  ) {
     setNotifications((current) => ({
       ...current,
       reminderSchedule: current.reminderSchedule.map((entry, i) =>
@@ -259,13 +268,14 @@ export default function SettingsForm() {
   }
 
   const scheduleLabel = useMemo(
-    () => ({
-      morning: "Morning Reminder",
-      midday: "Midday Reminder",
-      evening: "Evening Reminder",
-      final: "Final Reminder",
-      nextDay: "Next-Day Summary",
-    }) as Record<string, string>,
+    () =>
+      ({
+        morning: "Morning Reminder",
+        midday: "Midday Reminder",
+        evening: "Evening Reminder",
+        final: "Final Reminder",
+        nextDay: "Next-Day Summary",
+      }) as Record<string, string>,
     [],
   );
 
@@ -322,7 +332,7 @@ export default function SettingsForm() {
               />
             </label>
           </div>
-          <div className="mt-5 rounded-xl border border-rule bg-paper/50 p-4">
+          <div className="mt-5 rounded-xl border border-stone-400 bg-paper/50 p-4">
             <p className="text-[0.72rem] font-semibold text-graphite-2">
               Change password
             </p>
@@ -332,7 +342,10 @@ export default function SettingsForm() {
                 placeholder="Current password"
                 value={password.current}
                 onChange={(event) =>
-                  setPassword((current) => ({ ...current, current: event.target.value }))
+                  setPassword((current) => ({
+                    ...current,
+                    current: event.target.value,
+                  }))
                 }
                 aria-label="Current password"
                 className="field"
@@ -343,7 +356,10 @@ export default function SettingsForm() {
                 minLength={8}
                 value={password.next}
                 onChange={(event) =>
-                  setPassword((current) => ({ ...current, next: event.target.value }))
+                  setPassword((current) => ({
+                    ...current,
+                    next: event.target.value,
+                  }))
                 }
                 aria-label="New password"
                 className="field"
@@ -461,13 +477,19 @@ export default function SettingsForm() {
               aria-label="Weekly summary day"
               className="field w-auto appearance-none pr-6"
             >
-              {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(
-                (day, index) => (
-                  <option key={day} value={index}>
-                    {day}
-                  </option>
-                ),
-              )}
+              {[
+                "Sunday",
+                "Monday",
+                "Tuesday",
+                "Wednesday",
+                "Thursday",
+                "Friday",
+                "Saturday",
+              ].map((day, index) => (
+                <option key={day} value={index}>
+                  {day}
+                </option>
+              ))}
             </select>
           </ToggleRow>
         </div>
@@ -508,7 +530,10 @@ export default function SettingsForm() {
               type="checkbox"
               checked={notifications.excludeCompletedTasks}
               onChange={(event) =>
-                updateNotification("excludeCompletedTasks", event.target.checked)
+                updateNotification(
+                  "excludeCompletedTasks",
+                  event.target.checked,
+                )
               }
               className="h-4 w-4 accent-amber-ink"
             />
@@ -599,8 +624,10 @@ export default function SettingsForm() {
                 user &&
                 setUser({
                   ...user,
-                  dailyStudyTargetMinutes:
-                    Math.max(15, Math.min(720, Number(event.target.value) || 240)),
+                  dailyStudyTargetMinutes: Math.max(
+                    15,
+                    Math.min(720, Number(event.target.value) || 240),
+                  ),
                 })
               }
               className="field mt-1 normal-case tracking-normal"
