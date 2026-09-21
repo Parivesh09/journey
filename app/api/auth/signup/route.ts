@@ -1,7 +1,6 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { createSessionValue, sessionCookie, sessionCookieOptions } from "@/lib/auth";
-import { provisionRoadmapForUser } from "@/lib/business/roadmap-provision";
 import { prisma } from "@/lib/prisma";
 
 function validTimezone(value: string) {
@@ -33,7 +32,6 @@ export async function POST(request: Request) {
   });
 
   await prisma.notificationPreference.create({ data: { userId: user.id } });
-  await provisionRoadmapForUser(user.id);
 
   const response = NextResponse.json(
     { user: { id: user.id, name: user.name, email: user.email } },

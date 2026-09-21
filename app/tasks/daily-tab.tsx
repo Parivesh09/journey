@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
+import { Link2, Plus, Search } from "lucide-react";
 import {
-  CheckCircle2,
-  Circle,
-  LoaderCircle,
-  Link2,
-  Plus,
-  Search,
-} from "lucide-react";
+  Bubble,
+  EmptyNote,
+  SectionHead,
+  SkeletonRows,
+  Stamp,
+} from "@/app/components/ui";
 
 type Routine = {
   id: string;
@@ -58,40 +58,33 @@ function RoutineRow({
   onToggle: () => void;
 }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-3 transition hover:bg-slate-900/70">
-      <button
-        type="button"
-        aria-label={routine.doneToday ? "Mark not done today" : "Mark done today"}
-        disabled={updating}
-        onClick={onToggle}
-        className="shrink-0 text-cyan-300 disabled:opacity-50"
-      >
-        {updating ? (
-          <LoaderCircle className="h-5 w-5 animate-spin" />
-        ) : routine.doneToday ? (
-          <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-        ) : (
-          <Circle className="h-5 w-5 text-slate-500" />
-        )}
-      </button>
-      <div className="min-w-0 flex-1">
-        <p
-          className={
-            routine.doneToday
-              ? "truncate text-slate-500 line-through"
-              : "truncate font-medium text-slate-100"
-          }
-        >
-          {routine.title}
-        </p>
-        <p className="mt-1 text-xs text-slate-500">
-          Every day · {routine.plannedMinutes ?? routine.estimatedMinutes ?? 60}m
-          {routine.doneToday ? " · done today" : ""}
-        </p>
+    <div className="relative border-b border-graphite/15 last:border-b-0">
+      <span className="hl" data-on={routine.doneToday} aria-hidden />
+      <div className="relative z-10 flex items-center gap-3 px-1 py-3">
+        <Bubble
+          filled={routine.doneToday}
+          busy={updating}
+          label={routine.doneToday ? "Mark not done today" : "Mark done today"}
+          onClick={onToggle}
+        />
+        <div className="min-w-0 flex-1">
+          <p
+            className={
+              routine.doneToday
+                ? "truncate text-[0.9rem] leading-6 text-graphite-2 line-through decoration-graphite/50"
+                : "truncate text-[0.9rem] font-medium leading-6 text-graphite"
+            }
+          >
+            {routine.title}
+          </p>
+          <p className="mt-0.5 truncate font-mono text-[0.65rem] text-graphite-2">
+            Every day ·{" "}
+            {routine.plannedMinutes ?? routine.estimatedMinutes ?? 60}m
+            {routine.doneToday ? " · done today" : ""}
+          </p>
+        </div>
+        <Stamp>{routine.priority}</Stamp>
       </div>
-      <span className="rounded-md bg-slate-800 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-300">
-        {routine.priority}
-      </span>
     </div>
   );
 }
@@ -265,51 +258,51 @@ export default function DailyTab() {
   return (
     <div>
       {error ? (
-        <p className="mb-5 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">
-          {error}
-        </p>
+        <p
+            className="mb-6 rounded-xl border border-stamp/30 bg-stamp/[0.05] px-3 py-2.5 text-[0.78rem] font-medium text-stamp"
+            role="alert"
+          >
+            {error}
+          </p>
       ) : null}
 
-      <section className="mb-8 rounded-2xl border border-slate-800 bg-slate-950/55 p-6">
-        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">
-              Personal routines
-            </p>
-            <h2 className="mt-1 text-xl font-semibold">Every-day habits</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              {routines.length === 0
-                ? "Small, repeatable habits you keep regardless of the roadmap."
-                : `${remaining} of ${routines.length} left today. Routines reset each day.`}
-            </p>
-          </div>
-          <form onSubmit={addRoutine} className="flex gap-2">
-            <input
-              value={newTitle}
-              onChange={(event) => setNewTitle(event.target.value)}
-              placeholder="Add a routine, e.g. 30 min DSA"
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm outline-none focus:border-cyan-400 sm:w-72"
-            />
-            <button
-              type="submit"
-              disabled={adding || !newTitle.trim()}
-              className="shrink-0 rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </form>
-        </div>
+      <section>
+        <SectionHead
+          index="01"
+          title="Every-day habits"
+          instruction={
+            routines.length === 0
+              ? "Small, repeatable habits you keep regardless of the roadmap."
+              : `${remaining} of ${routines.length} left today. Routines reset each day.`
+          }
+        />
+        <form onSubmit={addRoutine} className="mt-4 flex items-end gap-2">
+          <input
+            value={newTitle}
+            onChange={(event) => setNewTitle(event.target.value)}
+            placeholder="Add a routine, e.g. 30 min DSA"
+            aria-label="New routine title"
+            className="field"
+          />
+          <button
+            type="submit"
+            disabled={adding || !newTitle.trim()}
+            aria-label="Add routine"
+            className="btn btn-mark shrink-0"
+          >
+            <Plus className="h-4 w-4" aria-hidden />
+            {adding ? "Adding" : "Add"}
+          </button>
+        </form>
 
         {loading ? (
-          <div className="mt-5 flex items-center gap-3 rounded-xl bg-slate-900/70 p-4 text-sm text-slate-400">
-            <LoaderCircle className="h-4 w-4 animate-spin" /> Loading routines...
-          </div>
+          <SkeletonRows rows={2} />
         ) : routines.length === 0 ? (
-          <p className="mt-5 rounded-xl bg-slate-900/70 p-4 text-sm text-slate-400">
+          <EmptyNote>
             No routines yet. Start with one habit you can keep every day.
-          </p>
+          </EmptyNote>
         ) : (
-          <div className="mt-5 divide-y divide-slate-800 overflow-hidden rounded-xl border border-slate-800">
+          <div className="mt-4 border-t border-graphite/25">
             {routines.map((routine) => (
               <RoutineRow
                 key={routine.id}
@@ -322,68 +315,53 @@ export default function DailyTab() {
         )}
       </section>
 
-      <section className="rounded-2xl border border-slate-800 bg-slate-950/55 p-6">
-        <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">
-              Connected from roadmap
-            </p>
-            <h2 className="mt-1 text-xl font-semibold">Focus tasks</h2>
-            <p className="mt-1 text-sm text-slate-400">
-              Roadmap tasks you&apos;ve pulled into your day. They stay here
-              until you complete them.
-            </p>
-          </div>
+      <section className="mt-10">
+        <SectionHead
+          index="02"
+          title="Focus tasks"
+          instruction="Roadmap tasks you've pulled into your day. They stay here until you complete them."
+          aside={`${connected.length} connected`}
+        />
+        <div className="mt-4">
           <button
             type="button"
             onClick={() => setPickerOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg border border-cyan-400/50 px-4 py-2 text-sm font-semibold text-cyan-200 hover:bg-cyan-400/10"
+            className="btn btn-line"
           >
-            <Link2 className="h-4 w-4" /> From roadmap
+            <Link2 className="h-4 w-4" aria-hidden />
+            From roadmap
           </button>
         </div>
 
         {loading ? (
-          <div className="mt-5 flex items-center gap-3 rounded-xl bg-slate-900/70 p-4 text-sm text-slate-400">
-            <LoaderCircle className="h-4 w-4 animate-spin" /> Loading connected
-            tasks...
-          </div>
+          <SkeletonRows rows={2} />
         ) : connected.length === 0 ? (
-          <p className="mt-5 rounded-xl bg-slate-900/70 p-4 text-sm text-slate-400">
+          <EmptyNote>
             Nothing connected. Pick unfinished roadmap tasks to work on here.
-          </p>
+          </EmptyNote>
         ) : (
-          <div className="mt-5 divide-y divide-slate-800 overflow-hidden rounded-xl border border-slate-800">
+          <div className="mt-4 border-t border-graphite/25">
             {connected.map((item) => (
               <div
                 key={item.pinId}
-                className="flex items-center gap-3 px-4 py-3 transition hover:bg-slate-900/70"
+                className="flex items-center gap-3 border-b border-graphite/15 px-1 py-3 last:border-b-0"
               >
-                <button
-                  type="button"
-                  aria-label={`Complete ${item.task.title}`}
-                  disabled={updating === item.task.id}
+                <Bubble
+                  filled={false}
+                  busy={updating === item.task.id}
+                  label={`Complete ${item.task.title}`}
                   onClick={() => completeConnected(item)}
-                  className="shrink-0 text-cyan-300 disabled:opacity-50"
-                >
-                  {updating === item.task.id ? (
-                    <LoaderCircle className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Circle className="h-5 w-5 text-slate-500" />
-                  )}
-                </button>
+                />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-slate-100">
+                  <p className="truncate text-[0.9rem] font-medium leading-6 text-graphite">
                     {item.task.title}
                   </p>
-                  <p className="mt-1 truncate text-xs text-slate-500">
+                  <p className="mt-0.5 truncate font-mono text-[0.65rem] text-graphite-2">
                     {item.task.milestoneTitle ?? item.task.phaseTitle} /{" "}
                     {item.task.topicTitle ?? "General"}
                   </p>
                 </div>
-                <span className="rounded-md bg-slate-800 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-300">
-                  {item.task.priority}
-                </span>
+                <Stamp>{item.task.priority}</Stamp>
               </div>
             ))}
           </div>
@@ -392,62 +370,63 @@ export default function DailyTab() {
 
       {pickerOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b0f18]/50 px-4 py-8 backdrop-blur-md"
           role="dialog"
           aria-modal="true"
           aria-labelledby="roadmap-picker-title"
         >
-          <div className="w-full max-w-2xl rounded-2xl border border-slate-700 bg-slate-950 p-6 shadow-2xl">
-            <div className="mb-5 flex items-start justify-between gap-4">
-              <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">
-                  Connect a task
-                </p>
-                <h2 id="roadmap-picker-title" className="mt-1 text-2xl font-semibold">
-                  Pick from your roadmap
-                </h2>
-              </div>
+          <div className="panel w-full max-w-2xl overflow-hidden p-5 sm:p-6">
+            <div className="flex items-start justify-between gap-4 border-b border-rule pb-4">
+              <h2
+                id="roadmap-picker-title"
+                className="text-[1.15rem] font-semibold tracking-tight text-graphite"
+              >
+                Pick from your roadmap
+              </h2>
               <button
                 type="button"
                 onClick={() => setPickerOpen(false)}
-                className="text-slate-400 hover:text-white"
                 aria-label="Close roadmap picker"
+                className="-mr-1 -mt-1 px-2 py-1 font-mono text-lg leading-none text-graphite-2 hover:text-graphite"
               >
                 ×
               </button>
             </div>
 
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+            <div className="relative mt-4">
+              <Search
+                className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-graphite-3"
+                aria-hidden
+              />
               <input
                 autoFocus
                 value={pickerQuery}
                 onChange={(event) => searchPicker(event.target.value)}
                 placeholder="Search roadmap tasks"
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 py-2.5 pl-10 pr-3 text-sm outline-none focus:border-cyan-400"
+                aria-label="Search roadmap tasks"
+                className="field pl-6"
               />
             </div>
 
             <div className="mt-4 max-h-[50vh] overflow-y-auto">
               {pickerLoading ? (
-                <div className="flex items-center gap-3 rounded-lg border border-slate-800 p-4 text-sm text-slate-400">
-                  <LoaderCircle className="h-4 w-4 animate-spin" /> Searching...
-                </div>
+                <SkeletonRows rows={3} />
               ) : pickerQuery.trim() && pickerResults.length === 0 ? (
-                <p className="rounded-lg border border-slate-800 bg-slate-900/60 p-4 text-sm text-slate-400">
-                  No unfinished tasks match that search.
-                </p>
+                <EmptyNote>No unfinished tasks match that search.</EmptyNote>
               ) : (
-                <div className="divide-y divide-slate-800 overflow-hidden rounded-lg border border-slate-800">
+                <div className="border-t border-graphite/25">
                   {pickerResults.map((task) => {
                     const pinned = pinnedTaskIds.has(task.id);
                     return (
-                      <div key={task.id} className="flex items-center gap-3 px-4 py-3">
+                      <div
+                        key={task.id}
+                        className="flex items-center gap-3 border-b border-graphite/15 px-1 py-3"
+                      >
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-slate-100">
+                          <p className="truncate text-[0.9rem] font-medium text-graphite">
                             {task.title}
                           </p>
-                          <p className="mt-0.5 truncate text-xs text-slate-500">
+                          <p className="mt-0.5 truncate font-mono text-[0.65rem] text-graphite-2">
                             {task.phaseTitle ?? "No phase"} /{" "}
                             {task.topicTitle ?? "No topic"}
                           </p>
@@ -456,7 +435,7 @@ export default function DailyTab() {
                           type="button"
                           disabled={pinned}
                           onClick={() => connectTask(task)}
-                          className="shrink-0 rounded-lg border border-cyan-400/50 px-3 py-1.5 text-xs font-semibold text-cyan-200 hover:bg-cyan-400/10 disabled:border-slate-700 disabled:text-slate-500 disabled:hover:bg-transparent"
+                          className="btn btn-line shrink-0 px-3 py-1.5 text-[0.75rem]"
                         >
                           {pinned ? "Connected" : "Connect"}
                         </button>

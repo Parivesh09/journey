@@ -30,48 +30,64 @@ export default function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#0b1020] px-6 text-slate-100">
-      <form
-        onSubmit={submit}
-        className="w-full max-w-md rounded-2xl border border-slate-800 bg-slate-950/70 p-8"
-      >
-        <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">
-          SDE Command Center
-        </p>
-        <h1 className="mt-3 text-3xl font-semibold">Sign in</h1>
-        <p className="mt-2 text-sm text-slate-400">
+    <main className="flex min-h-screen items-center justify-center px-4 py-10">
+      <form onSubmit={submit} className="sheet w-full max-w-[26rem] px-6 py-8 sm:px-9 sm:py-10">
+        <div className="flex items-center gap-2.5 border-b border-rule pb-5">
+          <span
+            aria-hidden
+            className="grid h-6 w-6 place-items-center rounded-lg bg-amber text-[0.62rem] font-bold text-white"
+          >
+            S
+          </span>
+          <span className="text-[0.8rem] font-semibold tracking-tight text-graphite">
+            SDE Command Center
+          </span>
+        </div>
+
+        <h1 className="mt-6 text-[1.75rem] font-bold leading-tight tracking-tight text-graphite">
+          Sign in
+        </h1>
+        <p className="mt-2 text-[0.8125rem] leading-5 text-graphite-2">
           Your personal SDE workspace is waiting.
         </p>
-        <label className="mt-8 block text-sm text-slate-300">
+
+        <label className="mt-7 block text-[0.72rem] font-semibold text-graphite-2">
           Email
           <input
             type="email"
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3"
+            className="field mt-1 normal-case tracking-normal"
           />
         </label>
-        <label className="mt-4 block text-sm text-slate-300">
+        <label className="mt-5 block text-[0.72rem] font-semibold text-graphite-2">
           Password
           <input
             type="password"
             required
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-3"
+            className="field mt-1 normal-case tracking-normal"
           />
         </label>
-        {error ? <p className="mt-4 text-sm text-rose-300">{error}</p> : null}
-        <button
-          disabled={loading}
-          className="mt-6 w-full rounded-lg bg-cyan-400 px-4 py-3 font-semibold text-slate-950 disabled:opacity-50"
-        >
-          {loading ? "Signing in..." : "Sign in"}
+
+        {error ? (
+          <p className="mt-4 text-[0.78rem] font-medium text-stamp" role="alert">
+            {error}
+          </p>
+        ) : null}
+
+        <button disabled={loading} className="btn btn-mark mt-6 w-full py-3">
+          {loading ? "Signing in" : "Sign in"}
         </button>
-        <p className="mt-6 text-center text-sm text-slate-400">
+
+        <p className="mt-6 border-t border-rule pt-4 text-center text-[0.8125rem] text-graphite-2">
           New here?{" "}
-          <Link href="/signup" className="text-cyan-300 hover:text-cyan-100">
+          <Link
+            href="/signup"
+            className="font-semibold text-amber-ink hover:underline hover:underline-offset-4"
+          >
             Create an account
           </Link>
         </p>

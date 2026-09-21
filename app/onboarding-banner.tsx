@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Bell } from "lucide-react";
+import { BellRing } from "lucide-react";
+import { Stamp } from "@/app/components/ui";
 
 export default function OnboardingBanner({ show }: { show: boolean }) {
   const router = useRouter();
@@ -10,51 +11,52 @@ export default function OnboardingBanner({ show }: { show: boolean }) {
 
   if (!visible) return null;
 
-  async function dismiss(goToSettings = false) {
+  async function dismiss(goToSettings = false, enrollRoadmapRoute?: string) {
     try {
       await fetch("/api/settings/dismiss-onboarding", { method: "POST" });
     } finally {
       setVisible(false);
-      if (goToSettings) router.push("/settings");
+      if (enrollRoadmapRoute) router.push(enrollRoadmapRoute);
+      else if (goToSettings) router.push("/settings");
       router.refresh();
     }
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-6 z-50 mx-auto max-w-md px-4">
-      <div className="rounded-2xl border border-slate-700 bg-slate-950/95 p-5 shadow-[0_24px_80px_rgba(2,6,23,0.6)]">
-        <div className="flex items-start gap-4">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-400/15 text-cyan-200">
-            <Bell className="h-5 w-5" />
-          </div>
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300">
-              Stay on track
-            </p>
-            <h2 className="mt-1 text-lg font-semibold">
-              Want reminders for your SDE preparation?
-            </h2>
-            <p className="mt-1 text-sm leading-6 text-slate-400">
-              You can receive reminders about your daily SDE tasks. Configure
-              email, browser, SMS and other channels from Settings.
-              Nothing is enabled until you choose it.
+    <div className="fixed inset-x-0 bottom-4 z-50 mx-auto max-w-lg px-4">
+      <div className="sheet p-4 sm:p-5">
+        <div className="flex items-start gap-3">
+          <BellRing
+            className="mt-0.5 h-4 w-4 shrink-0 text-amber-ink"
+            aria-hidden
+          />
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <h2 className="text-[0.95rem] font-semibold tracking-tight text-graphite">
+                Nothing on today&rsquo;s list yet
+              </h2>
+              <Stamp tone="amber">Get started</Stamp>
+            </div>
+            <p className="mt-1.5 text-[0.8125rem] leading-5 text-graphite-2">
+              Enroll a roadmap to populate your daily tasks, or set up
+              reminders from Settings. Nothing appears until you do.
             </p>
           </div>
         </div>
-        <div className="mt-4 flex gap-3">
+        <div className="mt-4 flex gap-2">
           <button
             type="button"
-            onClick={() => void dismiss(true)}
-            className="flex-1 rounded-lg bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-300"
+            onClick={() => void dismiss(false, "/roadmaps")}
+            className="btn btn-mark flex-1"
           >
-            Set Up Notifications
+            Enroll a roadmap
           </button>
           <button
             type="button"
-            onClick={() => void dismiss(false)}
-            className="flex-1 rounded-lg border border-slate-700 px-4 py-2.5 text-sm text-slate-300 transition hover:border-slate-500"
+            onClick={() => void dismiss(true)}
+            className="btn btn-line flex-1"
           >
-            Maybe Later
+            Set up notifications
           </button>
         </div>
       </div>

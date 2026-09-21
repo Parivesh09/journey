@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Circle, LoaderCircle } from "lucide-react";
+import { Bubble, EmptyNote, Stamp } from "@/app/components/ui";
 
 export type DashboardTaskRow = {
   id: string;
@@ -65,59 +65,64 @@ export default function DashboardTaskList({
 
   if (items.length === 0) {
     return (
-      <p className="mt-5 rounded-xl bg-slate-900/70 p-4 text-sm text-slate-400">
-        Nothing on today&apos;s list. Add a routine or connect a roadmap task.
-      </p>
+      <EmptyNote>
+        Nothing on today&rsquo;s list. Add a routine or connect a roadmap task.
+      </EmptyNote>
     );
   }
 
   return (
-    <div className="mt-5">
-      {error ? <p className="mb-3 text-sm text-rose-300">{error}</p> : null}
-      <div className="divide-y divide-slate-800 overflow-hidden rounded-xl border border-slate-800 bg-slate-950/40">
-        {items.map((row) => (
-          <div
-            key={`${row.kind}-${row.id}`}
-            className="flex items-center gap-3 px-4 py-3 transition hover:bg-slate-900/70"
-          >
-            <button
-              type="button"
-              aria-label={row.done ? "Mark incomplete" : "Mark complete"}
-              disabled={updatingId === row.id}
-              onClick={() => toggleTask(row)}
-              className="shrink-0 text-cyan-300 disabled:opacity-50"
+    <div className="mt-4">
+      {error ? (
+        <p className="mb-3 text-[0.75rem] font-medium text-stamp" role="alert">
+          {error}
+        </p>
+      ) : null}
+      <div className="border-t border-graphite/25">
+        {items.map((row, index) => {
+          const busy = updatingId === row.id;
+          const urgent = ["HIGH", "CRITICAL"].includes(row.priority);
+          return (
+            <div
+              key={`${row.kind}-${row.id}`}
+              className="relative border-b border-graphite/15"
             >
-              {updatingId === row.id ? (
-                <LoaderCircle className="h-5 w-5 animate-spin" />
-              ) : row.done ? (
-                <CheckCircle2 className="h-5 w-5 text-emerald-400" />
-              ) : (
-                <Circle className="h-5 w-5 text-slate-500" />
-              )}
-            </button>
-            <div className="min-w-0 flex-1">
-              <p
-                className={
-                  row.done
-                    ? "truncate text-slate-500 line-through"
-                    : "truncate font-medium text-slate-100"
-                }
-              >
-                {row.title}
-              </p>
-              <p className="mt-1 text-xs text-slate-400">
-                {row.dailySlot?.replaceAll("_", " ") ??
-                  row.category?.name ??
-                  "Scheduled"}{" "}
-                · {row.plannedMinutes ?? row.estimatedMinutes ?? 60}m
-                {row.kind === "connected" ? " · connected to roadmap" : ""}
-              </p>
+              <span className="hl" data-on={row.done} aria-hidden />
+              <div className="relative z-10 flex items-center gap-3 px-1 py-3">
+                <span className="w-6 shrink-0 font-mono text-[0.68rem] tabular-nums text-graphite-3">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <Bubble
+                  filled={row.done}
+                  busy={busy}
+                  label={row.done ? "Mark incomplete" : "Mark complete"}
+                  onClick={() => toggleTask(row)}
+                />
+                <div className="min-w-0 flex-1">
+                  <p
+                    className={
+                      row.done
+                        ? "truncate text-[0.9rem] leading-6 text-graphite-2 line-through decoration-graphite/50"
+                        : "truncate text-[0.9rem] font-medium leading-6 text-graphite"
+                    }
+                  >
+                    {row.title}
+                  </p>
+                  <p className="mt-0.5 truncate text-[0.7rem] text-graphite-2">
+                    {row.dailySlot?.replaceAll("_", " ") ??
+                      row.category?.name ??
+                      "Scheduled"}{" "}
+                    · {row.plannedMinutes ?? row.estimatedMinutes ?? 60}m
+                    {row.kind === "connected" ? " · connected" : ""}
+                  </p>
+                </div>
+                <Stamp tone={urgent ? "stamp" : "neutral"}>
+                  {row.priority}
+                </Stamp>
+              </div>
             </div>
-            <span className="rounded-md bg-slate-800 px-2 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-300">
-              {row.priority}
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

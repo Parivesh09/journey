@@ -2,10 +2,14 @@
 
 import { useState } from "react";
 import { LogOut } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
 
-export default function LogoutButton() {
-  const pathname = usePathname();
+export default function LogoutButton({
+  variant = "spine",
+}: {
+  variant?: "spine";
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -24,20 +28,22 @@ export default function LogoutButton() {
     }
   }
 
-  if (pathname === "/login") return null;
-
   return (
-    <div className="fixed right-4 top-4 z-40 text-right">
+    <div className={cn(variant === "spine" && "text-left")}>
       <button
         type="button"
         onClick={logout}
         disabled={loading}
-        className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-950/90 px-3 py-2 text-sm text-slate-300 shadow-lg transition hover:border-slate-500 hover:text-white disabled:opacity-50"
+        className="btn btn-line-ink w-full px-3 py-2 text-[0.8125rem] font-medium"
       >
-        <LogOut className="h-4 w-4" />
-        {loading ? "Signing out..." : "Log out"}
+        <LogOut className="h-3.5 w-3.5" aria-hidden />
+        {loading ? "Signing out" : "Log out"}
       </button>
-      {error ? <p className="mt-2 text-xs text-rose-300">{error}</p> : null}
+      {error ? (
+        <p className="mt-2 text-[0.72rem] font-medium text-stamp-on-ink" role="alert">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }

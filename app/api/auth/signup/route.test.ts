@@ -67,7 +67,7 @@ describe("POST /api/auth/signup", () => {
     expect(prisma.user.create).not.toHaveBeenCalled();
   });
 
-  it("hashes the password and provisions the roadmap", async () => {
+  it("hashes the password and creates the account without provisioning a roadmap", async () => {
     const response = await post({
       name: "Alice",
       email: "alice@example.com",
@@ -87,7 +87,7 @@ describe("POST /api/auth/signup", () => {
     expect(prisma.notificationPreference.create).toHaveBeenCalledWith(
       expect.objectContaining({ data: { userId: "new-user" } }),
     );
-    expect(provisionRoadmapForUser).toHaveBeenCalledWith("new-user");
+    expect(provisionRoadmapForUser).not.toHaveBeenCalled();
   });
 
   it("defaults an invalid timezone to UTC", async () => {

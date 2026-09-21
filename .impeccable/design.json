@@ -1,0 +1,507 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-21T12:29:30.641Z",
+  "title": "Design System: SDE Command Center",
+  "extensions": {
+    "colorMeta": {
+      "ink-ground": {
+        "role": "neutral",
+        "displayName": "Ink Ground",
+        "canonical": "oklch(15.4% 0.009 264.3)",
+        "tonalRamp": [
+          "#090b0f",
+          "#222429",
+          "#3d4045",
+          "#5b5e63",
+          "#7a7d83",
+          "#9b9ea4",
+          "#bec1c7",
+          "#e1e5eb"
+        ]
+      },
+      "ink-raised": {
+        "role": "neutral",
+        "displayName": "Ink Raised",
+        "canonical": "oklch(19.0% 0.016 261.6)",
+        "tonalRamp": [
+          "#080b12",
+          "#20242c",
+          "#3b4048",
+          "#595e67",
+          "#787e87",
+          "#999fa8",
+          "#bbc1cb",
+          "#dfe5ef"
+        ]
+      },
+      "ink-panel": {
+        "role": "neutral",
+        "displayName": "Ink Panel",
+        "canonical": "oklch(22.5% 0.020 258.3)",
+        "tonalRamp": [
+          "#060b13",
+          "#1e242e",
+          "#39404a",
+          "#575e69",
+          "#767e89",
+          "#979fab",
+          "#b9c2ce",
+          "#dde5f2"
+        ]
+      },
+      "hairline": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "oklch(28.3% 0.023 259.4)",
+        "tonalRamp": [
+          "#060b15",
+          "#1e242f",
+          "#39404c",
+          "#565e6b",
+          "#757e8b",
+          "#969fad",
+          "#b8c2d0",
+          "#dce5f4"
+        ]
+      },
+      "hairline-strong": {
+        "role": "neutral",
+        "displayName": "Hairline Strong",
+        "canonical": "oklch(35.3% 0.026 257.5)",
+        "tonalRamp": [
+          "#050b16",
+          "#1c2531",
+          "#37404e",
+          "#555e6c",
+          "#747e8d",
+          "#959faf",
+          "#b7c2d2",
+          "#dae6f6"
+        ]
+      },
+      "bone": {
+        "role": "neutral",
+        "displayName": "Bone",
+        "canonical": "oklch(88.0% 0.023 87.2)",
+        "tonalRamp": [
+          "#0f0a02",
+          "#292317",
+          "#453f32",
+          "#635d4f",
+          "#837d6e",
+          "#a49e8f",
+          "#c7c0b1",
+          "#ebe4d4"
+        ]
+      },
+      "bone-muted": {
+        "role": "neutral",
+        "displayName": "Bone Muted",
+        "canonical": "oklch(71.1% 0.026 85.8)",
+        "tonalRamp": [
+          "#100a01",
+          "#2a2315",
+          "#463f30",
+          "#645d4d",
+          "#847c6c",
+          "#a69e8d",
+          "#c8c0af",
+          "#ece4d2"
+        ]
+      },
+      "bone-faint": {
+        "role": "neutral",
+        "displayName": "Bone Faint",
+        "canonical": "oklch(61.2% 0.029 87.9)",
+        "tonalRamp": [
+          "#100a00",
+          "#2a2313",
+          "#463f2e",
+          "#655d4b",
+          "#857d6a",
+          "#a69e8a",
+          "#c9c0ac",
+          "#ede4cf"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "oklch(90.9% 0.037 86.2)",
+        "tonalRamp": [
+          "#110a00",
+          "#2c230e",
+          "#483f29",
+          "#675c46",
+          "#877c64",
+          "#a99d85",
+          "#cbc0a6",
+          "#efe3c9"
+        ]
+      },
+      "paper-shade": {
+        "role": "neutral",
+        "displayName": "Paper Shade",
+        "canonical": "oklch(86.6% 0.048 88.3)",
+        "tonalRamp": [
+          "#110a00",
+          "#2e2204",
+          "#4a3e21",
+          "#695c3e",
+          "#897c5d",
+          "#ab9d7d",
+          "#cec09e",
+          "#f2e4c1"
+        ]
+      },
+      "graphite": {
+        "role": "neutral",
+        "displayName": "Graphite",
+        "canonical": "oklch(25.9% 0.023 84.3)",
+        "tonalRamp": [
+          "#100a02",
+          "#292317",
+          "#453f32",
+          "#645d4f",
+          "#847c6e",
+          "#a59e8f",
+          "#c8c0b1",
+          "#ece4d4"
+        ]
+      },
+      "graphite-muted": {
+        "role": "neutral",
+        "displayName": "Graphite Muted",
+        "canonical": "oklch(45.3% 0.035 85.4)",
+        "tonalRamp": [
+          "#110a00",
+          "#2c230f",
+          "#483f2a",
+          "#675c47",
+          "#877c66",
+          "#a89d86",
+          "#cbc0a8",
+          "#efe3cb"
+        ]
+      },
+      "graphite-faint": {
+        "role": "neutral",
+        "displayName": "Graphite Faint",
+        "canonical": "oklch(49.3% 0.040 87.0)",
+        "tonalRamp": [
+          "#110a00",
+          "#2c230b",
+          "#493e27",
+          "#675c44",
+          "#887c62",
+          "#a99d82",
+          "#ccc0a4",
+          "#f0e3c7"
+        ]
+      },
+      "highlighter-amber": {
+        "role": "primary",
+        "displayName": "Highlighter Amber",
+        "canonical": "oklch(73.0% 0.140 76.3)",
+        "tonalRamp": [
+          "#130900",
+          "#332000",
+          "#563903",
+          "#7d5402",
+          "#a67207",
+          "#cf911c",
+          "#f4b44b",
+          "#ffdfb2"
+        ]
+      },
+      "amber-light": {
+        "role": "primary",
+        "displayName": "Amber Light",
+        "canonical": "oklch(85.7% 0.106 82.8)",
+        "tonalRamp": [
+          "#120a00",
+          "#312100",
+          "#533b00",
+          "#785702",
+          "#9c7726",
+          "#be984b",
+          "#e2bb6e",
+          "#ffe0a8"
+        ]
+      },
+      "amber-ink": {
+        "role": "primary",
+        "displayName": "Amber Ink",
+        "canonical": "oklch(47.0% 0.096 70.8)",
+        "tonalRamp": [
+          "#130800",
+          "#351e00",
+          "#5a3700",
+          "#7f5312",
+          "#a17337",
+          "#c49459",
+          "#e8b77b",
+          "#ffdfba"
+        ]
+      },
+      "stamp-red": {
+        "role": "secondary",
+        "displayName": "Stamp Red",
+        "canonical": "oklch(49.4% 0.156 29.5)",
+        "tonalRamp": [
+          "#1f0000",
+          "#4b0000",
+          "#7c0200",
+          "#a32d22",
+          "#c95142",
+          "#f07463",
+          "#fea799",
+          "#fedbd5"
+        ]
+      },
+      "stamp-on-ink": {
+        "role": "secondary",
+        "displayName": "Stamp on Ink",
+        "canonical": "oklch(66.3% 0.151 29.5)",
+        "tonalRamp": [
+          "#1f0000",
+          "#4b0100",
+          "#7c0200",
+          "#a13025",
+          "#c75345",
+          "#ed7665",
+          "#fea798",
+          "#ffdbd5"
+        ]
+      },
+      "valid-green": {
+        "role": "secondary",
+        "displayName": "Valid Green",
+        "canonical": "oklch(47.9% 0.078 161.1)",
+        "tonalRamp": [
+          "#000f07",
+          "#002c1b",
+          "#084c32",
+          "#2f6b4f",
+          "#508c6e",
+          "#71ae8f",
+          "#94d1b1",
+          "#b7f5d4"
+        ]
+      },
+      "valid-on-ink": {
+        "role": "secondary",
+        "displayName": "Valid on Ink",
+        "canonical": "oklch(74.1% 0.102 159.1)",
+        "tonalRamp": [
+          "#000f06",
+          "#002c19",
+          "#034d2f",
+          "#166f48",
+          "#3f9067",
+          "#62b287",
+          "#85d5a9",
+          "#a8facc"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Sheet mastheads only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Numbered section titles and milestone names."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "All read-at-length copy, max ~68ch."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Printed field labels and section indices."
+      },
+      "data": {
+        "displayName": "Data",
+        "purpose": "Figures, times, breadcrumbs and identifiers in tabular mono."
+      }
+    },
+    "shadows": [
+      {
+        "name": "sheet-lift",
+        "value": "inset 0 1px 0 rgba(255,255,255,0.7), inset 0 -1px 0 rgba(90,70,25,0.18), 0 1px 0 rgba(0,0,0,0.5), 0 26px 60px -30px rgba(0,0,0,0.95)",
+        "purpose": "The single elevation event: a paper sheet lifted off the ink."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.23, 1, 0.32, 1)",
+        "purpose": "Default brisk ease-out for state transitions."
+      },
+      {
+        "name": "ease-in-out",
+        "value": "cubic-bezier(0.77, 0, 0.175, 1)",
+        "purpose": "Symmetric ease for transformative moves."
+      },
+      {
+        "name": "bubble-strike",
+        "value": "460ms",
+        "purpose": "One-beat amber afterglow when a bubble is filled."
+      },
+      {
+        "name": "highlighter-swipe",
+        "value": "240ms",
+        "purpose": "Scale-from-left highlighter crossing a row on completion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Committed ink action on a paper sheet. Active scales, never lifts.",
+      "html": "<button class=\"ds-btn-mark\">Manage tasks</button>",
+      "css": ".ds-btn-mark{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;background:var(--color-graphite);color:var(--color-paper);border:0;border-radius:2px;padding:0.55rem 0.9rem;font:600 0.875rem/1.2 Archivo,ui-sans-serif,system-ui,sans-serif;letter-spacing:-0.005em;cursor:pointer;transition:transform 140ms cubic-bezier(0.23,1,0.32,1),background-color 140ms cubic-bezier(0.23,1,0.32,1)}.ds-btn-mark:hover{background:#171308}.ds-btn-mark:active{transform:scale(0.97)}.ds-btn-mark:disabled{opacity:0.45;cursor:not-allowed}"
+    },
+    {
+      "name": "Primary Button on Ink",
+      "kind": "button",
+      "refersTo": "button-on-ink",
+      "description": "The accent action for the dark room (auth cover, spine).",
+      "html": "<button class=\"ds-btn-on-ink\">Sign in</button>",
+      "css": ".ds-btn-on-ink{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;background:var(--color-amber);color:#1b1405;border:0;border-radius:2px;padding:0.55rem 0.9rem;font:600 0.875rem/1.2 Archivo,ui-sans-serif,system-ui,sans-serif;cursor:pointer;transition:transform 140ms cubic-bezier(0.23,1,0.32,1),background-color 140ms cubic-bezier(0.23,1,0.32,1)}.ds-btn-on-ink:hover{background:var(--color-amber-2)}.ds-btn-on-ink:active{transform:scale(0.97)}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Outlined ink action; the inset outline solidifies on hover.",
+      "html": "<button class=\"ds-btn-line\">From roadmap</button>",
+      "css": ".ds-btn-line{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;background:transparent;color:var(--color-graphite);border:0;border-radius:2px;padding:0.55rem 0.9rem;font:600 0.875rem/1.2 Archivo,ui-sans-serif,system-ui,sans-serif;cursor:pointer;box-shadow:inset 0 0 0 1.5px color-mix(in oklab,var(--color-graphite) 40%,transparent);transition:box-shadow 140ms cubic-bezier(0.23,1,0.32,1),transform 140ms cubic-bezier(0.23,1,0.32,1)}.ds-btn-line:hover{box-shadow:inset 0 0 0 1.5px var(--color-graphite)}.ds-btn-line:active{transform:scale(0.97)}"
+    },
+    {
+      "name": "Rule Text Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Underlined form field on paper. Focus darkens the rule to amber ink.",
+      "html": "<label class=\"ds-field-label\">Minutes studied<input class=\"ds-field\" type=\"number\" placeholder=\"0\"/></label>",
+      "css": ".ds-field-label{display:block;font:600 0.68rem/1.1 Archivo,ui-sans-serif,system-ui,sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:var(--color-graphite-2)}.ds-field{display:block;width:100%;margin-top:0.25rem;background:transparent;border:0;border-bottom:1.5px solid color-mix(in oklab,var(--color-graphite) 30%,transparent);border-radius:0;padding:0.5rem 0.1rem;color:var(--color-graphite);font:400 0.9375rem/1.4 Archivo,ui-sans-serif,system-ui,sans-serif;caret-color:var(--color-amber);transition:border-color 160ms cubic-bezier(0.23,1,0.32,1)}.ds-field::placeholder{color:var(--color-graphite-3)}.ds-field:hover{border-bottom-color:color-mix(in oklab,var(--color-graphite) 55%,transparent)}.ds-field:focus{outline:none;border-bottom-color:var(--color-amber-ink);box-shadow:0 1.5px 0 0 var(--color-amber-ink)}"
+    },
+    {
+      "name": "Stamp",
+      "kind": "chip",
+      "refersTo": "tab",
+      "description": "Rubber-stamp tag for state and priority. Outline in currentColor.",
+      "html": "<span class=\"ds-stamp ds-stamp--amber\">Next up</span> <span class=\"ds-stamp ds-stamp--stamp\">Note</span> <span class=\"ds-stamp ds-stamp--valid\">Done</span>",
+      "css": ".ds-stamp{display:inline-flex;align-items:center;gap:0.3rem;padding:0.14rem 0.42rem;font:600 0.625rem/1.3 \"Roboto Mono\",ui-monospace,monospace;letter-spacing:0.08em;text-transform:uppercase;border-radius:1px;border:1.25px solid currentColor;white-space:nowrap;color:var(--color-graphite-2)}.ds-stamp--amber{color:var(--color-amber-ink)}.ds-stamp--stamp{color:var(--color-stamp)}.ds-stamp--valid{color:var(--color-valid)}"
+    },
+    {
+      "name": "Sheet",
+      "kind": "card",
+      "refersTo": "sheet",
+      "description": "The only container in the system: one warm page lifted off the ink room.",
+      "html": "<div class=\"ds-sheet\"><h2 class=\"ds-sheet-title\">Today’s response sheet</h2><p class=\"ds-sheet-body\">Fill the sheet one line at a time.</p></div>",
+      "css": ".ds-sheet{position:relative;background-color:var(--color-paper);background-image:linear-gradient(180deg,rgba(255,255,255,0.55),rgba(120,96,40,0.06) 55%,rgba(90,70,25,0.12));color:var(--color-graphite);border-radius:3px;padding:1.75rem 2rem;box-shadow:inset 0 1px 0 rgba(255,255,255,0.7),inset 0 -1px 0 rgba(90,70,25,0.18),0 1px 0 rgba(0,0,0,0.5),0 26px 60px -30px rgba(0,0,0,0.95)}.ds-sheet-title{margin:0;font:700 1.9rem/1 Archivo,ui-sans-serif,system-ui,sans-serif;letter-spacing:-0.015em;border-bottom:2px solid color-mix(in oklab,var(--color-graphite) 75%,transparent);padding-bottom:0.75rem}.ds-sheet-body{margin:0.75rem 0 0;font:400 0.8125rem/1.5 Archivo,ui-sans-serif,system-ui,sans-serif;color:var(--color-graphite-2)}"
+    },
+    {
+      "name": "Spine Nav",
+      "kind": "nav",
+      "refersTo": "tab",
+      "description": "Numbered section index in the dark room; active item is ink-panel with an amber index and dot.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item\" href=\"#\">01 Dashboard</a><a class=\"ds-nav-item ds-nav-item--active\" href=\"#\" aria-current=\"page\">02 Tasks</a><a class=\"ds-nav-item\" href=\"#\">03 DSA</a></nav>",
+      "css": ".ds-nav{display:flex;flex-direction:column;gap:2px;background:var(--color-ink);padding:0.25rem;width:15rem}.ds-nav-item{display:flex;align-items:center;gap:0.75rem;border-radius:2px;padding:0.5rem 0.75rem;font:400 0.875rem/1.4 Archivo,ui-sans-serif,system-ui,sans-serif;color:var(--color-bone-2);text-decoration:none;transition:background-color 150ms cubic-bezier(0.23,1,0.32,1),color 150ms cubic-bezier(0.23,1,0.32,1)}.ds-nav-item:hover{background:var(--color-ink-2);color:var(--color-bone)}.ds-nav-item--active{background:var(--color-ink-3);color:var(--color-bone);font-weight:600}"
+    },
+    {
+      "name": "Tabs",
+      "kind": "nav",
+      "refersTo": "tab",
+      "description": "Booklet index tabs; selection is an inset amber underline on the masthead rule.",
+      "html": "<div class=\"ds-tablist\" role=\"tablist\"><button class=\"ds-tab\" role=\"tab\" aria-selected=\"true\">Daily</button><button class=\"ds-tab\" role=\"tab\" aria-selected=\"false\">Roadmap</button></div>",
+      "css": ".ds-tablist{display:flex;gap:0.25rem;border-bottom:1px solid color-mix(in oklab,var(--color-graphite) 25%,transparent)}.ds-tab{position:relative;display:inline-flex;align-items:center;gap:0.45rem;padding:0.5rem 0.85rem 0.65rem;border:0;background:transparent;font:600 0.875rem/1.4 Archivo,ui-sans-serif,system-ui,sans-serif;color:var(--color-graphite-2);cursor:pointer;transition:color 140ms cubic-bezier(0.23,1,0.32,1)}.ds-tab:hover{color:var(--color-graphite)}.ds-tab[aria-selected=\"true\"]{color:var(--color-graphite)}.ds-tab[aria-selected=\"true\"]::after{content:\"\";position:absolute;left:0.35rem;right:0.35rem;bottom:0.3rem;height:3px;background:var(--color-amber-ink)}"
+    },
+    {
+      "name": "Bubble",
+      "kind": "custom",
+      "refersTo": "bubble",
+      "description": "OMR mark control. Filled state commits instantly with a one-beat amber afterglow; the companion highlighter swipes the row.",
+      "html": "<button class=\"ds-bubble\" role=\"checkbox\" aria-checked=\"true\" aria-label=\"Mark complete\"></button><style>@keyframes ds-bubble-strike{0%{box-shadow:0 0 0 0 color-mix(in oklab,var(--color-amber) 85%,transparent)}100%{box-shadow:0 0 0 0.5rem transparent}}</style>",
+      "css": ".ds-bubble{display:inline-flex;align-items:center;justify-content:center;width:1.15rem;height:1.15rem;flex:none;border:1.5px solid color-mix(in oklab,var(--color-graphite) 45%,transparent);border-radius:999px;background:var(--color-graphite);border-color:var(--color-graphite);cursor:pointer;animation:ds-bubble-strike 460ms cubic-bezier(0.23,1,0.32,1)}.ds-bubble::after{content:\"\";width:0.28rem;height:0.28rem;border-radius:999px;background:var(--color-paper)}"
+    },
+    {
+      "name": "Section Head",
+      "kind": "custom",
+      "refersTo": "headline",
+      "description": "Printed numbered section header with a rule that stretches to the right, plus an optional instruction line.",
+      "html": "<header class=\"ds-sechead\"><span class=\"ds-sechead-index\">02</span><h2 class=\"ds-sechead-title\">Completion</h2><span class=\"ds-sechead-rule\"></span><span class=\"ds-sechead-aside\">72%</span></header><p class=\"ds-sechead-note\">A single glance at what moved forward today.</p>",
+      "css": ".ds-sechead{display:flex;align-items:baseline;gap:0.75rem}.ds-sechead-index{font:600 0.7rem/1 \"Roboto Mono\",ui-monospace,monospace;color:var(--color-amber-ink)}.ds-sechead-title{margin:0;font:600 1.0625rem/1.2 Archivo,ui-sans-serif,system-ui,sans-serif;letter-spacing:-0.01em;color:var(--color-graphite)}.ds-sechead-rule{height:1px;flex:1;background:color-mix(in oklab,var(--color-graphite) 25%,transparent)}.ds-sechead-aside{font:400 0.7rem/1 \"Roboto Mono\",ui-monospace,monospace;color:var(--color-graphite-2)}.ds-sechead-note{margin:0.5rem 0 0;max-width:68ch;font:400 0.8125rem/1.5 Archivo,ui-sans-serif,system-ui,sans-serif;color:var(--color-graphite-2)}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Lamp-Lit Response Sheet",
+    "overview": "The product is a person at a desk after dark, filling in an OMR practice booklet by lamp light. The room recedes into ink; the page in front of them is warm, ruled, and finite. Every screen is a sheet of paper on that desk, and every record is a line on the sheet: a numbered row, a bubble to fill, a printed section header with a rule under it, a margin note in graphite.\n\nThe system is deliberately un-digital. It rejects the growth-dashboard conventions: no gradients, no glass, no soft corner radii, no colored side borders, no accent eyebrow above every heading. Hierarchy comes from print grammar — masthead, numbered sections, hairlines, highlighter marks, rubber stamps. State changes are committed like ink: a bubble fills instantly, a highlighter swipe crosses the row once, and the page stays still.",
+    "keyCharacteristics": [
+      "Two materials only: ink room and paper sheet.",
+      "Hairline rules and printed section headers, never cards floating on a gradient.",
+      "A single highlighter accent (#d99a2b) plus two stamps (red, green).",
+      "Archivo for voice, Roboto Mono for data.",
+      "Motion is reserved for marking a line done; everything else is instant."
+    ],
+    "rules": [
+      {
+        "name": "The One Register Rule",
+        "body": "Text is bone on ink or graphite on paper. Never invert a single word inside a sentence for emphasis — use weight, not color.",
+        "section": "colors"
+      },
+      {
+        "name": "The Rationed Highlighter Rule",
+        "body": "The highlighter is the highest-value ink on the page. It appears on the current item, the current day, and the mark of completion. If two things on a screen both want it, one of them is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Figures Rule",
+        "body": "Any number that appears in a column, a count, or a progress readout uses Roboto Mono with tabular numerals. Proportional figures in a table are a defect.",
+        "section": "typography"
+      },
+      {
+        "name": "The Label-Not-Eyebrow Rule",
+        "body": "Uppercase tracked labels belong to form fields and section indices, sitting beside or above their own value. A tracked accent line above a heading, used as decoration, is prohibited.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Ink, Lit Paper Rule",
+        "body": "There is one elevation event: a sheet lifted off the ink. Everything else is flat, and depth is the material change. Shadows always carry an offset and a blur.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep one sheet per screen and separate sections with hairlines and numbered headers.",
+      "Do route every figure, count, date and identifier through Roboto Mono with tabular numerals.",
+      "Do commit state changes instantly and reserve motion for the mark of completion.",
+      "Do theme browser surfaces: amber selection, amber caret, amber focus ring, thin ink scrollbars."
+    ],
+    "donts": [
+      "Don’t use gradients, glass, backdrop blur or colored glows as decoration.",
+      "Don’t use rounded-xl/2xl cards, pill buttons, or shadows without an offset and blur.",
+      "Don’t put a tracked accent eyebrow above a heading.",
+      "Don’t use colored left borders to signal state — use a stamp, a rule, or a filled bubble.",
+      "Don’t mix a cool gray, cyan or violet accent into the warm ink-and-paper palette."
+    ]
+  }
+}

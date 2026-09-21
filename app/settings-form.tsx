@@ -1,8 +1,8 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { LoaderCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { SectionHead, SkeletonRows } from "@/app/components/ui";
 
 type NotificationSettings = {
   browserEnabled: boolean;
@@ -69,7 +69,41 @@ const timezones = (() => {
   }
 })();
 
+const labelClass =
+  "block text-[0.72rem] font-semibold text-graphite-2";
+
+function ToggleRow({
+  label,
+  checked,
+  onChange,
+  disabled,
+  children,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled?: boolean;
+  children?: React.ReactNode;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-4 border-b border-graphite/15 py-3">
+      <span className="text-[0.875rem] text-graphite">{label}</span>
+      <span className="flex shrink-0 items-center gap-3">
+        {children}
+        <input
+          type="checkbox"
+          checked={checked}
+          disabled={disabled}
+          onChange={(event) => onChange(event.target.checked)}
+          className="h-4 w-4 accent-amber-ink"
+        />
+      </span>
+    </label>
+  );
+}
+
 export default function SettingsForm() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState("");
   const [message, setMessage] = useState("");
@@ -186,6 +220,7 @@ export default function SettingsForm() {
     setMessage("Account settings saved.");
     setSaving("");
     await load();
+    router.refresh();
   }
 
   async function saveNotifications() {
@@ -235,53 +270,47 @@ export default function SettingsForm() {
   );
 
   if (loading) {
-    return (
-      <div className="mx-auto flex max-w-3xl items-center gap-3 py-16 text-slate-400">
-        <LoaderCircle className="h-5 w-5 animate-spin" /> Loading settings...
-      </div>
-    );
+    return <SkeletonRows rows={6} />;
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <Link href="/" className="text-sm text-slate-400 hover:text-white">
-        Back to dashboard
-      </Link>
-      <h1 className="mt-8 text-3xl font-semibold">Settings</h1>
-      <p className="mt-2 text-slate-400">
-        Account details, notification channels, and reminder preferences for
-        your workspace.
-      </p>
-
+    <div className="space-y-10">
       {message ? (
-        <p className="mt-6 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-200">
+        <p
+          className="rounded-xl border border-valid/30 bg-valid/[0.05] px-3 py-2.5 text-[0.78rem] font-medium text-valid"
+          role="status"
+        >
           {message}
         </p>
       ) : null}
       {error ? (
-        <p className="mt-6 rounded-lg border border-rose-500/30 bg-rose-500/10 p-3 text-sm text-rose-200">
+        <p
+          className="rounded-xl border border-stamp/30 bg-stamp/[0.05] px-3 py-2.5 text-[0.78rem] font-medium text-stamp"
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
 
-      <form onSubmit={saveAccount} className="mt-8 space-y-6">
-        <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-300">
-            Account
-          </h2>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <label className="block text-sm text-slate-300">
+      <form onSubmit={saveAccount}>
+        <section>
+          <SectionHead
+            index="01"
+            title="Account"
+            instruction="Your identity, sign-in email, and password."
+          />
+          <div className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2">
+            <label className={labelClass}>
               Name
               <input
                 value={user?.name ?? ""}
                 onChange={(event) =>
-                  user &&
-                  setUser({ ...user, name: event.target.value })
+                  user && setUser({ ...user, name: event.target.value })
                 }
-                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5"
+                className="field mt-1 normal-case tracking-normal"
               />
             </label>
-            <label className="block text-sm text-slate-300">
+            <label className={labelClass}>
               Email
               <input
                 type="email"
@@ -289,13 +318,15 @@ export default function SettingsForm() {
                 onChange={(event) =>
                   user && setUser({ ...user, email: event.target.value })
                 }
-                className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5"
+                className="field mt-1 normal-case tracking-normal"
               />
             </label>
           </div>
-          <div className="mt-4 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
-            <p className="text-sm text-slate-300">Change password</p>
-            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+          <div className="mt-5 rounded-xl border border-rule bg-paper/50 p-4">
+            <p className="text-[0.72rem] font-semibold text-graphite-2">
+              Change password
+            </p>
+            <div className="mt-3 grid gap-x-6 gap-y-4 sm:grid-cols-2">
               <input
                 type="password"
                 placeholder="Current password"
@@ -303,7 +334,8 @@ export default function SettingsForm() {
                 onChange={(event) =>
                   setPassword((current) => ({ ...current, current: event.target.value }))
                 }
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm"
+                aria-label="Current password"
+                className="field"
               />
               <input
                 type="password"
@@ -313,32 +345,31 @@ export default function SettingsForm() {
                 onChange={(event) =>
                   setPassword((current) => ({ ...current, next: event.target.value }))
                 }
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm"
+                aria-label="New password"
+                className="field"
               />
             </div>
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-[0.72rem] text-graphite-2">
               Leave both fields empty to keep your current password.
             </p>
           </div>
           <button
             type="submit"
             disabled={saving === "account"}
-            className="mt-5 rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
+            className="btn btn-mark mt-5"
           >
-            {saving === "account" ? "Saving..." : "Save account"}
+            {saving === "account" ? "Saving" : "Save account"}
           </button>
         </section>
       </form>
 
-      <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-300">
-          Notifications
-        </h2>
-        <p className="mt-1 text-sm text-slate-400">
-          Every channel is off by default. Reminders are only sent for channels
-          you explicitly enable below.
-        </p>
-        <div className="mt-5 space-y-4">
+      <section>
+        <SectionHead
+          index="02"
+          title="Notifications"
+          instruction="Every channel is off by default. Reminders are only sent for channels you explicitly enable below."
+        />
+        <div className="mt-4 border-t border-graphite/25">
           {(
             [
               ["browserEnabled", "Browser notifications"],
@@ -346,23 +377,17 @@ export default function SettingsForm() {
               ["smsEnabled", "SMS reminders"],
             ] as const
           ).map(([key, label]) => (
-            <label
+            <ToggleRow
               key={key}
-              className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3"
-            >
-              <span className="text-sm text-slate-200">{label}</span>
-              <input
-                type="checkbox"
-                checked={notifications[key]}
-                onChange={(event) => updateNotification(key, event.target.checked)}
-                className="h-5 w-5 accent-cyan-400"
-              />
-            </label>
+              label={label}
+              checked={notifications[key]}
+              onChange={(checked) => updateNotification(key, checked)}
+            />
           ))}
         </div>
 
         {notifications.smsEnabled ? (
-          <label className="mt-5 block text-sm text-slate-300">
+          <label className={`${labelClass} mt-5`}>
             Phone number (for SMS)
             <input
               type="tel"
@@ -371,9 +396,9 @@ export default function SettingsForm() {
                 updateNotification("phoneNumber", event.target.value)
               }
               placeholder="+91 XXXXX XXXXX"
-              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5"
+              className="field mt-1 normal-case tracking-normal"
             />
-            <span className="mt-1 block text-xs text-slate-500">
+            <span className="mt-1 block text-[0.72rem] normal-case tracking-normal text-graphite-2">
               Use an international format like +91XXXXXXXXXX. Nothing is sent
               unless the matching channel is enabled.
             </span>
@@ -383,146 +408,113 @@ export default function SettingsForm() {
           type="button"
           onClick={() => void saveNotifications()}
           disabled={saving === "notifications"}
-          className="mt-5 rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
+          className="btn btn-mark mt-5"
         >
-          {saving === "notifications" ? "Saving..." : "Save notifications"}
+          {saving === "notifications" ? "Saving" : "Save notifications"}
         </button>
       </section>
 
-      <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-300">
-          Reminder Schedule
-        </h2>
-        <label className="mt-5 flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3">
-          <span className="text-sm text-slate-200">
-            Daily task reminder (master switch)
-          </span>
-          <input
-            type="checkbox"
+      <section>
+        <SectionHead
+          index="03"
+          title="Reminder schedule"
+          instruction="With the master switch off, enable individual reminders below."
+        />
+        <div className="mt-4 border-t border-graphite/25">
+          <ToggleRow
+            label="Daily task reminder (master switch)"
             checked={notifications.dailyReminderEnabled}
-            onChange={(event) =>
-              updateNotification("dailyReminderEnabled", event.target.checked)
+            onChange={(checked) =>
+              updateNotification("dailyReminderEnabled", checked)
             }
-            className="h-5 w-5 accent-cyan-400"
           />
-        </label>
-        <p className="mt-3 text-xs text-slate-500">
-          With the master switch off, enable individual reminders below.
-        </p>
-        <div className="mt-3 space-y-3">
-          <label className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3">
-            <span className="text-sm text-slate-200">
-              Missed-task reminder (overdue tasks)
-            </span>
-            <input
-              type="checkbox"
-              checked={notifications.missedTaskReminderEnabled}
+          <ToggleRow
+            label="Missed-task reminder (overdue tasks)"
+            checked={notifications.missedTaskReminderEnabled}
+            onChange={(checked) =>
+              updateNotification("missedTaskReminderEnabled", checked)
+            }
+          />
+          <ToggleRow
+            label="Revision review (revision items due today)"
+            checked={notifications.revisionReminderEnabled}
+            onChange={(checked) =>
+              updateNotification("revisionReminderEnabled", checked)
+            }
+          />
+          <ToggleRow
+            label="Weekly summary (past 7 days)"
+            checked={notifications.weeklySummaryEnabled}
+            onChange={(checked) =>
+              updateNotification("weeklySummaryEnabled", checked)
+            }
+          >
+            <select
+              value={notifications.weeklySummaryDay}
               onChange={(event) =>
                 updateNotification(
-                  "missedTaskReminderEnabled",
-                  event.target.checked,
+                  "weeklySummaryDay",
+                  Number(event.target.value),
                 )
               }
-              className="h-5 w-5 accent-cyan-400"
-            />
-          </label>
-          <label className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3">
-            <span className="text-sm text-slate-200">
-              Revision review (revision items due today)
-            </span>
-            <input
-              type="checkbox"
-              checked={notifications.revisionReminderEnabled}
-              onChange={(event) =>
-                updateNotification(
-                  "revisionReminderEnabled",
-                  event.target.checked,
-                )
-              }
-              className="h-5 w-5 accent-cyan-400"
-            />
-          </label>
-          <label className="flex items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3">
-            <span className="text-sm text-slate-200">
-              Weekly summary (past 7 days)
-            </span>
-            <span className="flex items-center gap-3">
-              <select
-                value={notifications.weeklySummaryDay}
-                onChange={(event) =>
-                  updateNotification(
-                    "weeklySummaryDay",
-                    Number(event.target.value),
-                  )
-                }
-                disabled={!notifications.weeklySummaryEnabled}
-                className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm disabled:opacity-50"
-              >
-                {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(
-                  (day, index) => (
-                    <option key={day} value={index}>
-                      {day}
-                    </option>
-                  ),
-                )}
-              </select>
-              <input
-                type="checkbox"
-                checked={notifications.weeklySummaryEnabled}
-                onChange={(event) =>
-                  updateNotification(
-                    "weeklySummaryEnabled",
-                    event.target.checked,
-                  )
-                }
-                className="h-5 w-5 accent-cyan-400"
-              />
-            </span>
-          </label>
+              disabled={!notifications.weeklySummaryEnabled}
+              aria-label="Weekly summary day"
+              className="field w-auto appearance-none pr-6"
+            >
+              {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map(
+                (day, index) => (
+                  <option key={day} value={index}>
+                    {day}
+                  </option>
+                ),
+              )}
+            </select>
+          </ToggleRow>
         </div>
-        <div className="mt-3 space-y-3">
+
+        <div className="mt-1 border-t border-graphite/25">
           {notifications.reminderSchedule.map((entry, index) => (
             <div
               key={entry.key}
-              className="flex items-center justify-between gap-4 rounded-xl border border-slate-800 bg-slate-900/40 px-4 py-3"
+              className="flex items-center justify-between gap-4 border-b border-graphite/15 py-3"
             >
-              <span className="flex items-center gap-3">
+              <label className="flex items-center gap-3 text-[0.875rem] text-graphite">
                 <input
                   type="checkbox"
                   checked={entry.enabled}
                   onChange={(event) =>
                     updateSchedule(index, { enabled: event.target.checked })
                   }
-                  className="h-5 w-5 accent-cyan-400"
+                  className="h-4 w-4 accent-amber-ink"
                 />
-                <span className="text-sm text-slate-200">
-                  {scheduleLabel[entry.key] ?? entry.key}
-                </span>
-              </span>
+                {scheduleLabel[entry.key] ?? entry.key}
+              </label>
               <input
                 type="time"
                 value={entry.time}
                 onChange={(event) =>
                   updateSchedule(index, { time: event.target.value })
                 }
-                className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-sm"
+                aria-label={`${scheduleLabel[entry.key] ?? entry.key} time`}
+                className="field w-auto"
               />
             </div>
           ))}
         </div>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <label className="flex items-center gap-3 text-sm text-slate-200">
+
+        <div className="mt-5 grid gap-x-6 gap-y-4 sm:grid-cols-2">
+          <label className="flex items-center gap-3 text-[0.875rem] text-graphite">
             <input
               type="checkbox"
               checked={notifications.excludeCompletedTasks}
               onChange={(event) =>
                 updateNotification("excludeCompletedTasks", event.target.checked)
               }
-              className="h-5 w-5 accent-cyan-400"
+              className="h-4 w-4 accent-amber-ink"
             />
             Exclude completed tasks
           </label>
-          <label className="block text-sm text-slate-300">
+          <label className={labelClass}>
             Max reminders per day
             <input
               type="number"
@@ -535,10 +527,10 @@ export default function SettingsForm() {
                   Math.max(1, Math.min(20, Number(event.target.value) || 1)),
                 )
               }
-              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5"
+              className="field mt-1 normal-case tracking-normal"
             />
           </label>
-          <label className="block text-sm text-slate-300">
+          <label className={labelClass}>
             Quiet hours start (HH:MM)
             <input
               type="time"
@@ -546,10 +538,10 @@ export default function SettingsForm() {
               onChange={(event) =>
                 updateNotification("quietHoursStart", event.target.value)
               }
-              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5"
+              className="field mt-1 normal-case tracking-normal"
             />
           </label>
-          <label className="block text-sm text-slate-300">
+          <label className={labelClass}>
             Quiet hours end (HH:MM)
             <input
               type="time"
@@ -557,7 +549,7 @@ export default function SettingsForm() {
               onChange={(event) =>
                 updateNotification("quietHoursEnd", event.target.value)
               }
-              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5"
+              className="field mt-1 normal-case tracking-normal"
             />
           </label>
         </div>
@@ -565,25 +557,27 @@ export default function SettingsForm() {
           type="button"
           onClick={() => void saveNotifications()}
           disabled={saving === "notifications"}
-          className="mt-5 rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
+          className="btn btn-mark mt-5"
         >
-          {saving === "notifications" ? "Saving..." : "Save schedule"}
+          {saving === "notifications" ? "Saving" : "Save schedule"}
         </button>
       </section>
 
-      <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-6">
-        <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-cyan-300">
-          Preferences
-        </h2>
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          <label className="block text-sm text-slate-300">
+      <section>
+        <SectionHead
+          index="04"
+          title="Preferences"
+          instruction="Timezone, daily focus target, and reading theme."
+        />
+        <div className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2">
+          <label className={labelClass}>
             Timezone
             <select
               value={user?.timezone ?? "UTC"}
               onChange={(event) =>
                 user && setUser({ ...user, timezone: event.target.value })
               }
-              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5"
+              className="field mt-1 appearance-none pr-6 normal-case tracking-normal"
             >
               {timezones.length
                 ? timezones.map((zone) => (
@@ -594,7 +588,7 @@ export default function SettingsForm() {
                 : null}
             </select>
           </label>
-          <label className="block text-sm text-slate-300">
+          <label className={labelClass}>
             Daily study target (minutes)
             <input
               type="number"
@@ -609,17 +603,17 @@ export default function SettingsForm() {
                     Math.max(15, Math.min(720, Number(event.target.value) || 240)),
                 })
               }
-              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5"
+              className="field mt-1 normal-case tracking-normal"
             />
           </label>
-          <label className="block text-sm text-slate-300">
+          <label className={labelClass}>
             Theme
             <select
               value={user?.theme ?? "dark"}
               onChange={(event) =>
                 user && setUser({ ...user, theme: event.target.value })
               }
-              className="mt-2 w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5"
+              className="field mt-1 appearance-none pr-6 normal-case tracking-normal"
             >
               <option value="dark">Dark</option>
               <option value="light">Light</option>
@@ -630,9 +624,9 @@ export default function SettingsForm() {
           type="button"
           onClick={() => void saveAccount()}
           disabled={saving === "account"}
-          className="mt-5 rounded-lg bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 disabled:opacity-50"
+          className="btn btn-mark mt-5"
         >
-          {saving === "account" ? "Saving..." : "Save preferences"}
+          {saving === "account" ? "Saving" : "Save preferences"}
         </button>
       </section>
     </div>

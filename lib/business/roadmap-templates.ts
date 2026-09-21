@@ -41,6 +41,9 @@ export type RoadmapTemplate = {
 
 export const DEFAULT_ROADMAP_ID = "fullstack-v1";
 
+/** Public template IDs (what the API expects). */
+export const ROADMAP_IDS = ["fullstack-v1", "sde-master-roadmap"] as const;
+
 export const ROADMAP_TEMPLATES: Record<string, string> = {
   fullstack_v1: path.resolve(process.cwd(), "roadmaps/fullstack-v1.json"),
   sde_master_roadmap: path.resolve(process.cwd(), "sde-master-roadmap.json"),

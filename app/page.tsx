@@ -1,17 +1,13 @@
-import {
-  ArrowRight,
-  BarChart3,
-  CalendarDays,
-  CheckCircle2,
-  CircleAlert,
-  Clock3,
-  Flame,
-  ListTodo,
-  Rocket,
-  Target,
-} from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import AppShell from "@/app/components/shell";
+import {
+  Num,
+  SectionHead,
+  Sheet,
+  Stamp,
+} from "@/app/components/ui";
 import DashboardTaskList from "@/app/dashboard-task-list";
 import OnboardingBanner from "@/app/onboarding-banner";
 import FocusLog from "@/app/focus-log";
@@ -131,259 +127,226 @@ export default async function HomePage() {
       )
       .map((task) => toRow(task, "task")),
   ];
+  const remainingToday = Math.max(todayTasks.length - completedToday, 0);
   const metrics = [
-    [
-      "Today",
-      `${completedToday}/${todayTasks.length}`,
-      "tasks complete",
-      CheckCircle2,
-      "text-emerald-300",
-    ],
-    [
-      "Focus time",
-      formatMinutes(studyMinutes),
-      `of ${formatMinutes(user.dailyStudyTargetMinutes)} target`,
-      Clock3,
-      "text-cyan-300",
-    ],
-    [
-      "Urgent",
-      String(openHighPriority),
-      "high-priority tasks open",
-      CircleAlert,
-      "text-amber-300",
-    ],
-    [
-      "Revision",
-      String(revisionCount),
-      "topics ready to revisit",
-      Target,
-      "text-violet-300",
-    ],
-  ] as const;
+    {
+      label: "Completed today",
+      value: `${completedToday}/${todayTasks.length}`,
+      detail: `${remainingToday} still open`,
+    },
+    {
+      label: "Focus logged",
+      value: formatMinutes(studyMinutes),
+      detail: `of ${formatMinutes(user.dailyStudyTargetMinutes)} target`,
+    },
+    {
+      label: "High priority",
+      value: String(openHighPriority),
+      detail: "open and urgent",
+    },
+    {
+      label: "To revise",
+      value: String(revisionCount),
+      detail: "topics waiting",
+    },
+  ];
+  const overallPercent = toPercent(totalCompleted, allTasks.length || 1);
 
   return (
-    <main className="min-h-screen bg-[#0b1020] text-slate-100">
+    <AppShell active="dashboard">
       <OnboardingBanner show={!user.onboardingDismissedAt} />
-      <div className="mx-auto flex max-w-[1440px] gap-8 px-5 py-6 lg:px-8">
-        <aside className="hidden w-64 shrink-0 lg:block">
-          <div className="sticky top-6 rounded-2xl border border-slate-800 bg-slate-950/60 p-5 shadow-[0_24px_80px_rgba(2,6,23,0.32)]">
-            <div className="mb-8 flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-cyan-400/15 text-cyan-200">
-                <Rocket className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300">
-                  SDE
-                </p>
-                <h1 className="text-lg font-semibold tracking-tight">
-                  Command Center
-                </h1>
-              </div>
-            </div>
-            <nav className="space-y-1 text-sm">
-              {[
-                { label: "Dashboard", href: "/", isDisabled: false },
-                { label: "All tasks", href: "/tasks", isDisabled: false },
-                { label: "DSA", href: "/dsa", isDisabled: true },
-                { label: "Study", href: "/study", isDisabled: true },
-                { label: "Revision", href: "/revision", isDisabled: true },
-                { label: "Settings", href: "/settings", isDisabled: false },
-              ].map(({ label, href, isDisabled }) => (
-                <Link
-                  key={label}
-                  href={isDisabled ? "#" : href}
-                  className={`flex items-center justify-between rounded-lg px-3 py-2.5 transition  ${
-                    isDisabled
-                      ? "cursor-not-allowed text-slate-600"
-                      : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  {label}
-                  <ArrowRight className="h-4 w-4 opacity-60" />
-                </Link>
-              ))}
-            </nav>
-            <div className="mt-8 rounded-xl bg-cyan-400/10 p-4">
-              <p className="text-xs text-cyan-200">Current target</p>
-              <p className="mt-1 font-medium">{defaultStudyPlan.goal}</p>
-              <p className="mt-2 text-xs text-slate-400">
-                {defaultStudyPlan.durationDays} days ·{" "}
-                {formatMinutes(defaultStudyPlan.dailyStudyMinutes)} daily
+      <main className="mx-auto max-w-[1120px] px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
+        <Sheet className="overflow-hidden px-5 py-7 sm:px-8 sm:py-9">
+          {/* ---------- masthead ---------- */}
+          <header className="flex flex-col gap-5 border-b border-rule pb-6 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className="text-[1.6rem] font-bold leading-none tracking-tight text-graphite sm:text-[1.9rem]">
+                Today&rsquo;s plan
+              </h1>
+              <p className="mt-2.5 text-[0.8125rem] font-medium text-graphite-2">
+                {todayLabel}
+              </p>
+              <p className="mt-3 max-w-[62ch] text-[0.8125rem] leading-5 text-graphite-2">
+                {defaultStudyPlan.goal} · {defaultStudyPlan.durationDays} days ·{" "}
+                {formatMinutes(defaultStudyPlan.dailyStudyMinutes)} daily target.
+                Keep it simple — finish a line at a time.
               </p>
             </div>
-          </div>
-        </aside>
-
-        <div className="min-w-0 flex-1 space-y-7">
-          <header className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/70 p-6 shadow-[0_24px_80px_rgba(2,6,23,0.25)] md:p-8">
-            <div className="absolute -right-16 -top-16 h-52 w-52 rounded-full bg-cyan-400/10 blur-3xl" />
-            <div className="relative flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
-              <div>
-                <p className="text-sm text-slate-400">{todayLabel}</p>
-                <h2 className="mt-1 text-3xl font-semibold tracking-tight text-balance md:text-4xl">
-                  Your learning day, clearly mapped.
-                </h2>
-                <p className="mt-3 max-w-xl text-sm leading-6 text-slate-400">
-                  Start with the next scheduled task, keep an eye on your study
-                  time, and leave the dashboard knowing what moved forward.
-                </p>
-              </div>
-              <Link
-                href="/tasks"
-                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-cyan-300 px-4 py-2.5 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 active:scale-[0.98]"
-              >
-                Manage tasks <ArrowRight className="h-4 w-4" />
-              </Link>
-            </div>
+            <Link href="/tasks" className="btn btn-mark shrink-0 self-start">
+              Manage tasks
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </Link>
           </header>
 
-          <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {metrics.map(([label, value, detail, Icon, color]) => (
-              <article
-                key={label}
-                className="rounded-xl border border-slate-800 bg-slate-950/55 p-5 transition hover:-translate-y-0.5 hover:border-slate-700"
+          {/* ---------- summary strip ---------- */}
+          <section
+            aria-label="Today at a glance"
+            className="grid grid-cols-2 border-b border-rule md:grid-cols-4"
+          >
+            {metrics.map((metric, index) => (
+              <div
+                key={metric.label}
+                className={`px-1 py-4 sm:px-4 ${
+                  index > 0 ? "md:border-l md:border-rule" : ""
+                } ${index % 2 === 1 ? "border-l border-rule" : ""}`}
               >
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-slate-400">{label}</p>
-                  <Icon className={`h-5 w-5 ${color}`} />
-                </div>
-                <p className="mt-5 text-3xl font-semibold tracking-tight tabular-nums">
-                  {value}
+                <p className="text-[0.72rem] font-medium text-graphite-2">
+                  {metric.label}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">{detail}</p>
-              </article>
+                <p className="mt-2 text-[1.45rem] font-semibold leading-none text-graphite">
+                  <Num>{metric.value}</Num>
+                </p>
+                <p className="mt-1.5 text-[0.72rem] text-graphite-2">
+                  {metric.detail}
+                </p>
+              </div>
             ))}
           </section>
 
-          <FocusLog />
-
-          <section className="grid gap-5 xl:grid-cols-[1.2fr_0.8fr]">
-            <article className="rounded-2xl border border-slate-800 bg-slate-950/55 p-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-medium">Today&apos;s completion</p>
-                  <p className="mt-1 text-sm text-slate-400">
-                    A single glance at what&apos;s left.
-                  </p>
-                </div>
-                <span className="text-3xl font-semibold tabular-nums text-cyan-200">
-                  {progress}%
-                </span>
-              </div>
-              <div className="mt-7 h-3 overflow-hidden rounded-full bg-slate-800">
-                <div
-                  className="h-full rounded-full bg-cyan-300"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <div className="mt-5 flex items-center justify-between text-sm">
-                <span className="text-slate-400">
-                  {completedToday} finished
-                </span>
-                <span className="font-medium text-slate-200">
-                  {Math.max(todayTasks.length - completedToday, 0)} remaining
-                </span>
-              </div>
-              <div className="mt-6 border-t border-slate-800 pt-5 text-sm text-slate-400">
-                <Flame className="mr-2 inline h-4 w-4 text-amber-300" />
-                Consistency is built one finished task at a time.
-              </div>
-            </article>
-            <article className="rounded-2xl border border-slate-800 bg-slate-950/55 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Completion cadence</p>
-                  <p className="mt-1 text-sm text-slate-400">Last seven days</p>
-                </div>
-                <BarChart3 className="h-5 w-5 text-cyan-300" />
-              </div>
-              <div className="mt-7 flex h-28 items-end gap-2">
-                {weeklyCompletion.map((day) => (
-                  <div
-                    key={day.label}
-                    className="flex min-w-0 flex-1 flex-col items-center gap-2"
-                  >
-                    <span className="text-xs tabular-nums text-slate-400">
-                      {day.count || ""}
-                    </span>
-                    <div
-                      className="w-full rounded-t-sm bg-cyan-300/80"
-                      style={{
-                        height: `${Math.max((day.count / weeklyMax) * 76, day.count ? 8 : 3)}px`,
-                      }}
-                    />
-                    <span className="text-[10px] text-slate-500">
-                      {day.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </article>
-          </section>
-
-          <section className="grid gap-5 md:grid-cols-2">
-            <article className="rounded-2xl border border-slate-800 bg-slate-950/55 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Overall progress</p>
-                  <p className="mt-1 text-sm text-slate-400">
-                    {totalCompleted} of {allTasks.length} roadmap tasks
-                    completed
-                  </p>
-                </div>
-                <CalendarDays className="h-5 w-5 text-cyan-300" />
-              </div>
-              <div className="mt-6 h-2 overflow-hidden rounded-full bg-slate-800">
-                <div
-                  className="h-full rounded-full bg-cyan-300"
-                  style={{
-                    width: `${toPercent(totalCompleted, allTasks.length || 1)}%`,
-                  }}
-                />
-              </div>
-            </article>
-            <article className="rounded-2xl border border-amber-400/20 bg-amber-400/[0.05] p-6">
-              <p className="text-sm font-medium text-amber-100">
-                Next best move
-              </p>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
-                {todayTasks.length - completedToday > 0
-                  ? "Complete one scheduled task before adding anything new."
-                  : "Today is clear. Use the time to review a topic or plan tomorrow."}
-              </p>
-              <Link
-                href="/tasks"
-                className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-amber-200 hover:text-amber-100"
-              >
-                Open task plan <ArrowRight className="h-4 w-4" />
-              </Link>
-            </article>
-          </section>
-
-          <section className="rounded-2xl border border-slate-800 bg-slate-950/55 p-6">
-            <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">
-                  Task list
-                </p>
-                <h3 className="mt-1 text-xl font-semibold">
-                  Today&apos;s list
-                </h3>
-                <p className="mt-1 text-sm text-slate-400">
-                  Routines, connected roadmap tasks, and anything scheduled for
-                  today — complete them right here.
-                </p>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-slate-400">
-                <ListTodo className="h-4 w-4" />
-                {todayList.length} today
-              </div>
-            </div>
+          {/* ---------- the sheet proper ---------- */}
+          <section className="mt-8">
+            <SectionHead
+              index="01"
+              title="Today's list"
+              instruction="Routines, connected roadmap tasks, and anything scheduled for today. Fill the bubble to mark a line done."
+              aside={`${todayList.length} rows`}
+            />
             <DashboardTaskList initialItems={todayList} />
           </section>
-        </div>
-      </div>
-    </main>
+
+          {/* ---------- margin analysis ---------- */}
+          <section className="mt-10 grid gap-10 border-t border-rule pt-8 md:grid-cols-[1.15fr_0.85fr] md:gap-12">
+            <div className="space-y-9">
+              <div>
+                <SectionHead
+                  index="02"
+                  title="Completion"
+                  instruction="A single glance at what moved forward today."
+                  aside={`${progress}%`}
+                />
+                <div className="mt-5">
+                  <div
+                    className="relative h-2.5 w-full overflow-hidden rounded-full bg-rule"
+                    role="progressbar"
+                    aria-valuenow={progress}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-label="Today's completion"
+                  >
+                    <div
+                      className="h-full rounded-full transition-[width] duration-500 ease-out"
+                      style={{
+                        width: `${progress}%`,
+                        backgroundImage:
+                          "linear-gradient(90deg, var(--color-amber-ink), var(--color-amber))",
+                      }}
+                    />
+                  </div>
+                  <div className="mt-3 flex items-baseline justify-between font-mono text-[0.72rem] tabular-nums text-graphite-2">
+                    <span>{completedToday} finished</span>
+                    <span className="text-graphite">{remainingToday} remaining</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <SectionHead
+                  index="03"
+                  title="Cadence"
+                  instruction="Completions recorded across the last seven days."
+                />
+                <div className="mt-5 flex h-28 items-end gap-2 rounded-xl border-b border-rule bg-paper/40 pb-px px-2">
+                  {weeklyCompletion.map((day, index) => (
+                    <div
+                      key={day.label}
+                      className="flex min-w-0 flex-1 flex-col items-center gap-2"
+                    >
+                      <span className="font-mono text-[0.68rem] tabular-nums text-graphite-2">
+                        {day.count || ""}
+                      </span>
+                      <div
+                        className={`w-full rounded-t-md ${
+                          index === weeklyCompletion.length - 1
+                            ? "bg-amber"
+                            : "bg-graphite/25"
+                        }`}
+                        style={{
+                          height: `${Math.max((day.count / weeklyMax) * 76, day.count ? 8 : 3)}px`,
+                        }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-2 flex gap-2">
+                  {weeklyCompletion.map((day) => (
+                    <span
+                      key={day.label}
+                      className="min-w-0 flex-1 text-center text-[0.68rem] font-medium text-graphite-3"
+                    >
+                      {day.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* margin notes */}
+            <div className="space-y-7 md:border-l md:border-rule md:pl-10">
+              <div>
+                <SectionHead
+                  index="04"
+                  title="Overall progress"
+                  instruction={`${totalCompleted} of ${allTasks.length} roadmap tasks completed.`}
+                  aside={`${overallPercent}%`}
+                />
+                <div
+                  className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-rule"
+                  role="progressbar"
+                  aria-valuenow={overallPercent}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-label="Overall roadmap progress"
+                >
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${overallPercent}%`,
+                      backgroundImage:
+                        "linear-gradient(90deg, var(--color-amber-ink), var(--color-amber))",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-rule bg-paper/50 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h3 className="text-[0.95rem] font-semibold text-graphite">
+                    Next best move
+                  </h3>
+                  <Stamp tone="stamp">Note</Stamp>
+                </div>
+                <p className="mt-2 text-[0.8125rem] leading-5 text-graphite-2">
+                  {remainingToday > 0
+                    ? "Complete one scheduled task before adding anything new."
+                    : "Today is clear. Use the time to review a topic or plan tomorrow."}
+                </p>
+                <Link
+                  href="/tasks"
+                  className="mt-3 inline-flex items-center gap-1 text-[0.8125rem] font-semibold text-amber-ink hover:underline hover:underline-offset-4"
+                >
+                  Open task plan
+                  <ArrowRight className="h-3.5 w-3.5" aria-hidden />
+                </Link>
+              </div>
+
+              <div>
+                <SectionHead index="05" title="Log focus time" />
+                <FocusLog />
+              </div>
+            </div>
+          </section>
+        </Sheet>
+      </main>
+    </AppShell>
   );
 }
