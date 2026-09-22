@@ -4,6 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum TaskStatus {
@@ -69,6 +70,7 @@ model User {
   tasks                   Task[]
   taskCompletions         TaskCompletion[]
   dailyTaskPins           DailyTaskPin[]
+  userDailyRoadmaps       UserDailyRoadmap[]
   userRoadmaps            UserRoadmap[]
   userMilestones          UserMilestone[]
   studySessions           StudySession[]
@@ -194,6 +196,18 @@ model DailyTaskPin {
 
   @@unique([userId, taskId])
   @@index([userId, createdAt])
+}
+
+model UserDailyRoadmap {
+  id        String   @id @default(cuid())
+  userId    String
+  roadmapId String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roadmapId])
+  @@index([userId])
 }
 
 model UserRoadmap {

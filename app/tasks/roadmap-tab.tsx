@@ -96,7 +96,7 @@ export default function RoadmapTab({
   title: string;
   initialFilters?: { category?: string; taskType?: string };
 }) {
-  const [roadmaps, setRoadmaps] = useState<RoadmapSummary[]>([]);
+  const [roadmaps, setRoadmaps] = useState<Array<{ id: string; title: string; description: string | null; activated: boolean }>>([]);
   const [selectedId, setSelectedId] = useState("");
   const [data, setData] = useState<MilestonesData | null>(null);
   const [pinnedById, setPinnedById] = useState<Record<string, string>>({});
@@ -149,17 +149,16 @@ export default function RoadmapTab({
     loadRoutines();
   }, []);
 
-  useEffect(() => {
-    fetch("/api/roadmaps")
-      .then((response) => response.json())
-      .then((body: { roadmaps: RoadmapSummary[] }) => {
-        setRoadmaps(body.roadmaps);
-        if (body.roadmaps.length > 0 && !body.roadmaps[0]?.id) return;
-        setSelectedId((current) => current || body.roadmaps[0]?.id || "");
-      })
-      .catch(() => setError("Unable to load your roadmaps."))
-      .finally(() => setLoading(false));
-  }, []);
+useEffect(() => {
+  fetch("/api/roadmaps")
+    .then((response) => response.json())
+    .then((body: { roadmaps: Array<{ id: string; title: string; description: string | null; activated: boolean }> }) => {
+      setRoadmaps(body.roadmaps);
+      setLoading(false);
+    })
+    .catch(() => setError("Unable to load your roadmaps."))
+    .finally(() => setLoading(false));
+}, []);
 
   async function loadMilestones(roadmapId: string) {
     setLoading(true);
@@ -184,41 +183,60 @@ export default function RoadmapTab({
     }
   }
 
-  useEffect(() => {
-    if (!selectedId) return;
-    let cancelled = false;
-    Promise.all([
-      fetch(`/api/milestones?roadmapId=${selectedId}`).then((response) => {
-        if (!response.ok) throw new Error("load");
-        return response.json() as Promise<MilestonesData>;
-      }),
-      fetch("/api/daily-pins").then(
-        (response) =>
-          response.json() as Promise<{
-            pins: Array<{ id: string; taskId: string }>;
-          }>,
-      ),
-    ])
-      .then(([milestones, pinBody]) => {
-        if (cancelled) return;
-        setData(milestones);
-        setPinnedById(
-          Object.fromEntries(pinBody.pins.map((pin) => [pin.taskId, pin.id])),
-        );
-        setError("");
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setData(null);
-        setError("Unable to load this roadmap. Please try again.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedId]);
+useEffect(() => {
+  if (!selectedId) return;
+  let cancelled = false;
+  Promise.all([
+    fetch(`/api/milestones?roadmapId=${selectedId}`).then((response) => {
+      if (!response.ok) throw new Error("load");
+      return response.json() as Promise<MilestonesData>;
+    }),
+    fetch("/api/daily-pins").then(
+      (response) =>
+        response.json() as Promise<{
+          pins: Array<{ id: string; taskId: string }>;
+        }>,
+    ),
+  ])
+    .then(([milestones, pinBody]) => {
+      if (cancelled) return;
+      setData(milestones);
+      setPinnedById(
+        Object.fromEntries(pinBody.pins.map((pin) => [pin.taskId, pin.id])),
+      );
+      setError("");
+    })
+    .catch(() => {
+      if (cancelled) return;
+      setData(null);
+      setError("Unable to load this roadmap. Please try again.");
+    })
+    .finally(() => {
+      if (!cancelled) setLoading(false);
+    });
+  return () => {
+    cancelled = true;
+  };
+}, [selectedId]);
+
+// Load roadmap data
+const roadmapData = useMemo(() => {
+  if (!data) return null;
+  return {
+    roadmap: data.roadmap,
+    milestones: data.milestones,
+    phases: data.phases,
+    nextUpTaskId: data.nextUpTaskId,
+    pinnedTaskIds: Object.keys(pinnedById),
+  };
+}, [data, pinnedById]);
+
+// Get roadmap data by ID
+const getRoadmapData = useMemo(() => {
+  return (roadmapId: string) => {
+    return roadmapsData.find(rd => rd.roadmap.id === roadmapId);
+  };
+}, [roadmapsData]);
 
   // Personal daily task functions
   async function addRoutine() {

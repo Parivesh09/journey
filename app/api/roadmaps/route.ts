@@ -14,24 +14,30 @@ export async function GET() {
     where: { userId: user.id },
     orderBy: { activatedAt: "asc" },
   });
-  const roadmaps = activations.map((activation) => {
-    let summary: { id: string; title: string; description: string | null };
-    try {
-      const template = readRoadmap(activation.roadmapId);
-      summary = {
-        id: template.id,
-        title: template.title,
-        description: template.description ?? null,
-      };
-    } catch {
-      summary = {
-        id: activation.roadmapId,
-        title: activation.roadmapId,
-        description: null,
-      };
-    }
-    return summary;
-  });
+
+  const roadmaps = await Promise.all(
+    activations.map(async (activation) => {
+      let summary: { id: string; title: string; description: string | null; activated: boolean };
+      try {
+        const template = readRoadmap(activation.roadmapId);
+        summary = {
+          id: template.id,
+          title: template.title,
+          description: template.description ?? null,
+          activated: true,
+        };
+      } catch {
+        summary = {
+          id: activation.roadmapId,
+          title: activation.roadmapId,
+          description: null,
+          activated: false,
+        };
+      }
+      return summary;
+    })
+  );
+
   return NextResponse.json({ roadmaps });
 }
 

@@ -53,6 +53,16 @@ type ActiveRoadmap = {
   dailyTaskCount: number;
 };
 
+type LinkedRoadmap = {
+  id: string;
+  roadmapId: string;
+  roadmap: {
+    id: string;
+    title: string;
+    description: string | null;
+  };
+};
+
 type DailyFeed = {
   routines: Routine[];
   connected: Connected[];
@@ -105,30 +115,16 @@ export default function DailyTab() {
   const [updating, setUpdating] = useState<string | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [activeTabInModal, setActiveTabInModal] = useState<"personal" | "roadmap">("personal");
-  const [pickerQuery, setPickerQuery] = useState("");
   const [activeRoadmaps, setActiveRoadmaps] = useState<ActiveRoadmap[]>([]);
+  const [linkedRoadmaps, setLinkedRoadmaps] = useState<LinkedRoadmap[]>([]);
   const [roadmapsLoading, setRoadmapsLoading] = useState(false);
-  const [selectedRoadmapTasks, setSelectedRoadmapTasks] = useState<PickerTask[]>([]);
-  const [roadmapTasksLoading, setRoadmapTasksLoading] = useState(false);
-  const [selectedRoadmapId, setSelectedRoadmapId] = useState<string | null>(null);
-  const [linkingAll, setLinkingAll] = useState(false);
+  const [linkingRoadmap, setLinkingRoadmap] = useState<string | null>(null);
+  const [unlinkingRoadmap, setUnlinkingRoadmap] = useState<string | null>(null);
 
-  const pinnedTaskIds = useMemo(
-    () => new Set(connected.map((item) => item.task.id)),
-    [connected],
+  const linkedRoadmapIds = useMemo(
+    () => new Set(linkedRoadmaps.map(item => item.roadmapId)),
+    [linkedRoadmaps],
   );
-
-  const filteredRoadmapTasks = useMemo(() => {
-    if (!pickerQuery.trim()) return selectedRoadmapTasks;
-    const query = pickerQuery.toLowerCase();
-    return selectedRoadmapTasks.filter(
-      (task) =>
-        task.title.toLowerCase().includes(query) ||
-        (task.phaseTitle ?? "").toLowerCase().includes(query) ||
-        (task.topicTitle ?? "").toLowerCase().includes(query) ||
-        (task.milestoneTitle ?? "").toLowerCase().includes(query)
-    );
-  }, [selectedRoadmapTasks, pickerQuery]);
 
   useEffect(() => {
     let cancelled = false;
@@ -210,31 +206,6 @@ export default function DailyTab() {
     }
   }
 
-  async function connectTask(task: PickerTask) {
-    if (pinnedTaskIds.has(task.id)) return;
-    setError("");
-    try {
-      const response = await fetch("/api/daily-pins", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ taskId: task.id }),
-      });
-      if (!response.ok) {
-        const data = (await response.json()) as { error?: string };
-        throw new Error(data.error ?? "pin");
-      }
-      const data = (await response.json()) as { pin: { id: string } };
-      setConnected((current) => [...current, { pinId: data.pin.id, task }]);
-      setAddModalOpen(false);
-    } catch (reason) {
-      setError(
-        reason instanceof Error
-          ? reason.message
-          : "Unable to connect that task.",
-      );
-    }
-  }
-
   async function loadActiveRoadmaps() {
     setRoadmapsLoading(true);
     try {
@@ -249,70 +220,81 @@ export default function DailyTab() {
     }
   }
 
-  async function loadRoadmapTasksForRoadmap(roadmapId: string) {
-    setSelectedRoadmapId(roadmapId);
-    setRoadmapTasksLoading(true);
+  async function loadLinkedRoadmaps() {
     try {
-      const response = await fetch(`/api/milestones?roadmapId=${roadmapId}`);
+      const response = await fetch("/api/daily-roadmaps");
       if (!response.ok) throw new Error("load");
-      const data = (await response.json()) as {
-        milestones: Array<{
-          phases: Array<{
-            topics: Array<{
-              tasks: PickerTask[];
-            }>;
-          }>;
-        }>;
-      };
-      const tasks: PickerTask[] = [];
-      for (const m of data.milestones) {
-        for (const p of m.phases) {
-          for (const t of p.topics) {
-            tasks.push(...t.tasks);
-          }
-        }
-      }
-      setSelectedRoadmapTasks(tasks);
+      const data = (await response.json()) as { linkedRoadmaps: LinkedRoadmap[] };
+      setLinkedRoadmaps(data.linkedRoadmaps);
     } catch {
-      setSelectedRoadmapTasks([]);
-    } finally {
-      setRoadmapTasksLoading(false);
+      setLinkedRoadmaps([]);
     }
   }
 
-  async function linkAllTasks() {
-    if (selectedRoadmapTasks.length === 0) return;
-    setLinkingAll(true);
+  async function linkRoadmap(roadmapId: string) {
+    setLinkingRoadmap(roadmapId);
     setError("");
     try {
-      for (const task of selectedRoadmapTasks) {
-        if (!pinnedTaskIds.has(task.id)) {
-          await fetch("/api/daily-pins", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ taskId: task.id }),
-          });
-        }
+      const response = await fetch("/api/daily-roadmaps", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roadmapId }),
+      });
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error ?? "link");
       }
-      // Reload daily feed
-      const response = await fetch("/api/tasks?tab=daily");
-      if (response.ok) {
-        const daily = (await response.json()) as DailyFeed;
+      await loadLinkedRoadmaps();
+      // Reload daily feed to get updated connected tasks
+      const dailyResponse = await fetch("/api/tasks?tab=daily");
+      if (dailyResponse.ok) {
+        const daily = (await dailyResponse.json()) as DailyFeed;
         setConnected(daily.connected);
       }
-      setAddModalOpen(false);
-      setSelectedRoadmapId(null);
-      setSelectedRoadmapTasks([]);
-    } catch {
-      setError("Unable to link roadmap tasks.");
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Unable to link roadmap."
+      );
     } finally {
-      setLinkingAll(false);
+      setLinkingRoadmap(null);
+    }
+  }
+
+  async function unlinkRoadmap(roadmapId: string) {
+    setUnlinkingRoadmap(roadmapId);
+    setError("");
+    try {
+      const response = await fetch(`/api/daily-roadmaps?roadmapId=${roadmapId}`, {
+        method: "DELETE",
+      });
+      if (!response.ok) {
+        const data = (await response.json()) as { error?: string };
+        throw new Error(data.error ?? "unlink");
+      }
+      await loadLinkedRoadmaps();
+      // Reload daily feed to get updated connected tasks
+      const dailyResponse = await fetch("/api/tasks?tab=daily");
+      if (dailyResponse.ok) {
+        const daily = (await dailyResponse.json()) as DailyFeed;
+        setConnected(daily.connected);
+      }
+    } catch (reason) {
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : "Unable to unlink roadmap."
+      );
+    } finally {
+      setUnlinkingRoadmap(null);
     }
   }
 
   useEffect(() => {
     if (addModalOpen && activeTabInModal === "roadmap") {
       loadActiveRoadmaps();
+      loadLinkedRoadmaps();
     }
   }, [addModalOpen, activeTabInModal]);
 
@@ -531,147 +513,78 @@ export default function DailyTab() {
                 </form>
               ) : (
                 <div className="space-y-4">
-                  {selectedRoadmapId ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h4 className="text-[0.9rem] font-semibold text-graphite">
-                          Daily Tasks in Selected Roadmap
-                        </h4>
-                        <IconButton
-                          onClick={() => {
-                            setSelectedRoadmapId(null);
-                            setSelectedRoadmapTasks([]);
-                            setPickerQuery("");
-                          }}
-                          ariaLabel="Back to roadmap list"
-                        >
-                          <X className="h-4 w-4" />
-                        </IconButton>
-                      </div>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-graphite-faint" />
-                        <input
-                          value={pickerQuery}
-                          onChange={(event) => setPickerQuery(event.target.value)}
-                          placeholder="Filter tasks..."
-                          className="field pl-10 border-b-2"
-                        />
-                      </div>
+                  <p className="text-[0.85rem] text-graphite-muted">
+                    Link a roadmap to automatically include its daily tasks in your workspace. 
+                    Daily tasks from linked roadmaps will appear in your "Focus Tasks" section.
+                  </p>
 
-                      <div className="max-h-[300px] overflow-y-auto space-y-1">
-                        {roadmapTasksLoading ? (
-                          <div className="space-y-2">
-                            {[...Array(3)].map((_, i) => (
-                              <div key={i} className="h-12 bg-paper-shade animate-pulse rounded" />
-                            ))}
-                          </div>
-                        ) : filteredRoadmapTasks.length === 0 ? (
-                          <EmptyState
-                            title={pickerQuery.trim() ? "No matching tasks" : "No tasks in this roadmap"}
-                            description={pickerQuery.trim() ? "Try a different search term" : "This roadmap has no pending tasks"}
-                          />
-                        ) : (
-                          filteredRoadmapTasks.map((task) => {
-                            const pinned = pinnedTaskIds.has(task.id);
-                            return (
-                              <div key={task.id} className="task-row py-2.5">
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <p className="truncate text-[0.85rem] font-medium text-graphite">
-                                      {task.title}
-                                    </p>
-                                    <Stamp tone="amber">Roadmap</Stamp>
-                                  </div>
-                                  <p className="mt-0.5 truncate font-mono text-[0.65rem] text-graphite-faint">
-                                    {task.phaseTitle ?? "No phase"} / {task.topicTitle ?? "No topic"}
-                                  </p>
-                                </div>
-                                <SecondaryButton
-                                  onClick={() => connectTask(task)}
-                                  disabled={pinned}
-                                  className="px-3 py-1 text-[0.75rem]"
-                                >
-                                  {pinned ? "Connected" : "Connect"}
-                                </SecondaryButton>
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-
-                      <div className="mt-4 pt-4 border-t border-hairline flex justify-end gap-3">
-                        <SecondaryButton
-                          onClick={() => {
-                            setSelectedRoadmapId(null);
-                            setSelectedRoadmapTasks([]);
-                            setPickerQuery("");
-                          }}
-                        >
-                          Back to Roadmaps
-                        </SecondaryButton>
-                        <PrimaryButton
-                          onClick={linkAllTasks}
-                          disabled={linkingAll || selectedRoadmapTasks.length === 0}
-                        >
-                          {linkingAll ? "Linking All..." : `Link All (${selectedRoadmapTasks.length})`}
-                        </PrimaryButton>
-                      </div>
+                  {roadmapsLoading ? (
+                    <div className="space-y-2">
+                      {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-16 bg-paper-shade animate-pulse rounded" />
+                      ))}
                     </div>
+                  ) : activeRoadmaps.length === 0 ? (
+                    <EmptyState
+                      title="No active roadmaps"
+                      description="Activate a roadmap from the Roadmap Library first"
+                      action={
+                        <SecondaryButton onClick={() => setAddModalOpen(false)}>
+                          Browse Roadmaps
+                        </SecondaryButton>
+                      }
+                    />
                   ) : (
-                    <div className="space-y-4">
-                      <p className="text-[0.85rem] text-graphite-muted">
-                        Select an active roadmap to link its daily tasks to your workspace. Linked tasks will appear in your "Focus Tasks" section and can be completed daily.
-                      </p>
-
-                      {roadmapsLoading ? (
-                        <div className="space-y-2">
-                          {[...Array(3)].map((_, i) => (
-                            <div key={i} className="h-16 bg-paper-shade animate-pulse rounded" />
-                          ))}
-                        </div>
-                      ) : activeRoadmaps.length === 0 ? (
-                        <EmptyState
-                          title="No active roadmaps"
-                          description="Activate a roadmap from the Roadmap Library first"
-                          action={
-                            <SecondaryButton onClick={() => setAddModalOpen(false)}>
-                              Browse Roadmaps
-                            </SecondaryButton>
-                          }
-                        />
-                      ) : (
-                        <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                          {activeRoadmaps.map((roadmap) => (
-                            <div
-                              key={roadmap.id}
-                              className="flex items-center justify-between p-4 border border-hairline rounded hover:border-hairline-strong hover:bg-paper-shade/50 transition-colors"
-                            >
-                              <div className="flex-1 min-w-0">
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      {activeRoadmaps.map((roadmap) => {
+                        const isLinked = linkedRoadmapIds.has(roadmap.id);
+                        const isLinking = linkingRoadmap === roadmap.id;
+                        const isUnlinking = unlinkingRoadmap === roadmap.id;
+                        
+                        return (
+                          <div
+                            key={roadmap.id}
+                            className="flex items-center justify-between p-4 border border-hairline rounded hover:border-hairline-strong hover:bg-paper-shade/50 transition-colors"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
                                 <p className="text-[0.9rem] font-medium text-graphite truncate">
                                   {roadmap.title}
                                 </p>
-                                {roadmap.description && (
-                                  <p className="mt-1 text-[0.8rem] text-graphite-faint truncate">
-                                    {roadmap.description}
-                                  </p>
-                                )}
-                                <div className="mt-2 flex items-center gap-3 text-[0.75rem] text-graphite-faint">
-                                  <span className="flex items-center gap-1">
-                                    <LinkIcon className="h-3.5 w-3.5" />
-                                    {roadmap.dailyTaskCount} daily tasks
-                                  </span>
-                                </div>
+                                {isLinked && <Stamp tone="valid">Linked</Stamp>}
                               </div>
+                              {roadmap.description && (
+                                <p className="mt-1 text-[0.8rem] text-graphite-faint truncate">
+                                  {roadmap.description}
+                                </p>
+                              )}
+                              <div className="mt-2 flex items-center gap-3 text-[0.75rem] text-graphite-faint">
+                                <span className="flex items-center gap-1">
+                                  <LinkIcon className="h-3.5 w-3.5" />
+                                  {roadmap.dailyTaskCount} daily tasks
+                                </span>
+                              </div>
+                            </div>
+                            {isLinked ? (
                               <SecondaryButton
-                                onClick={() => loadRoadmapTasksForRoadmap(roadmap.id)}
+                                onClick={() => unlinkRoadmap(roadmap.id)}
+                                disabled={isUnlinking}
                                 className="shrink-0"
                               >
-                                View & Link
+                                {isUnlinking ? "Unlinking..." : "Unlink"}
                               </SecondaryButton>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                            ) : (
+                              <PrimaryButton
+                                onClick={() => linkRoadmap(roadmap.id)}
+                                disabled={isLinking}
+                                className="shrink-0"
+                              >
+                                {isLinking ? "Linking..." : "Link Roadmap"}
+                              </PrimaryButton>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
