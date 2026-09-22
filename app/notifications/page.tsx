@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import AppShell from "@/app/components/shell";
+import NotificationsClient from "@/app/notifications/notifications-client";
 
 export const metadata: Metadata = {
   title: "Notifications",
@@ -28,11 +30,13 @@ export default async function NotificationsPage() {
   ]);
 
   return (
-    <NotificationsClient
-      user={user}
-      totalNotifications={totalNotifications}
-      deliveredCount={deliveredCount}
-      failedCount={failedCount}
-    />
+    <AppShell active="notifications">
+      <NotificationsClient
+        user={user}
+        totalNotifications={totalNotifications}
+        deliveredCount={deliveredCount}
+        failedCount={failedCount}
+      />
+    </AppShell>
   );
 }

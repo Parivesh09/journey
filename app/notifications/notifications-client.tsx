@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import AppShell from "@/app/components/shell";
 import { Sheet, PageHeader, SectionHead, Stamp, Drawer, IconButton } from "@/app/components/ui";
 
 type User = {
@@ -120,7 +119,7 @@ export default function NotificationsClient({
   };
 
   return (
-    <AppShell active="notifications">
+    <>
       <main className="px-6 py-8 sm:px-8 lg:px-12">
         <Sheet>
           <PageHeader
@@ -400,6 +399,6 @@ export default function NotificationsClient({
           </div>
         </div>
       </Drawer>
-    </AppShell>
+    </>
   );
 }

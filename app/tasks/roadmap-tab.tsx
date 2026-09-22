@@ -114,6 +114,41 @@ export default function RoadmapTab({
     null,
   );
 
+  // Personal daily tasks (routines)
+  const [routines, setRoutines] = useState<Array<{
+    id: string;
+    title: string;
+    priority: string;
+    plannedMinutes: number | null;
+    estimatedMinutes: number | null;
+    doneToday: boolean;
+  }>>([]);
+  const [newRoutineTitle, setNewRoutineTitle] = useState("");
+  const [addingRoutine, setAddingRoutine] = useState(false);
+  const [updatingRoutine, setUpdatingRoutine] = useState<string | null>(null);
+
+  // Load personal daily tasks
+  useEffect(() => {
+    const loadRoutines = async () => {
+      try {
+        const response = await fetch("/api/tasks?tab=daily");
+        if (!response.ok) throw new Error("load");
+        const data = (await response.json()) as { routines: Array<{
+          id: string;
+          title: string;
+          priority: string;
+          plannedMinutes: number | null;
+          estimatedMinutes: number | null;
+          doneToday: boolean;
+        }>; };
+        setRoutines(data.routines);
+      } catch {
+        // Ignore error, routines are optional
+      }
+    };
+    loadRoutines();
+  }, []);
+
   useEffect(() => {
     fetch("/api/roadmaps")
       .then((response) => response.json())
@@ -184,6 +219,67 @@ export default function RoadmapTab({
       cancelled = true;
     };
   }, [selectedId]);
+
+  // Personal daily task functions
+  async function addRoutine() {
+    const title = newRoutineTitle.trim();
+    if (!title) return;
+    setAddingRoutine(true);
+    setError("");
+    try {
+      const response = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          priority: "MEDIUM",
+          isPersonalDaily: true,
+        }),
+      });
+      if (!response.ok) throw new Error("create");
+      const data = (await response.json()) as { task: {
+        id: string;
+        title: string;
+        priority: string;
+        plannedMinutes: number | null;
+        estimatedMinutes: number | null;
+        doneToday: boolean;
+      } };
+      setRoutines((current) => [
+        { ...data.task, doneToday: false },
+        ...current,
+      ]);
+      setNewRoutineTitle("");
+    } catch {
+      setError("Unable to add that routine. Please try again.");
+    } finally {
+      setAddingRoutine(false);
+    }
+  }
+
+  async function toggleRoutine(routineId: string) {
+    setUpdatingRoutine(routineId);
+    setError("");
+    try {
+      const response = await fetch(`/api/tasks/${routineId}/complete-today`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) throw new Error("toggle");
+      const data = (await response.json()) as { doneToday: boolean };
+      setRoutines((current) =>
+        current.map((item) =>
+          item.id === routineId
+            ? { ...item, doneToday: data.doneToday }
+            : item,
+        ),
+      );
+    } catch {
+      setError("Unable to update that routine. Please try again.");
+    } finally {
+      setUpdatingRoutine(null);
+    }
+  }
 
   async function activateRoadmap(roadmapId: string) {
     setActivating(true);
