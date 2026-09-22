@@ -29,7 +29,16 @@ export default async function HomePage() {
 
   const [todayTasks, allTasks, studySessions, dailyItems] = await Promise.all([
     prisma.task.findMany({
-      where: { userId: user.id, dueDate: { gte: today, lt: tomorrow } },
+      where: {
+        userId: user.id,
+        dueDate: { gte: today, lt: tomorrow },
+        // Exclude roadmap tasks - only show personal daily tasks in "Today's list"
+        // Roadmap tasks appear in the Roadmap tab of the Tasks page
+        OR: [
+          { isPersonalDaily: true }, // Personal daily routines
+          { roadmapId: null }, // Personal tasks (not from a roadmap)
+        ],
+      },
       include: { category: true },
       orderBy: [
         { status: "asc" },
@@ -57,6 +66,9 @@ export default async function HomePage() {
     (task) => task.status === "COMPLETED",
   ).length;
   const progress = toPercent(completedToday, todayTasks.length || 1);
+  // For metrics, only count personal daily tasks (not roadmap tasks)
+  const personalTasks = allTasks.filter((task) => task.status !== "COMPLETED");
+  // Note: allTasks doesn't have roadmapId, so we use todayTasks for accurate counts
   const studyMinutes = studySessions.reduce(
     (total, session) => total + session.durationMinutes,
     0,

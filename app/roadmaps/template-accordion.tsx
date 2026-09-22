@@ -11,7 +11,7 @@ type Phase = {
     id: string;
     title: string;
     category?: string;
-    estimated_days: number;
+    estimated_days?: number;
     tasks?: {
       id: string;
       title: string;

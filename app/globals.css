@@ -297,3 +297,62 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* Tab styles */
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.875rem;
+  font: var(--font-label);
+  color: var(--color-graphite-2);
+  background: var(--color-paper);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--control-radius);
+  cursor: pointer;
+  transition:
+    color 140ms var(--ease-out),
+    background-color 140ms var(--ease-out),
+    border-color 140ms var(--ease-out);
+}
+
+.tab:hover {
+  color: var(--color-graphite);
+  background: var(--color-paper-2);
+  border-color: var(--color-rule-2);
+}
+
+.tab[aria-selected="true"] {
+  color: var(--color-amber);
+  background: color-mix(in oklab, var(--color-amber) 12%, transparent);
+  border-color: color-mix(in oklab, var(--color-amber) 30%, transparent);
+}
+
+/* Badge styles for task types */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.5rem;
+  font: var(--font-label);
+  border-radius: var(--pill-radius);
+  background: color-mix(in oklab, currentColor 12%, transparent);
+  white-space: nowrap;
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badge-routine {
+  color: var(--color-valid);
+  background: color-mix(in oklab, var(--color-valid) 15%, transparent);
+}
+
+.badge-roadmap {
+  color: var(--color-amber);
+  background: color-mix(in oklab, var(--color-amber) 15%, transparent);
+}
+
+.badge-personal {
+  color: var(--color-bone-2);
+  background: color-mix(in oklab, var(--color-bone-2) 15%, transparent);
+}

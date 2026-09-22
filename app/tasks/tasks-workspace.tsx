@@ -52,7 +52,7 @@ export default function TasksWorkspace({
               role="tab"
               aria-selected={tab === item.id}
               onClick={() => setTab(item.id)}
-              className="tab"
+              className="tab text-white"
             >
               {item.label}
             </button>

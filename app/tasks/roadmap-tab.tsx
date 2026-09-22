@@ -817,15 +817,18 @@ function MilestoneCard({
                                 onClick={() => onToggleTask(task)}
                               />
                               <div className="min-w-0 flex-1">
-                                <p
-                                  className={
-                                    isDone
-                                      ? "truncate text-[0.875rem] leading-6 text-graphite-2 line-through decoration-graphite/50"
-                                      : "truncate text-[0.875rem] leading-6 text-graphite"
-                                  }
-                                >
-                                  {task.title}
-                                </p>
+                                <div className="flex items-center gap-2">
+                                  <p
+                                    className={
+                                      isDone
+                                        ? "truncate text-[0.875rem] leading-6 text-graphite-2 line-through decoration-graphite/50"
+                                        : "truncate text-[0.875rem] leading-6 text-graphite"
+                                    }
+                                  >
+                                    {task.title}
+                                  </p>
+                                  <span className="badge badge-roadmap">Roadmap</span>
+                                </div>
                                 <p className="mt-0.5 truncate font-mono text-[0.65rem] text-graphite-2">
                                   {[
                                     task.taskType,

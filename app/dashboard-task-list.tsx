@@ -95,21 +95,31 @@ export default function DashboardTaskList({
                   onClick={() => toggleTask(row)}
                 />
                 <div className="min-w-0 flex-1">
-                  <p
-                    className={
-                      row.done
-                        ? "truncate text-[0.9rem] leading-6 text-graphite-2 line-through decoration-graphite/50"
-                        : "truncate text-[0.9rem] font-medium leading-6 text-graphite"
-                    }
-                  >
-                    {row.title}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p
+                      className={
+                        row.done
+                          ? "truncate text-[0.9rem] leading-6 text-graphite-2 line-through decoration-graphite/50"
+                          : "truncate text-[0.9rem] font-medium leading-6 text-graphite"
+                      }
+                    >
+                      {row.title}
+                    </p>
+                    {row.kind === "routine" && (
+                      <span className="badge badge-routine">Routine</span>
+                    )}
+                    {row.kind === "connected" && (
+                      <span className="badge badge-roadmap">Roadmap</span>
+                    )}
+                    {row.kind === "task" && (
+                      <span className="badge badge-personal">Personal</span>
+                    )}
+                  </div>
                   <p className="mt-0.5 truncate text-[0.7rem] text-graphite-2">
                     {row.dailySlot?.replaceAll("_", " ") ??
                       row.category?.name ??
                       "Scheduled"}{" "}
                     · {row.plannedMinutes ?? row.estimatedMinutes ?? 60}m
-                    {row.kind === "connected" ? " · connected" : ""}
                   </p>
                 </div>
                 <Stamp tone={urgent ? "stamp" : "neutral"}>

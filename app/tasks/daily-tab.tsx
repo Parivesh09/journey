@@ -69,15 +69,18 @@ function RoutineRow({
           onClick={onToggle}
         />
         <div className="min-w-0 flex-1">
-          <p
-            className={
-              routine.doneToday
-                ? "truncate text-[0.9rem] leading-6 text-graphite-2 line-through decoration-graphite/50"
-                : "truncate text-[0.9rem] font-medium leading-6 text-graphite"
-            }
-          >
-            {routine.title}
-          </p>
+          <div className="flex items-center gap-2">
+            <p
+              className={
+                routine.doneToday
+                  ? "truncate text-[0.9rem] leading-6 text-graphite-2 line-through decoration-graphite/50"
+                  : "truncate text-[0.9rem] font-medium leading-6 text-graphite"
+              }
+            >
+              {routine.title}
+            </p>
+            <span className="badge badge-routine">Routine</span>
+          </div>
           <p className="mt-0.5 truncate font-mono text-[0.65rem] text-graphite-2">
             Every day ·{" "}
             {routine.plannedMinutes ?? routine.estimatedMinutes ?? 60}m
@@ -356,9 +359,12 @@ export default function DailyTab() {
                   onClick={() => completeConnected(item)}
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-[0.9rem] font-medium leading-6 text-graphite">
-                    {item.task.title}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="truncate text-[0.9rem] font-medium leading-6 text-graphite">
+                      {item.task.title}
+                    </p>
+                    <span className="badge badge-roadmap">Roadmap</span>
+                  </div>
                   <p className="mt-0.5 truncate font-mono text-[0.65rem] text-graphite-2">
                     {item.task.milestoneTitle ?? item.task.phaseTitle} /{" "}
                     {item.task.topicTitle ?? "General"}
@@ -426,9 +432,12 @@ export default function DailyTab() {
                         className="flex items-center gap-3 border-b border-graphite/15 px-1 py-3"
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[0.9rem] font-medium text-graphite">
-                            {task.title}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-[0.9rem] font-medium text-graphite">
+                              {task.title}
+                            </p>
+                            <span className="badge badge-roadmap">Roadmap</span>
+                          </div>
                           <p className="mt-0.5 truncate font-mono text-[0.65rem] text-graphite-2">
                             {task.phaseTitle ?? "No phase"} /{" "}
                             {task.topicTitle ?? "No topic"}

@@ -11,6 +11,6 @@ export default {
     path: path.join("prisma", "views"),
   },
   datasource: {
-    url: process.env.DIRECT_URL ?? process.env.DATABASE_URL,
+    url: process.env.DIRECT_URL ?? process.env.DATABASE_URL ?? "",
   },
 } satisfies PrismaConfig;
