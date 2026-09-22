@@ -5,17 +5,17 @@ import { isAuthenticated } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "Revision",
-  description: "Review and revise completed topics",
+  title: "Projects",
+  description: "Engineering projects and development tasks",
 };
 
-export default async function RevisionPage() {
+export default async function ProjectsPage() {
   if (!(await isAuthenticated())) redirect("/login");
   return (
-    <AppShell active="revision">
+    <AppShell active="projects">
       <TasksWorkspace
         initialTab="roadmap"
-        initialFilters={{ taskType: "revision" }}
+        initialFilters={{}}
       />
     </AppShell>
   );

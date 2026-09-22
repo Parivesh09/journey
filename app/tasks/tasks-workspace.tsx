@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sheet } from "@/app/components/ui";
+import { Sheet, PageHeader, SectionHead } from "@/app/components/ui";
 import DailyTab from "./daily-tab";
 import RoadmapTab from "./roadmap-tab";
 
@@ -18,58 +18,60 @@ export default function TasksWorkspace({
     {
       id: "daily" as const,
       label: "Daily",
-      description: "Today's routines and connected roadmap tasks",
+      description: "Today's routines and connected tasks",
     },
     {
       id: "roadmap" as const,
       label: "Roadmap",
-      description: "Milestones, prerequisites, and the full study plan",
+      description: "Milestones, phases, and study plan",
     },
   ];
 
   return (
-    <main className="container mx-auto max-w-[1120px] px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
-      <Sheet className="overflow-hidden px-5 py-7 sm:px-8 sm:py-9">
-        <header className="border-b border-stone-400 pb-5">
-          <h1 className="text-[1.6rem] font-bold leading-none tracking-tight text-graphite sm:text-[1.9rem]">
-            Tasks
-          </h1>
-          <p className="mt-3 max-w-[62ch] text-[0.8125rem] leading-5 text-graphite-2">
-            Your personal daily routines live next to the roadmap that feeds
-            them.
-          </p>
-        </header>
+    <main className="px-6 py-8 sm:px-8 lg:px-12">
+      <Sheet>
+        <PageHeader
+          title="Tasks"
+          subtitle="Your daily routines and roadmap progress in one view"
+        />
 
-        <div
-          role="tablist"
-          aria-label="Task views"
-          className="mt-3 flex items-center gap-1"
-        >
-          {tabs.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === item.id}
-              onClick={() => setTab(item.id)}
-              className="tab text-white"
-            >
-              {item.label}
-            </button>
-          ))}
-          <span className="ml-auto hidden self-center text-[0.72rem] text-graphite-2 sm:block">
-            {tabs.find((item) => item.id === tab)?.description}
-          </span>
+        <div className="border-b border-hairline mb-8">
+          <div className="flex items-center gap-8">
+            {tabs.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setTab(item.id)}
+                className={`pb-3 border-b-2 transition-colors font-medium ${
+                  tab === item.id
+                    ? "border-highlighter-amber text-graphite"
+                    : "border-transparent text-graphite-muted hover:text-graphite"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+            <div className="ml-auto text-[0.75rem] text-graphite-faint hidden sm:block">
+              {tabs.find((item) => item.id === tab)?.description}
+            </div>
+          </div>
         </div>
 
-        <div className="mt-8">
+        <div>
           {tab === "daily" ? (
             <DailyTab />
           ) : (
-            <RoadmapTab
-              title="All roadmap tasks"
-              initialFilters={initialFilters}
-            />
+            <>
+              <SectionHead
+                index="01"
+                title="Roadmap Overview"
+                instruction="Your activated roadmaps and progress"
+              />
+              <RoadmapTab
+                title="All roadmap tasks"
+                initialFilters={initialFilters}
+              />
+            </>
           )}
         </div>
       </Sheet>

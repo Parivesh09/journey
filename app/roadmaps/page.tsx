@@ -9,7 +9,7 @@ import {
   type RoadmapTemplate,
 } from "@/lib/business/roadmap-templates";
 import AppShell from "@/app/components/shell";
-import { SectionHead, Stamp } from "@/app/components/ui";
+import { PageHeader, Sheet, SectionHead, Stamp } from "@/app/components/ui";
 import ActivateButton from "./activate-button";
 
 export const metadata: Metadata = {
@@ -21,7 +21,7 @@ export default async function RoadmapsPage() {
   const user = await getCurrentUser();
   if (!user) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center p-6 text-bone-2">
+      <div className="flex min-h-[60vh] items-center justify-center p-6 text-bone-muted">
         Please sign in to browse roadmaps.
       </div>
     );
@@ -52,17 +52,21 @@ export default async function RoadmapsPage() {
   );
 
   return (
-    <AppShell active="roadmaps">
-      <main className="mx-auto max-w-[1120px] px-4 py-6 sm:px-6 lg:px-10 lg:py-10">
-        <div className="sheet overflow-hidden px-5 py-7 sm:px-8 sm:py-9">
+    <AppShell active="roadmap">
+      <main className="px-6 py-8 sm:px-8 lg:px-12">
+        <Sheet>
+          <PageHeader
+            title="Roadmap Library"
+            subtitle="Pick a curriculum track to inspect its full structure, then enroll to schedule it into your daily plan"
+          />
+
           <SectionHead
             index="01"
-            title="Roadmap library"
-            instruction="Pick a curriculum track to inspect its full structure, then enroll to schedule it into your daily plan."
+            title="Available Tracks"
             aside={`${validTemplates.length} tracks`}
           />
 
-          <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {validTemplates.map(({ template, activated }) => {
               const totalPhases = template.phases.length;
               const totalTopics = template.phases.reduce(
@@ -83,84 +87,67 @@ export default async function RoadmapsPage() {
                 <Link
                   key={template.id}
                   href={`/roadmaps/${template.id}`}
-                  className="group sheet flex flex-col overflow-hidden transition-all duration-200 hover:-translate-y-0.5"
+                  className="group border border-hairline rounded hover:border-hairline-strong transition-colors bg-paper"
                 >
-                  <div className="flex flex-1 flex-col p-5">
+                  <div className="p-5">
                     <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="truncate text-[1.05rem] font-bold tracking-tight text-graphite group-hover:text-amber-ink">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-[1.05rem] font-semibold text-graphite group-hover:text-amber-ink">
                           {template.title}
                         </h3>
                         {template.description && (
-                          <p className="mt-1.5 line-clamp-2 text-[0.8rem] leading-5 text-graphite-2">
+                          <p className="mt-2 text-[0.85rem] leading-relaxed text-graphite-muted line-clamp-2">
                             {template.description}
                           </p>
                         )}
                       </div>
-                      {activated ? (
-                        <Stamp tone="valid" className="shrink-0">
-                          Enrolled
-                        </Stamp>
-                      ) : (
-                        <Stamp tone="amber" className="shrink-0">
-                          Available
-                        </Stamp>
-                      )}
+                      <Stamp tone={activated ? "valid" : "amber"} className="shrink-0">
+                        {activated ? "Enrolled" : "Available"}
+                      </Stamp>
                     </div>
 
-                    <div className="mt-4 grid grid-cols-3 gap-2">
-                      <div className="rounded-lg border border-stone-400 bg-paper/40 px-2 py-2 text-center">
-                        <div className="font-mono text-[1.05rem] font-bold text-graphite">
+                    <div className="mt-4 grid grid-cols-3 gap-3">
+                      <div className="text-center py-2 border border-hairline rounded">
+                        <div className="font-mono text-[1.1rem] font-semibold text-graphite">
                           {totalPhases}
                         </div>
-                        <div className="mt-0.5 text-[0.62rem] uppercase tracking-wider text-graphite-3">
+                        <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
                           Phases
                         </div>
                       </div>
-                      <div className="rounded-lg border border-stone-400 bg-paper/40 px-2 py-2 text-center">
-                        <div className="font-mono text-[1.05rem] font-bold text-graphite">
+                      <div className="text-center py-2 border border-hairline rounded">
+                        <div className="font-mono text-[1.1rem] font-semibold text-graphite">
                           {totalTopics}
                         </div>
-                        <div className="mt-0.5 text-[0.62rem] uppercase tracking-wider text-graphite-3">
+                        <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
                           Topics
                         </div>
                       </div>
-                      <div className="rounded-lg border border-stone-400 bg-paper/40 px-2 py-2 text-center">
-                        <div className="font-mono text-[1.05rem] font-bold text-graphite">
+                      <div className="text-center py-2 border border-hairline rounded">
+                        <div className="font-mono text-[1.1rem] font-semibold text-graphite">
                           {totalTasks}
                         </div>
-                        <div className="mt-0.5 text-[0.62rem] uppercase tracking-wider text-graphite-3">
+                        <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
                           Tasks
                         </div>
                       </div>
                     </div>
 
-                    <div className="mt-auto pt-5">
-                      {activated ? (
-                        <span className="inline-flex items-center gap-1.5 font-mono text-[0.72rem] font-medium text-valid">
-                          <span className="h-1.5 w-1.5 rounded-full bg-valid" />
-                          Enrolled · active in your plan
-                        </span>
-                      ) : (
-                        <ActivateButton templateId={template.id} />
-                      )}
+                    <div className="mt-4 pt-4 border-t border-hairline flex items-center justify-between">
+                      <span className="font-mono text-[0.7rem] text-graphite-faint">
+                        {template.milestones.length} milestones
+                      </span>
+                      <span className="inline-flex items-center gap-1 font-mono text-[0.7rem] text-amber-ink group-hover:text-highlighter-amber">
+                        View
+                        <ArrowRight className="h-3 w-3" />
+                      </span>
                     </div>
-                  </div>
-
-                  <div className="flex items-center justify-between border-t border-stone-400 bg-paper/50 px-5 py-3">
-                    <span className="font-mono text-[0.68rem] text-graphite-3">
-                      {template.milestones.length} milestones
-                    </span>
-                    <span className="inline-flex items-center gap-1 font-mono text-[0.7rem] font-medium text-amber-ink transition-colors group-hover:text-amber">
-                      View details
-                      <ArrowRight className="h-3 w-3" aria-hidden />
-                    </span>
                   </div>
                 </Link>
               );
             })}
           </div>
-        </div>
+        </Sheet>
       </main>
     </AppShell>
   );

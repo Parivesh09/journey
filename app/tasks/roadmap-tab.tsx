@@ -5,11 +5,11 @@ import { cn } from "@/lib/utils";
 import { Link2, Lock, Plus } from "lucide-react";
 import {
   Bubble,
-  EmptyNote,
+  EmptyState,
   SectionHead,
   SkeletonRows,
   Stamp,
-  FormError,
+  FormGroup,
 } from "@/app/components/ui";
 
 type RoadmapSummary = {
@@ -58,6 +58,7 @@ type MilestonesData = {
   nextUpTaskId: string | null;
   milestones: Milestone[];
   pinnedTaskIds: string[];
+  phases: MilestonePhase[];
 };
 
 const KNOWN_TEMPLATES = [
@@ -365,43 +366,138 @@ export default function RoadmapTab({
 
   return (
     <div>
-      {error ? <FormError>{error}</FormError> : null}
+      {error && (
+        <div className="rounded border border-stamp-red/50 bg-stamp-red/5 px-4 py-3 text-[0.85rem] text-stamp-red mb-4">
+          {error}
+        </div>
+      )}
 
       <section>
-        <SectionHead
-          index="01"
-          title={title}
-          instruction="Milestones gate each other — a milestone unlocks only when its prerequisites are done."
-        />
-        <div className="mt-4 flex flex-wrap items-end gap-2">
-          <label className="min-w-[12rem] flex-1 text-[0.72rem] font-semibold text-graphite-2">
-            Active roadmap
-            <select
-              value={selectedId}
-              onChange={(event) => setSelectedId(event.target.value)}
-              className="field mt-1 appearance-none pr-6"
-            >
-              {roadmaps.length === 0 ? (
-                <option value="">No active roadmap</option>
-              ) : (
-                roadmaps.map((roadmap) => (
-                  <option key={roadmap.id} value={roadmap.id}>
-                    {roadmap.title}
-                  </option>
-                ))
-              )}
-            </select>
-          </label>
-          <button
-            type="button"
-            onClick={() => setActivateOpen(true)}
-            className="btn btn-secondary shrink-0"
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-            Activate
-          </button>
-        </div>
+        {data ? (
+          <>
+            <SectionHead
+              index="01"
+              title={data.roadmap.title}
+              instruction={data.roadmap.description}
+              aside={`${data.milestones.length} milestones`}
+            />
+            <div className="mt-4 flex flex-wrap items-end gap-2">
+              <label className="min-w-[12rem] flex-1 text-[0.72rem] font-semibold text-graphite-2">
+                Active roadmap
+                <select
+                  value={selectedId}
+                  onChange={(event) => setSelectedId(event.target.value)}
+                  className="field mt-1 appearance-none pr-6"
+                >
+                  {roadmaps.length === 0 ? (
+                    <option value="">No active roadmap</option>
+                  ) : (
+                    roadmaps.map((roadmap) => (
+                      <option key={roadmap.id} value={roadmap.id}>
+                        {roadmap.title}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </label>
+              <button
+                type="button"
+                onClick={() => setActivateOpen(true)}
+                className="btn btn-secondary shrink-0"
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+                Activate
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <SectionHead
+              index="01"
+              title={title}
+              instruction="Milestones gate each other — a milestone unlocks only when its prerequisites are done."
+            />
+            <div className="mt-4 flex flex-wrap items-end gap-2">
+              <label className="min-w-[12rem] flex-1 text-[0.72rem] font-semibold text-graphite-2">
+                Active roadmap
+                <select
+                  value={selectedId}
+                  onChange={(event) => setSelectedId(event.target.value)}
+                  className="field mt-1 appearance-none pr-6"
+                >
+                  {roadmaps.length === 0 ? (
+                    <option value="">No active roadmap</option>
+                  ) : (
+                    roadmaps.map((roadmap) => (
+                      <option key={roadmap.id} value={roadmap.id}>
+                        {roadmap.title}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </label>
+              <button
+                type="button"
+                onClick={() => setActivateOpen(true)}
+                className="btn btn-secondary shrink-0"
+              >
+                <Plus className="h-4 w-4" aria-hidden />
+                Activate
+              </button>
+            </div>
+          </>
+        )}
+
       </section>
+
+      {data && data.phases && (
+        <div className="mt-8 mb-6 grid grid-cols-3 gap-4">
+          {(() => {
+            const totalPhases = data.phases.length;
+            const totalTopics = data.phases.reduce(
+              (sum: number, p: MilestonePhase) => sum + (p.topics ?? []).length,
+              0,
+            );
+            const totalTasks = data.phases.reduce(
+              (sum: number, p: MilestonePhase) =>
+                sum +
+                (p.topics ?? []).reduce(
+                  (tSum: number, t: MilestoneTopic) => tSum + (t.tasks ?? []).length,
+                  0,
+                ),
+              0,
+            );
+            return (
+              <>
+                <div className="text-center py-3 border border-hairline rounded bg-paper-shade/50">
+                  <div className="font-mono text-[1.25rem] font-semibold text-graphite">
+                    {totalPhases}
+                  </div>
+                  <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
+                    Phases
+                  </div>
+                </div>
+                <div className="text-center py-3 border border-hairline rounded bg-paper-shade/50">
+                  <div className="font-mono text-[1.25rem] font-semibold text-graphite">
+                    {totalTopics}
+                  </div>
+                  <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
+                    Topics
+                  </div>
+                </div>
+                <div className="text-center py-3 border border-hairline rounded bg-paper-shade/50">
+                  <div className="font-mono text-[1.25rem] font-semibold text-graphite">
+                    {totalTasks}
+                  </div>
+                  <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
+                    Tasks
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
 
       {loading ? (
         <SkeletonRows rows={4} />
@@ -533,10 +629,10 @@ export default function RoadmapTab({
         </>
       ) : (
         <div className="mt-6">
-          <EmptyNote>
-            No roadmap active yet. Activate one to start working through its
-            milestones.
-          </EmptyNote>
+          <EmptyState
+            title="No roadmap active"
+            description="Activate one to start working through its milestones"
+          />
           <button
             type="button"
             onClick={() => setActivateOpen(true)}

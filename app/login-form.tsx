@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Sheet } from "@/app/components/ui";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -30,71 +31,64 @@ export default function LoginForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
-      <form onSubmit={submit} className="sheet w-full max-w-sm p-6 sm:p-8">
-        <div className="flex items-center gap-2.5 border-b border-stone-400 pb-5">
-          <span
-            aria-hidden
-            className="grid h-6 w-6 place-items-center rounded-lg bg-amber text-[0.62rem] font-bold text-white"
-          >
-            S
-          </span>
-          <span className="text-[0.8rem] font-semibold tracking-tight text-graphite">
-            SDE Command Center
-          </span>
-        </div>
+    <main className="min-h-screen flex items-center justify-center px-4 py-8 bg-ink-ground">
+      <div className="w-full max-w-sm">
+        <Sheet className="p-8">
+          <div className="text-center mb-8">
+            <div className="grid h-12 w-12 place-items-center bg-highlighter-amber text-[0.9rem] font-bold text-white mx-auto rounded">
+              S
+            </div>
+            <h1 className="mt-4 text-[1.85rem] font-bold text-graphite">SDE Command Center</h1>
+            <p className="mt-2 text-[0.9rem] text-graphite-muted">Sign in to your workspace</p>
+          </div>
 
-        <h1 className="mt-6 text-[1.75rem] font-bold leading-tight tracking-tight text-graphite">
-          Sign in
-        </h1>
-        <p className="mt-2 text-[0.8125rem] leading-5 text-graphite-2">
-          Your personal SDE workspace is waiting.
-        </p>
+          <form onSubmit={submit} className="space-y-5">
+            <div>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                className="field border-b-2 w-full"
+                placeholder="Email"
+              />
+            </div>
 
-        <label className="mt-7 block text-[0.72rem] font-semibold text-graphite-2">
-          Email
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className="field mt-1 normal-case tracking-normal"
-          />
-        </label>
-        <label className="mt-5 block text-[0.72rem] font-semibold text-graphite-2">
-          Password
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="field mt-1 normal-case tracking-normal"
-          />
-        </label>
+            <div>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="field border-b-2 w-full"
+                placeholder="Password"
+              />
+            </div>
 
-        {error ? (
-          <p
-            className="mt-4 text-[0.78rem] font-medium text-stamp"
-            role="alert"
-          >
-            {error}
-          </p>
-        ) : null}
+            {error && (
+              <div className="rounded border border-stamp-red/50 bg-stamp-red/5 px-3 py-2 text-[0.8rem] text-stamp-red">
+                {error}
+              </div>
+            )}
 
-        <button disabled={loading} className="btn btn-primary mt-6 w-full py-3">
-          {loading ? "Signing in" : "Sign in"}
-        </button>
+            <button 
+              disabled={loading} 
+              className="btn btn-primary w-full py-3 mt-2"
+            >
+              {loading ? "Signing in..." : "Sign In"}
+            </button>
+          </form>
 
-        <p className="mt-6 border-t border-stone-400 pt-4 text-center text-[0.8125rem] text-graphite-2">
-          New here?{" "}
-          <Link
-            href="/signup"
-            className="font-semibold text-amber-ink hover:underline hover:underline-offset-4"
-          >
-            Create an account
-          </Link>
-        </p>
-      </form>
+          <div className="mt-6 pt-6 border-t border-hairline text-center">
+            <p className="text-[0.85rem] text-graphite-muted">
+              New here?{" "}
+              <Link href="/signup" className="font-medium text-highlighter-amber hover:underline">
+                Create account
+              </Link>
+            </p>
+          </div>
+        </Sheet>
+      </div>
     </main>
   );
 }

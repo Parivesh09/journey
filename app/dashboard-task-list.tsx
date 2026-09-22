@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bubble, EmptyNote, Stamp, FormError } from "@/app/components/ui";
+import { Bubble, Stamp, EmptyState } from "@/app/components/ui";
 
 export type DashboardTaskRow = {
   id: string;
@@ -65,67 +65,64 @@ export default function DashboardTaskList({
 
   if (items.length === 0) {
     return (
-      <EmptyNote>
-        Nothing on today&rsquo;s list. Add a routine or connect a roadmap task.
-      </EmptyNote>
+      <EmptyState
+        title="No tasks today"
+        description="Add a routine or connect a roadmap task to get started"
+      />
     );
   }
 
   return (
-    <div className="mt-4">
-      {error ? <FormError>{error}</FormError> : null}
-      <div className="border-t border-graphite/25">
+    <div className="mt-6">
+      {error && (
+        <div className="mb-4 rounded border border-stamp-red/30 bg-stamp-red/5 px-4 py-3 text-[0.85rem] text-stamp-red">
+          {error}
+        </div>
+      )}
+      <div className="border-t border-hairline">
         {items.map((row, index) => {
           const busy = updatingId === row.id;
           const urgent = ["HIGH", "CRITICAL"].includes(row.priority);
+          
           return (
             <div
               key={`${row.kind}-${row.id}`}
-              className="relative border-b border-graphite/15"
+              className="task-row py-3"
             >
-              <span className="hl" data-on={row.done} aria-hidden />
-              <div className="relative z-10 flex items-center gap-3 px-1 py-3">
-                <span className="w-6 shrink-0 font-mono text-[0.68rem] tabular-nums text-graphite-3">
-                  {String(index + 1).padStart(2, "0")}
-                </span>
-                <Bubble
-                  filled={row.done}
-                  busy={busy}
-                  label={row.done ? "Mark incomplete" : "Mark complete"}
-                  onClick={() => toggleTask(row)}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2">
-                    <p
-                      className={
-                        row.done
-                          ? "truncate text-[0.9rem] leading-6 text-graphite-2 line-through decoration-graphite/50"
-                          : "truncate text-[0.9rem] font-medium leading-6 text-graphite"
-                      }
-                    >
-                      {row.title}
-                    </p>
-                    {row.kind === "routine" && (
-                      <span className="badge badge-routine">Routine</span>
-                    )}
-                    {row.kind === "connected" && (
-                      <span className="badge badge-roadmap">Roadmap</span>
-                    )}
-                    {row.kind === "task" && (
-                      <span className="badge badge-personal">Personal</span>
-                    )}
-                  </div>
-                  <p className="mt-0.5 truncate text-[0.7rem] text-graphite-2">
-                    {row.dailySlot?.replaceAll("_", " ") ??
-                      row.category?.name ??
-                      "Scheduled"}{" "}
-                    · {row.plannedMinutes ?? row.estimatedMinutes ?? 60}m
-                  </p>
-                </div>
-                <Stamp tone={urgent ? "stamp" : "neutral"}>
-                  {row.priority}
-                </Stamp>
+              <div className="ml-1 font-mono text-[0.7rem] text-graphite-faint w-6 tabular-nums">
+                {String(index + 1).padStart(2, "0")}
               </div>
+              <Bubble
+                filled={row.done}
+                busy={busy}
+                label={row.done ? "Mark incomplete" : "Mark complete"}
+                onClick={() => toggleTask(row)}
+              />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className={`truncate text-[0.9rem] ${row.done ? "text-graphite-faint line-through" : "text-graphite font-medium"}`}>
+                    {row.title}
+                  </p>
+                  {row.kind === "routine" && (
+                    <Stamp tone="valid">Routine</Stamp>
+                  )}
+                  {row.kind === "connected" && (
+                    <Stamp tone="amber">Roadmap</Stamp>
+                  )}
+                  {row.kind === "task" && (
+                    <Stamp tone="neutral">Personal</Stamp>
+                  )}
+                </div>
+                <p className="mt-0.5 truncate font-mono text-[0.7rem] text-graphite-faint">
+                  {row.dailySlot?.replaceAll("_", " ") ??
+                    row.category?.name ??
+                    "Scheduled"}{" "}
+                  · {row.plannedMinutes ?? row.estimatedMinutes ?? 60}m
+                </p>
+              </div>
+              <Stamp tone={urgent ? "stamp" : "neutral"} className="text-[0.7rem]">
+                {row.priority}
+              </Stamp>
             </div>
           );
         })}

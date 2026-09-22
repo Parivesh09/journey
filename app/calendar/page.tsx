@@ -5,17 +5,17 @@ import { isAuthenticated } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "Revision",
-  description: "Review and revise completed topics",
+  title: "Calendar",
+  description: "View scheduled tasks and events",
 };
 
-export default async function RevisionPage() {
+export default async function CalendarPage() {
   if (!(await isAuthenticated())) redirect("/login");
   return (
-    <AppShell active="revision">
+    <AppShell active="calendar">
       <TasksWorkspace
-        initialTab="roadmap"
-        initialFilters={{ taskType: "revision" }}
+        initialTab="daily"
+        initialFilters={{}}
       />
     </AppShell>
   );

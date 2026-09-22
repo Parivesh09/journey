@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Link2, Plus, Search } from "lucide-react";
+import { Plus, Search, Link2 } from "lucide-react";
 import {
-  Bubble,
-  EmptyNote,
-  FormError,
   SectionHead,
-  SkeletonRows,
   Stamp,
+  Bubble,
+  PrimaryButton,
+  SecondaryButton,
+  EmptyState,
+  Loader,
 } from "@/app/components/ui";
 
 type Routine = {
@@ -58,37 +59,30 @@ function RoutineRow({
   updating: boolean;
   onToggle: () => void;
 }) {
+  const minutes = routine.plannedMinutes ?? routine.estimatedMinutes ?? 60;
+  
   return (
-    <div className="relative border-b border-graphite/15 last:border-b-0">
-      <span className="hl" data-on={routine.doneToday} aria-hidden />
-      <div className="relative z-10 flex items-center gap-3 px-1 py-3">
-        <Bubble
-          filled={routine.doneToday}
-          busy={updating}
-          label={routine.doneToday ? "Mark not done today" : "Mark done today"}
-          onClick={onToggle}
-        />
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
-            <p
-              className={
-                routine.doneToday
-                  ? "truncate text-[0.9rem] leading-6 text-graphite-2 line-through decoration-graphite/50"
-                  : "truncate text-[0.9rem] font-medium leading-6 text-graphite"
-              }
-            >
-              {routine.title}
-            </p>
-            <span className="badge badge-routine">Routine</span>
-          </div>
-          <p className="mt-0.5 truncate font-mono text-[0.65rem] text-graphite-2">
-            Every day ·{" "}
-            {routine.plannedMinutes ?? routine.estimatedMinutes ?? 60}m
-            {routine.doneToday ? " · done today" : ""}
+    <div className="task-row py-3">
+      <Bubble
+        filled={routine.doneToday}
+        busy={updating}
+        label={routine.doneToday ? "Mark not done" : "Mark done"}
+        onClick={onToggle}
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className={`truncate text-[0.9rem] ${routine.doneToday ? "text-graphite-faint line-through" : "text-graphite font-medium"}`}>
+            {routine.title}
           </p>
+          <Stamp tone="valid">Routine</Stamp>
         </div>
-        <Stamp>{routine.priority}</Stamp>
+        <p className="mt-0.5 font-mono text-[0.7rem] text-graphite-faint">
+          Every day · {minutes}m {routine.doneToday && "· done today"}
+        </p>
       </div>
+      <Stamp tone="neutral" className="text-[0.7rem]">
+        {routine.priority}
+      </Stamp>
     </div>
   );
 }
@@ -269,46 +263,52 @@ export default function DailyTab() {
   const remaining = routines.filter((routine) => !routine.doneToday).length;
 
   return (
-    <div>
-      {error ? <FormError>{error}</FormError> : null}
+    <div className="space-y-10">
+      {error && (
+        <div className="rounded bg-stamp-red/10 border border-stamp-red/20 p-3 text-[0.85rem] text-stamp-red">
+          {error}
+        </div>
+      )}
 
       <section>
         <SectionHead
           index="01"
-          title="Every-day habits"
+          title="Every-day Habits"
           instruction={
             routines.length === 0
-              ? "Small, repeatable habits you keep regardless of the roadmap."
+              ? "Small, repeatable habits you keep regardless of roadmap"
               : `${remaining} of ${routines.length} left today. Routines reset each day.`
           }
         />
-        <form onSubmit={addRoutine} className="mt-4 flex items-end gap-2">
-          <input
-            value={newTitle}
-            onChange={(event) => setNewTitle(event.target.value)}
-            placeholder="Add a routine, e.g. 30 min DSA"
-            aria-label="New routine title"
-            className="field"
-          />
-          <button
-            type="submit"
-            disabled={adding || !newTitle.trim()}
-            aria-label="Add routine"
-            className="btn btn-primary shrink-0"
-          >
-            <Plus className="h-4 w-4" aria-hidden />
+        
+        <form onSubmit={addRoutine} className="mt-4 flex gap-3">
+          <div className="flex-1">
+            <input
+              value={newTitle}
+              onChange={(event) => setNewTitle(event.target.value)}
+              placeholder="Add a routine, e.g. 30 min DSA"
+              className="field border-b-2"
+            />
+          </div>
+          <PrimaryButton type="submit" disabled={adding || !newTitle.trim()}>
+            <Plus className="h-4 w-4" />
             {adding ? "Adding" : "Add"}
-          </button>
+          </PrimaryButton>
         </form>
 
         {loading ? (
-          <SkeletonRows rows={2} />
+          <div className="mt-6 space-y-3">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="h-12 bg-paper-shade animate-pulse rounded" />
+            ))}
+          </div>
         ) : routines.length === 0 ? (
-          <EmptyNote>
-            No routines yet. Start with one habit you can keep every day.
-          </EmptyNote>
+          <EmptyState
+            title="No routines yet"
+            description="Start with one habit you can keep every day"
+          />
         ) : (
-          <div className="mt-4 border-t border-graphite/25">
+          <div className="mt-6 border-t border-hairline">
             {routines.map((routine) => (
               <RoutineRow
                 key={routine.id}
@@ -321,37 +321,36 @@ export default function DailyTab() {
         )}
       </section>
 
-      <section className="mt-10">
+      <section>
         <SectionHead
           index="02"
-          title="Focus tasks"
-          instruction="Roadmap tasks you've pulled into your day. They stay here until you complete them."
+          title="Focus Tasks"
+          instruction="Roadmap tasks you've pulled into your day"
           aside={`${connected.length} connected`}
         />
+        
         <div className="mt-4">
-          <button
-            type="button"
-            onClick={() => setPickerOpen(true)}
-            className="btn btn-secondary"
-          >
-            <Link2 className="h-4 w-4" aria-hidden />
-            From roadmap
-          </button>
+          <SecondaryButton onClick={() => setPickerOpen(true)}>
+            <Link2 className="h-4 w-4" />
+            From Roadmap
+          </SecondaryButton>
         </div>
 
         {loading ? (
-          <SkeletonRows rows={2} />
+          <div className="mt-6 space-y-3">
+            {[...Array(2)].map((_, i) => (
+              <div key={i} className="h-16 bg-paper-shade animate-pulse rounded" />
+            ))}
+          </div>
         ) : connected.length === 0 ? (
-          <EmptyNote>
-            Nothing connected. Pick unfinished roadmap tasks to work on here.
-          </EmptyNote>
+          <EmptyState
+            title="Nothing connected"
+            description="Pick unfinished roadmap tasks to work on here"
+          />
         ) : (
-          <div className="mt-4 border-t border-graphite/25">
+          <div className="mt-6 border-t border-hairline">
             {connected.map((item) => (
-              <div
-                key={item.pinId}
-                className="flex items-center gap-3 border-b border-graphite/15 px-1 py-3 last:border-b-0"
-              >
+              <div key={item.pinId} className="task-row py-3">
                 <Bubble
                   filled={false}
                   busy={updating === item.task.id}
@@ -360,97 +359,85 @@ export default function DailyTab() {
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="truncate text-[0.9rem] font-medium leading-6 text-graphite">
+                    <p className="truncate text-[0.9rem] font-medium text-graphite">
                       {item.task.title}
                     </p>
-                    <span className="badge badge-roadmap">Roadmap</span>
+                    <Stamp tone="amber">Roadmap</Stamp>
                   </div>
-                  <p className="mt-0.5 truncate font-mono text-[0.65rem] text-graphite-2">
-                    {item.task.milestoneTitle ?? item.task.phaseTitle} /{" "}
-                    {item.task.topicTitle ?? "General"}
+                  <p className="mt-0.5 truncate font-mono text-[0.7rem] text-graphite-faint">
+                    {item.task.milestoneTitle ?? item.task.phaseTitle} / {item.task.topicTitle ?? "General"}
                   </p>
                 </div>
-                <Stamp>{item.task.priority}</Stamp>
+                <Stamp tone="neutral" className="text-[0.7rem]">
+                  {item.task.priority}
+                </Stamp>
               </div>
             ))}
           </div>
         )}
       </section>
 
-      {pickerOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b0f18]/50 px-4 py-8 backdrop-blur-md"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="roadmap-picker-title"
-        >
-          <div className="panel w-full max-w-2xl overflow-hidden p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4 border-b border-stone-400 pb-4">
-              <h2
-                id="roadmap-picker-title"
-                className="text-[1.15rem] font-semibold tracking-tight text-graphite"
-              >
-                Pick from your roadmap
-              </h2>
-              <button
-                type="button"
-                onClick={() => setPickerOpen(false)}
-                aria-label="Close roadmap picker"
-                className="-mr-1 -mt-1 px-2 py-1 font-mono text-lg leading-none text-graphite-2 hover:text-graphite"
-              >
-                ×
-              </button>
+      {pickerOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-ground/80 backdrop-blur-sm p-4">
+          <div className="bg-paper rounded shadow-xl max-w-2xl w-full max-h-[80vh] flex flex-col">
+            <div className="p-6 border-b border-hairline">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[1.1rem] font-semibold text-graphite">Pick from Roadmap</h3>
+                <button
+                  onClick={() => setPickerOpen(false)}
+                  className="text-graphite-muted hover:text-graphite text-xl leading-none"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="mt-4 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-graphite-faint" />
+                <input
+                  autoFocus
+                  value={pickerQuery}
+                  onChange={(event) => searchPicker(event.target.value)}
+                  placeholder="Search roadmap tasks"
+                  className="field pl-10 border-b-2"
+                />
+              </div>
             </div>
 
-            <div className="relative mt-4">
-              <Search
-                className="pointer-events-none absolute left-0 top-1/2 h-4 w-4 -translate-y-1/2 text-graphite-3"
-                aria-hidden
-              />
-              <input
-                autoFocus
-                value={pickerQuery}
-                onChange={(event) => searchPicker(event.target.value)}
-                placeholder="Search roadmap tasks"
-                aria-label="Search roadmap tasks"
-                className="field pl-6"
-              />
-            </div>
-
-            <div className="mt-4 max-h-[50vh] overflow-y-auto">
+            <div className="flex-1 overflow-y-auto p-6">
               {pickerLoading ? (
-                <SkeletonRows rows={3} />
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="h-16 bg-paper-shade animate-pulse rounded" />
+                  ))}
+                </div>
               ) : pickerQuery.trim() && pickerResults.length === 0 ? (
-                <EmptyNote>No unfinished tasks match that search.</EmptyNote>
+                <EmptyState
+                  title="No matches"
+                  description="No unfinished tasks match that search"
+                />
               ) : (
-                <div className="border-t border-graphite/25">
+                <div className="space-y-1">
                   {pickerResults.map((task) => {
                     const pinned = pinnedTaskIds.has(task.id);
                     return (
-                      <div
-                        key={task.id}
-                        className="flex items-center gap-3 border-b border-graphite/15 px-1 py-3"
-                      >
+                      <div key={task.id} className="task-row py-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2">
                             <p className="truncate text-[0.9rem] font-medium text-graphite">
                               {task.title}
                             </p>
-                            <span className="badge badge-roadmap">Roadmap</span>
+                            <Stamp tone="amber">Roadmap</Stamp>
                           </div>
-                          <p className="mt-0.5 truncate font-mono text-[0.65rem] text-graphite-2">
-                            {task.phaseTitle ?? "No phase"} /{" "}
-                            {task.topicTitle ?? "No topic"}
+                          <p className="mt-0.5 truncate font-mono text-[0.7rem] text-graphite-faint">
+                            {task.phaseTitle ?? "No phase"} / {task.topicTitle ?? "No topic"}
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          disabled={pinned}
+                        <SecondaryButton
                           onClick={() => connectTask(task)}
-                          className="btn btn-secondary shrink-0 px-3 py-1.5 text-[0.75rem]"
+                          disabled={pinned}
+                          className="px-4 py-1.5 text-[0.8rem]"
                         >
                           {pinned ? "Connected" : "Connect"}
-                        </button>
+                        </SecondaryButton>
                       </div>
                     );
                   })}
@@ -459,7 +446,7 @@ export default function DailyTab() {
             </div>
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

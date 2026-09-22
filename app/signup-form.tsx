@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Sheet, PrimaryButton, FormGroup } from "@/app/components/ui";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -47,82 +48,74 @@ export default function SignupForm() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center p-4">
-      <form onSubmit={submit} className="sheet w-full max-w-sm p-6 sm:p-8">
-        <div className="flex items-center gap-2.5 border-b border-stone-400 pb-5">
-          <span
-            aria-hidden
-            className="grid h-6 w-6 place-items-center rounded-lg bg-amber text-[0.62rem] font-bold text-white"
-          >
-            S
-          </span>
-          <span className="text-[0.8rem] font-semibold tracking-tight text-graphite">
-            SDE Command Center
-          </span>
-        </div>
+    <main className="min-h-screen flex items-center justify-center px-4 py-8 bg-ink-ground">
+      <div className="w-full max-w-md">
+        <Sheet className="p-8">
+          <div className="text-center mb-8">
+            <div className="grid h-12 w-12 place-items-center bg-highlighter-amber text-[0.9rem] font-bold text-white mx-auto rounded">
+              S
+            </div>
+            <h1 className="mt-4 text-[1.85rem] font-bold text-graphite">Create Workspace</h1>
+            <p className="mt-2 text-[0.9rem] text-graphite-muted">
+              Start your SDE roadmap journey
+            </p>
+          </div>
 
-        <h1 className="mt-6 text-[1.75rem] font-bold leading-tight tracking-tight text-graphite">
-          Create your workspace
-        </h1>
-        <p className="mt-2 text-[0.8125rem] leading-5 text-graphite-2">
-          Your roadmap, plans, and progress stay private to you.
-        </p>
+          <form onSubmit={submit} className="space-y-6">
+            <FormGroup label="Name">
+              <input
+                required
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                className="field border-b-2"
+                placeholder="Your name"
+              />
+            </FormGroup>
 
-        <label className="mt-7 block text-[0.72rem] font-semibold text-graphite-2">
-          Name
-          <input
-            required
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            className="field mt-1 normal-case tracking-normal"
-          />
-        </label>
-        <label className="mt-5 block text-[0.72rem] font-semibold text-graphite-2">
-          Email
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            className="field mt-1 normal-case tracking-normal"
-          />
-        </label>
-        <label className="mt-5 block text-[0.72rem] font-semibold text-graphite-2">
-          Password
-          <input
-            type="password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="At least 8 characters"
-            className="field mt-1 normal-case tracking-normal"
-          />
-        </label>
+            <FormGroup label="Email">
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                className="field border-b-2"
+                placeholder="you@company.com"
+              />
+            </FormGroup>
 
-        {error ? (
-          <p
-            className="mt-4 text-[0.78rem] font-medium text-stamp"
-            role="alert"
-          >
-            {error}
-          </p>
-        ) : null}
+            <FormGroup label="Password">
+              <input
+                type="password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                className="field border-b-2"
+                placeholder="At least 8 characters"
+              />
+            </FormGroup>
 
-        <button disabled={loading} className="btn btn-primary mt-6 w-full py-3">
-          {loading ? "Creating your workspace" : "Create account"}
-        </button>
+            {error && (
+              <div className="rounded border border-stamp-red/50 bg-stamp-red/5 px-3 py-2 text-[0.85rem] text-stamp-red">
+                {error}
+              </div>
+            )}
 
-        <p className="mt-6 border-t border-stone-400 pt-4 text-center text-[0.8125rem] text-graphite-2">
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            className="font-semibold text-amber-ink hover:underline hover:underline-offset-4"
-          >
-            Sign in
-          </Link>
-        </p>
-      </form>
+            <PrimaryButton type="submit" disabled={loading} className="w-full py-3 mt-2">
+              {loading ? "Creating..." : "Create Account"}
+            </PrimaryButton>
+          </form>
+
+          <div className="mt-6 pt-6 border-t border-hairline text-center">
+            <p className="text-[0.9rem] text-graphite-muted">
+              Already have an account?{" "}
+              <Link href="/login" className="font-medium text-highlighter-amber hover:underline">
+                Sign in
+              </Link>
+            </p>
+          </div>
+        </Sheet>
+      </div>
     </main>
   );
 }
