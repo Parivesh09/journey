@@ -1,92 +1,14 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
-import { Link2, Lock, Plus } from "lucide-react";
-import {
-  Bubble,
-  EmptyState,
-  SectionHead,
-  SkeletonRows,
-  Stamp,
-  FormGroup,
-} from "@/app/components/ui";
-import {
-  useGetMilestonesQuery,
-  useGetDailyPinsQuery,
-  useCreateTaskMutation,
-  useToggleTaskCompleteTodayMutation,
-  useActivateRoadmapMutation,
-  useGetRoadmapsQuery,
-  useUpdateTaskMutation,
-  usePinTaskMutation,
-  useUnpinTaskMutation,
-  useCompleteMilestoneMutation,
-} from "@/lib/api";
-import type { RoadmapSummary, MilestonesData, ApiError } from "@/lib/types";
-
-type MilestoneTask = {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  taskType: string | null;
-  difficulty: string | null;
-  phaseTitle: string | null;
-  topicTitle: string | null;
-  sequenceOrder: number;
-};
-
-type MilestoneTopic = { id: string; title: string; tasks: MilestoneTask[] };
-type MilestonePhase = {
-  id: string;
-  title: string;
-  category: string | null;
-  topics: MilestoneTopic[];
-};
-
-type Milestone = {
-  id: string;
-  title: string;
-  description?: string;
-  status: "LOCKED" | "IN_PROGRESS" | "DONE";
-  locked: boolean;
-  manuallyCompleted: boolean;
-  prereqMet: boolean;
-  needsManualCompletion: boolean;
-  prerequisites: Array<{ id: string; title: string; met: boolean }>;
-  progress: { completed: number; total: number; percent: number };
-  phases: MilestonePhase[];
-  nextUpTaskId: string | null;
-};
-
-const KNOWN_TEMPLATES = [
-  { roadmapId: "fullstack-v1", title: "Full Stack Web Development" },
-  { roadmapId: "sde-master-roadmap", title: "SDE Master Roadmap" },
-];
-
-const RAMP =
-  "linear-gradient(90deg, var(--color-amber-ink), var(--color-amber))";
-
-type Filters = {
-  q: string;
-  category: string;
-  phaseId: string;
-  topicId: string;
-  taskType: string;
-  status: string;
-  difficulty: string;
-};
-
-const emptyFilters: Filters = {
-  q: "",
-  category: "",
-  phaseId: "",
-  topicId: "",
-  taskType: "",
-  status: "",
-  difficulty: "",
-};
+import { useState, useEffect, useMemo } from "react";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { useGetMilestonesQuery, useGetDailyPinsQuery, useGetRoadmapsQuery, useUpdateTaskMutation } from "@/lib/api";
+import type { RoadmapSummary, MilestonesData, Filters } from "@/lib/types";
+import { MilestoneCard } from "./components/MilestoneCard";
+import { SkeletonRows, SectionHead, Stamp } from "@/app/components/ui";
+import { extractErrorMessage } from "@/lib/utils";
+import { taskMatches, visiblePhases } from "./components/roadmap-types";
 
 export default function RoadmapTab({
   title,
@@ -95,882 +17,173 @@ export default function RoadmapTab({
   title: string;
   initialFilters?: { category?: string; taskType?: string };
 }) {
-  
-  const [selectedId, setSelectedId] = useState("");
-  const [data, setData] = useState<MilestonesData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [filters, setFilters] = useState<Filters>({
-    ...emptyFilters,
-    ...(initialFilters?.category ? { category: initialFilters.category } : {}),
-    ...(initialFilters?.taskType ? { taskType: initialFilters.taskType } : {}),
-  });
-  const [activateOpen, setActivateOpen] = useState(false);
-  const [activating, setActivating] = useState(false);
-  const [mutating, setMutating] = useState<string | null>(null);
-  const [completingMilestone, setCompletingMilestone] = useState<string | null>(
-    null,
-  );
-
-  // RTK Query hooks
-  const { data: milestonesData, isLoading: milestonesLoading, refetch: refetchMilestones } = useGetMilestonesQuery(selectedId, {
-    skip: !selectedId,
-  });
-  const { data: pinsData } = useGetDailyPinsQuery();
-  const [activateRoadmap] = useActivateRoadmapMutation();
-  const [updateTask] = useUpdateTaskMutation();
-  const [pinTask] = usePinTaskMutation();
-  const [unpinTask] = useUnpinTaskMutation();
-  const [completeMilestoneMutation] = useCompleteMilestoneMutation();
-
   const { data: roadmapsData } = useGetRoadmapsQuery(undefined);
   const roadmaps: RoadmapSummary[] = roadmapsData?.roadmaps ?? [];
 
-  const milestonesResponse: MilestonesData | null = milestonesData?.data ?? null;
-  const pinnedById = milestonesData?.pinnedTaskIds
-    ? Object.fromEntries(
-        pinsData?.pins?.
-        filter((pin: { taskId: string }) => milestonesData.pinnedTaskIds.includes(pin.taskId))
-        .map((pin: { taskId: string; id: string }) => [pin.taskId, pin.id]) ?? []
-    ) : {};
+  return (
+    <div>
+      <SectionHead
+        index="01"
+        title="Your Roadmaps"
+        instruction="Enrolled roadmaps with progress tracking"
+        aside={`${roadmaps.length} active`}
+      />
 
-  // Use milestonesResponse for the data state
+      {roadmaps.length === 0 ? (
+        <div className="mt-6 text-center py-12">
+          <p className="text-graphite-muted">No active roadmaps yet</p>
+          <Link
+            href="/roadmaps"
+            className="mt-4 inline-flex items-center gap-1.5 font-mono text-[0.75rem] text-amber-ink hover:text-highlighter-amber"
+          >
+            Browse roadmap library
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+      ) : (
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {roadmaps.map((roadmap) => (
+            <RoadmapCard key={roadmap.id} roadmap={roadmap} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RoadmapCard({ roadmap }: { roadmap: RoadmapSummary }) {
+  const { data: milestonesData, isLoading, isFetching, isError } = useGetMilestonesQuery(roadmap.id);
+  const { data: pinsData } = useGetDailyPinsQuery(undefined);
+  const [updateTask] = useUpdateTaskMutation();
+
+  const [data, setData] = useState<MilestonesData | null>(null);
+
+  const pinnedById = useMemo(() => {
+    if (!milestonesData?.pinnedTaskIds || !pinsData?.pins) return {};
+    return Object.fromEntries(
+      pinsData.pins
+        .filter((pin: { taskId: string }) =>
+          milestonesData.pinnedTaskIds.includes(pin.taskId),
+        )
+        .map((pin: { taskId: string; id: string }) => [pin.taskId, pin.id]),
+    );
+  }, [milestonesData, pinsData]);
+
   useEffect(() => {
-    setData(milestonesResponse);
-    if (milestonesResponse) {
-      setLoading(false);
+    if (milestonesData) {
+      setData(milestonesData as MilestonesData);
     }
-  }, [milestonesResponse]);
+  }, [milestonesData]);
 
-  function extractErrorMessage(reason: unknown): string {
-    if (reason && typeof reason === "object" && "data" in reason) {
-      const errorData = (reason as { data?: ApiError }).data;
-      if (errorData && typeof errorData.error === "string") {
-        return errorData.error;
-      }
-    }
-    return "";
-  }
-
-  // Personal daily tasks (routines)
-  const [routines, setRoutines] = useState<
-    Array<{
-      id: string;
-      title: string;
-      priority: string;
-      plannedMinutes: number | null;
-      estimatedMinutes: number | null;
-      doneToday: boolean;
-    }>
-  >([]);
-  const [newRoutineTitle, setNewRoutineTitle] = useState("");
-  const [addingRoutine, setAddingRoutine] = useState(false);
-  const [updatingRoutine, setUpdatingRoutine] = useState<string | null>(null);
-
-  // Load personal daily tasks using RTK Query's getDailyTasksQuery
-  // The "daily" tab response includes personal routines
-  // These are now available from the useGetDailyTasksQuery hook
-
-  // Roadmaps are loaded via useGetRoadmapsQuery RTK Query hook
-  // No need for separate fetch calls
-
-  // Load milestones when selectedId changes
-  useEffect(() => {
-    if (!selectedId) {
-      setData(null);
-      return;
-    }
-    // RTK Query will handle loading state automatically
-    // Set up for when data is available
-  }, [selectedId]);
-
-  // Load roadmap data
-  const roadmapData = useMemo(() => {
-    if (!data) return null;
-    return {
-      roadmap: data.roadmap,
-      milestones: data.milestones,
-      phases: data.phases,
-      nextUpTaskId: data.nextUpTaskId,
-      pinnedTaskIds: Object.keys(pinnedById),
-    };
-  }, [data, pinnedById]);
-
-  // Get roadmap data by ID
-  const getRoadmapData = useMemo(() => {
-    return (roadmapId: string) => {
-      return roadmaps.find((rd) => rd.id === roadmapId);
-    };
-  }, [roadmaps]);
-
-  // Personal daily task functions
-  // Note: Personal routines are now fetched via RTK Query's useGetDailyTasksQuery
-  // The "daily" tab includes personal routines, so they're already available
-  // If you need to add personal routines separately, you can add a dedicated RTK Query endpoint
-
-  // Note: toggleRoutine function should use the personal daily routines from the
-  // getDailyTasksQuery response. Personal routines are part of the "daily" tab response.
-
-  async function activateRoadmapHandler(roadmapId: string) {
-    setActivating(true);
-    setError("");
-    try {
-      await activateRoadmap(roadmapId).unwrap();
-      // Roadmaps are refetched automatically
-    } catch (error: unknown) {
-      const message = error && typeof error === "object" && "data" in error
-        ? (error as { data?: ApiError }).data?.error
-        : undefined;
-      setError(message ?? "Unable to activate that roadmap.");
-    } finally {
-      setActivating(false);
-    }
-  }
-
-  function updateFilter(name: keyof Filters, value: string) {
-    setFilters((current) => ({
-      ...current,
-      [name]: value,
-      ...(name === "phaseId" ? { topicId: "" } : {}),
-    }));
-  }
-
-  const facets = useMemo(() => {
-    if (!data)
-      return {
-        categories: [],
-        phases: [],
-        topics: [],
-        taskTypes: [],
-        difficulties: [],
-      };
-    const categories = new Set<string>();
-    const phases = new Set<{ id: string; title: string }>();
-    const topics = new Set<{ id: string; title: string; phaseId: string }>();
-    const taskTypes = new Set<string>();
-    const difficulties = new Set<string>();
-    for (const milestone of data.milestones) {
-      for (const phase of milestone.phases) {
-        if (phase.category) categories.add(phase.category);
-        phases.add({ id: phase.id, title: phase.title });
-        for (const topic of phase.topics) {
-          topics.add({ id: topic.id, title: topic.title, phaseId: phase.id });
-          for (const task of topic.tasks) {
-            if (task.taskType) taskTypes.add(task.taskType);
-            if (task.difficulty) difficulties.add(task.difficulty);
-          }
-        }
-      }
-    }
-    return {
-      categories: [...categories].sort(),
-      phases: [...phases].sort((a, b) => a.title.localeCompare(b.title)),
-      topics: [...topics].sort((a, b) => a.title.localeCompare(b.title)),
-      taskTypes: [...taskTypes].sort(),
-      difficulties: [...difficulties].sort(),
-    };
-  }, [data]);
-
-  const matchingTaskCount = useMemo(() => {
-    if (!data) return 0;
-    return data.milestones.reduce((total, milestone) => {
-      for (const phase of visiblePhases(milestone, filters)) {
-        for (const topic of phase.topics) {
-          total += topic.tasks.filter((task) =>
-            taskMatches(task, filters),
-          ).length;
-        }
-      }
-      return total;
-    }, 0);
-  }, [data, filters]);
-
-  async function toggleTask(task: MilestoneTask) {
-    if (mutating) return;
-    setMutating(task.id);
-    setError("");
+  async function handleToggleTask(task: any) {
     try {
       await updateTask({
         id: task.id,
         status: task.status === "COMPLETED" ? "TODO" : "COMPLETED",
       }).unwrap();
-      // Refetch milestones to get updated data
-      // The RTK Query will handle refetching automatically
     } catch (reason: unknown) {
-      const message = extractErrorMessage(reason);
-      setError(message || "Unable to update the task.");
-    } finally {
-      setMutating(null);
+      console.error(extractErrorMessage(reason));
     }
   }
 
-  async function togglePin(task: MilestoneTask) {
-    if (mutating) return;
-    setMutating(task.id);
-    setError("");
-    try {
-      const pinId = pinnedById[task.id];
-      if (pinId) {
-        await unpinTask({ pinId }).unwrap();
-      } else {
-        await pinTask({ taskId: task.id }).unwrap();
-      }
-      // Refetch milestones to get updated pin data
-    } catch (reason: unknown) {
-      const message = extractErrorMessage(reason);
-      setError(message || "Unable to update the pin.");
-    } finally {
-      setMutating(null);
-    }
-  }
+  const progress = data
+    ? data.milestones.reduce((acc: number, m) => acc + m.progress.completed, 0) /
+      Math.max(1, data.milestones.reduce((acc: number, m) => acc + m.progress.total, 0))
+    : 0;
 
-  async function completeMilestone(milestone: Milestone) {
-    setCompletingMilestone(milestone.id);
-    setError("");
-    try {
-      await completeMilestoneMutation({
-        milestoneId: milestone.id,
-        roadmapId: selectedId,
-      }).unwrap();
-    } catch (reason: unknown) {
-      const message = extractErrorMessage(reason);
-      setError(message || "Unable to complete the milestone.");
-    } finally {
-      setCompletingMilestone(null);
-    }
-  }
-
-  const nextUpTask = useMemo(() => {
-    if (!data?.nextUpTaskId) return null;
-    for (const milestone of data.milestones) {
-      for (const phase of milestone.phases) {
-        for (const topic of phase.topics) {
-          const task = topic.tasks.find(
-            (item) => item.id === data.nextUpTaskId,
-          );
-          if (task) return task;
-        }
-      }
-    }
-    return null;
-  }, [data]);
-
-  if (loading && data === null && roadmaps.length === 0) {
-    return <SkeletonRows rows={4} />;
-  }
+  const totalPhases = roadmap.phases?.length ?? 0;
+  const phasesArr = (roadmap.phases ?? []) as any[];
+  const totalTopics = phasesArr.reduce(
+    (sum: number, p: any) => sum + (p.topics ?? []).length,
+    0,
+  ) ?? 0;
+  const totalTasks = phasesArr.reduce(
+    (sum: number, p: any) =>
+      sum +
+      (p.topics ?? []).reduce(
+        (tSum: number, t: any) => tSum + (t.tasks ?? []).length,
+        0,
+      ),
+    0,
+  ) ?? 0;
 
   return (
-    <div>
-      {error && (
-        <div className="rounded border border-stamp-red/50 bg-stamp-red/5 px-4 py-3 text-[0.85rem] text-stamp-red mb-4">
-          {error}
-        </div>
-      )}
-
-      <section>
-        {data ? (
-          <>
-            <SectionHead
-              index="01"
-              title={data.roadmap.title}
-              instruction={data.roadmap.description}
-              aside={`${data.milestones.length} milestones`}
-            />
-            <div className="mt-4 flex flex-wrap items-end gap-2">
-              <label className="min-w-[12rem] flex-1 text-[0.72rem] font-semibold text-graphite-2">
-                Active roadmap
-                <select
-                  value={selectedId}
-                  onChange={(event) => setSelectedId(event.target.value)}
-                  className="field mt-1 appearance-none pr-6"
-                >
-                  {roadmaps.length === 0 ? (
-                    <option value="">No active roadmap</option>
-                  ) : (
-                    roadmaps.map((roadmap) => (
-                      <option key={roadmap.id} value={roadmap.id}>
-                        {roadmap.title}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </label>
-              <button
-                type="button"
-                onClick={() => setActivateOpen(true)}
-                className="btn btn-secondary shrink-0"
-              >
-                <Plus className="h-4 w-4" aria-hidden />
-                Activate
-              </button>
-            </div>
-          </>
-        ) : (
-          <>
-            <SectionHead
-              index="01"
-              title={title}
-              instruction="Milestones gate each other — a milestone unlocks only when its prerequisites are done."
-            />
-            <div className="mt-4 flex flex-wrap items-end gap-2">
-              <label className="min-w-[12rem] flex-1 text-[0.72rem] font-semibold text-graphite-2">
-                Active roadmap
-                <select
-                  value={selectedId}
-                  onChange={(event) => setSelectedId(event.target.value)}
-                  className="field mt-1 appearance-none pr-6"
-                >
-                  {roadmaps.length === 0 ? (
-                    <option value="">No active roadmap</option>
-                  ) : (
-                    roadmaps.map((roadmap) => (
-                      <option key={roadmap.id} value={roadmap.id}>
-                        {roadmap.title}
-                      </option>
-                    ))
-                  )}
-                </select>
-              </label>
-              <button
-                type="button"
-                onClick={() => setActivateOpen(true)}
-                className="btn btn-secondary shrink-0"
-              >
-                <Plus className="h-4 w-4" aria-hidden />
-                Activate
-              </button>
-            </div>
-          </>
-        )}
-      </section>
-
-      {data && data.phases && (
-        <div className="mt-8 mb-6 grid grid-cols-3 gap-4">
-          {(() => {
-            const totalPhases = data.phases.length;
-            const totalTopics = data.phases.reduce(
-              (sum: number, p: MilestonePhase) => sum + (p.topics ?? []).length,
-              0,
-            );
-            const totalTasks = data.phases.reduce(
-              (sum: number, p: MilestonePhase) =>
-                sum +
-                (p.topics ?? []).reduce(
-                  (tSum: number, t: MilestoneTopic) =>
-                    tSum + (t.tasks ?? []).length,
-                  0,
-                ),
-              0,
-            );
-            return (
-              <>
-                <div className="text-center py-3 border border-hairline rounded bg-paper-shade/50">
-                  <div className="font-mono text-[1.25rem] font-semibold text-graphite">
-                    {totalPhases}
-                  </div>
-                  <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
-                    Phases
-                  </div>
-                </div>
-                <div className="text-center py-3 border border-hairline rounded bg-paper-shade/50">
-                  <div className="font-mono text-[1.25rem] font-semibold text-graphite">
-                    {totalTopics}
-                  </div>
-                  <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
-                    Topics
-                  </div>
-                </div>
-                <div className="text-center py-3 border border-hairline rounded bg-paper-shade/50">
-                  <div className="font-mono text-[1.25rem] font-semibold text-graphite">
-                    {totalTasks}
-                  </div>
-                  <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
-                    Tasks
-                  </div>
-                </div>
-              </>
-            );
-          })()}
-        </div>
-      )}
-
-      {loading ? (
-        <SkeletonRows rows={4} />
-      ) : data && data.milestones.length > 0 ? (
-        <>
-          {nextUpTask ? (
-            <div className="mt-8 flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border border-amber/25 bg-amber/[0.07] px-4 py-3">
-              <Stamp tone="amber">Next up</Stamp>
-              <span className="min-w-0 flex-1 truncate text-[0.875rem] font-medium text-graphite">
-                {nextUpTask.title}
-              </span>
-              <span className="shrink-0 font-mono text-[0.68rem] text-graphite-2">
-                {nextUpTask.phaseTitle} / {nextUpTask.topicTitle}
-              </span>
-            </div>
-          ) : null}
-
-          <section
-            aria-label="Filters"
-            className="mt-7 grid gap-x-4 gap-y-3 border-y border-stone-400 py-5 sm:grid-cols-2 lg:grid-cols-4"
-          >
-            <input
-              value={filters.q}
-              onChange={(event) => updateFilter("q", event.target.value)}
-              placeholder="Search questions or topics"
-              aria-label="Search questions or topics"
-              className="field"
-            />
-            <select
-              value={filters.phaseId}
-              onChange={(event) => updateFilter("phaseId", event.target.value)}
-              aria-label="Filter by phase"
-              className="field appearance-none pr-6"
-            >
-              <option value="">All phases</option>
-              {facets.phases.map((phase) => (
-                <option key={phase.id} value={phase.id}>
-                  {phase.title}
-                </option>
-              ))}
-            </select>
-            <select
-              value={filters.topicId}
-              onChange={(event) => updateFilter("topicId", event.target.value)}
-              aria-label="Filter by topic"
-              className="field appearance-none pr-6"
-            >
-              <option value="">All topics</option>
-              {facets.topics
-                .filter(
-                  (topic) =>
-                    !filters.phaseId || topic.phaseId === filters.phaseId,
-                )
-                .map((topic) => (
-                  <option key={topic.id} value={topic.id}>
-                    {topic.title}
-                  </option>
-                ))}
-            </select>
-            <select
-              value={filters.category}
-              onChange={(event) => updateFilter("category", event.target.value)}
-              aria-label="Filter by category"
-              className="field appearance-none pr-6"
-            >
-              <option value="">All categories</option>
-              {facets.categories.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
-            <select
-              value={filters.taskType}
-              onChange={(event) => updateFilter("taskType", event.target.value)}
-              aria-label="Filter by question type"
-              className="field appearance-none pr-6"
-            >
-              <option value="">All question types</option>
-              {facets.taskTypes.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
-            <select
-              value={filters.status}
-              onChange={(event) => updateFilter("status", event.target.value)}
-              aria-label="Filter by status"
-              className="field appearance-none pr-6"
-            >
-              <option value="">All statuses</option>
-              <option value="TODO">To do</option>
-              <option value="IN_PROGRESS">In progress</option>
-              <option value="COMPLETED">Completed</option>
-              <option value="SKIPPED">Skipped</option>
-            </select>
-            <select
-              value={filters.difficulty}
-              onChange={(event) =>
-                updateFilter("difficulty", event.target.value)
-              }
-              aria-label="Filter by difficulty"
-              className="field appearance-none pr-6"
-            >
-              <option value="">All difficulty</option>
-              {facets.difficulties.map((item) => (
-                <option key={item}>{item}</option>
-              ))}
-            </select>
-            <p className="self-end text-[0.78rem] font-medium text-graphite-2">
-              {matchingTaskCount} matching task
-              {matchingTaskCount === 1 ? "" : "s"}
-            </p>
-          </section>
-
-          <div className="mt-8 space-y-9">
-            {data.milestones.map((milestone, index) => (
-              <MilestoneCard
-                key={milestone.id}
-                milestone={milestone}
-                pinnedById={pinnedById}
-                filters={filters}
-                mutating={mutating}
-                completing={completingMilestone === milestone.id}
-                index={index}
-                onToggleTask={toggleTask}
-                onTogglePin={togglePin}
-                onComplete={completeMilestone}
-              />
-            ))}
+    <Link
+      href={`/tasks/roadmap/${roadmap.id}`}
+      className="group border border-hairline rounded hover:border-hairline-strong hover:ring-2 hover:ring-amber-ink/20 transition-colors bg-paper block"
+    >
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-[1.05rem] font-semibold text-graphite group-hover:text-amber-ink">
+              {roadmap.title}
+            </h3>
+            {roadmap.description && (
+              <p className="mt-2 text-[0.85rem] leading-relaxed text-graphite-muted line-clamp-2">
+                {roadmap.description}
+              </p>
+            )}
           </div>
-        </>
-      ) : (
-        <div className="mt-6">
-          <EmptyState
-            title="No roadmap active"
-            description="Activate one to start working through its milestones"
-          />
-          <button
-            type="button"
-            onClick={() => setActivateOpen(true)}
-            className="btn btn-primary mt-4"
-          >
-            <Plus className="h-4 w-4" aria-hidden />
-            Activate a roadmap
-          </button>
-        </div>
-      )}
-
-      {activateOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0b0f18]/50 px-4 py-8 backdrop-blur-md"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="activate-roadmap-title"
-        >
-          <div className="panel w-full max-w-md overflow-hidden p-5 sm:p-6">
-            <div className="flex items-start justify-between gap-4 border-b border-stone-400 pb-4">
-              <h2
-                id="activate-roadmap-title"
-                className="text-[1.15rem] font-semibold tracking-tight text-graphite"
-              >
-                Activate a roadmap
-              </h2>
-              <button
-                type="button"
-                onClick={() => setActivateOpen(false)}
-                aria-label="Close"
-                className="-mr-1 -mt-1 px-2 py-1 font-mono text-lg leading-none text-graphite-2 hover:text-graphite"
-              >
-                ×
-              </button>
-            </div>
-            <div className="mt-4 border-t border-stone-400">
-              {KNOWN_TEMPLATES.map((template) => {
-                const active = roadmaps.some(
-                  (roadmap) => roadmap.id === template.roadmapId,
-                );
-                return (
-                  <div
-                    key={template.roadmapId}
-                    className="flex items-center justify-between gap-3 border-b border-stone-400 py-3"
-                  >
-                    <span className="text-[0.9rem] font-medium text-graphite">
-                      {template.title}
-                    </span>
-                    <button
-                      type="button"
-                      disabled={active || activating}
-                      onClick={() => activateRoadmap(template.roadmapId)}
-                      className={cn(
-                        "btn shrink-0 px-3 py-1.5 text-[0.75rem]",
-                        active ? "btn-secondary" : "btn-primary",
-                      )}
-                    >
-                      {active
-                        ? "Active"
-                        : activating
-                          ? "Activating"
-                          : "Activate"}
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function taskMatches(task: MilestoneTask, filters: Filters) {
-  const search = filters.q.trim().toLowerCase();
-  const matchesSearch =
-    !search ||
-    task.title.toLowerCase().includes(search) ||
-    (task.topicTitle ?? "").toLowerCase().includes(search) ||
-    (task.phaseTitle ?? "").toLowerCase().includes(search);
-  return (
-    matchesSearch &&
-    (!filters.taskType || task.taskType === filters.taskType) &&
-    (!filters.status || task.status === filters.status) &&
-    (!filters.difficulty || task.difficulty === filters.difficulty)
-  );
-}
-
-function visiblePhases(milestone: Milestone, filters: Filters) {
-  return milestone.phases
-    .filter((phase) => !filters.phaseId || phase.id === filters.phaseId)
-    .filter((phase) => !filters.category || phase.category === filters.category)
-    .map((phase) => ({
-      ...phase,
-      topics: phase.topics
-        .filter((topic) => !filters.topicId || topic.id === filters.topicId)
-        .map((topic) => ({
-          ...topic,
-          tasks: topic.tasks.filter((task) => taskMatches(task, filters)),
-        })),
-    }));
-}
-
-function statusPill(milestone: Milestone): {
-  label: string;
-  tone: "neutral" | "valid" | "amber";
-} {
-  if (milestone.status === "LOCKED")
-    return { label: "Locked", tone: "neutral" };
-  if (milestone.status === "DONE")
-    return {
-      label: milestone.manuallyCompleted ? "Done · marked" : "Done",
-      tone: "valid",
-    };
-  return { label: "In progress", tone: "amber" };
-}
-
-function MilestoneCard({
-  milestone,
-  pinnedById,
-  filters,
-  mutating,
-  completing,
-  index,
-  onToggleTask,
-  onTogglePin,
-  onComplete,
-}: {
-  milestone: Milestone;
-  pinnedById: Record<string, string>;
-  filters: Filters;
-  mutating: string | null;
-  completing: boolean;
-  index: number;
-  onToggleTask: (task: MilestoneTask) => void;
-  onTogglePin: (task: MilestoneTask) => void;
-  onComplete: (milestone: Milestone) => void;
-}) {
-  const pill = statusPill(milestone);
-  const locked = milestone.locked;
-  const blockedPrereqs = milestone.prerequisites.filter(
-    (prereq) => !prereq.met,
-  );
-  const anyFilterActive = Boolean(
-    filters.q ||
-    filters.phaseId ||
-    filters.topicId ||
-    filters.category ||
-    filters.taskType ||
-    filters.status ||
-    filters.difficulty,
-  );
-
-  return (
-    <section className="border-t border-stone-400 pt-6">
-      <header>
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="rounded-md bg-amber/12 px-1.5 py-0.5 font-mono text-[0.68rem] font-semibold tabular-nums text-amber-ink">
-            M{index + 1}
-          </span>
-          <h3 className="min-w-0 flex-1 text-[1.05rem] font-semibold tracking-tight text-graphite">
-            {milestone.title}
-          </h3>
-          <Stamp tone={pill.tone}>
-            {locked ? <Lock className="h-3 w-3" aria-hidden /> : null}
-            {pill.label}
+          <Stamp tone="valid" className="shrink-0">
+            Enrolled
           </Stamp>
         </div>
-        {milestone.description ? (
-          <p className="mt-1.5 max-w-[68ch] text-[0.8125rem] leading-5 text-graphite-2">
-            {milestone.description}
-          </p>
-        ) : null}
 
-        <div className="mt-4 flex items-center gap-4">
-          <div
-            className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-rule"
-            role="progressbar"
-            aria-valuenow={milestone.progress.percent}
-            aria-valuemin={0}
-            aria-valuemax={100}
-            aria-label={`${milestone.title} progress`}
-          >
-            <div
-              className="h-full"
-              style={{
-                width: `${milestone.progress.percent}%`,
-                backgroundImage: RAMP,
-              }}
-            />
+        <div className="mt-4 grid grid-cols-3 gap-3">
+          <div className="text-center py-2 border border-hairline rounded">
+            <div className="font-mono text-[1.1rem] font-semibold text-graphite">
+              {totalPhases}
+            </div>
+            <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
+              Phases
+            </div>
           </div>
-          <span className="shrink-0 font-mono text-[0.7rem] tabular-nums text-graphite-2">
-            {milestone.progress.completed}/{milestone.progress.total} ·{" "}
-            {milestone.progress.percent}%
-          </span>
+          <div className="text-center py-2 border border-hairline rounded">
+            <div className="font-mono text-[1.1rem] font-semibold text-graphite">
+              {totalTopics}
+            </div>
+            <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
+              Topics
+            </div>
+          </div>
+          <div className="text-center py-2 border border-hairline rounded">
+            <div className="font-mono text-[1.1rem] font-semibold text-graphite">
+              {totalTasks}
+            </div>
+            <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
+              Tasks
+            </div>
+          </div>
         </div>
 
-        {locked && blockedPrereqs.length > 0 ? (
-          <p className="mt-3 flex items-start gap-2 text-[0.8125rem] leading-5 text-graphite-2">
-            <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden />
-            <span>
-              Complete{" "}
-              {blockedPrereqs
-                .map((prereq) => `"${prereq.title}"`)
-                .join(" and ")}{" "}
-              first to unlock this milestone.
+        <div className="mt-4 pt-4 border-t border-hairline flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-24 h-2 bg-rule rounded-full overflow-hidden">
+              <div
+                className="h-full bg-amber-ink transition-all duration-300"
+                style={{ width: `${Math.round(progress * 100)}%` }}
+              />
+            </div>
+            <span className="font-mono text-[0.7rem] text-amber-ink">
+              {Math.round(progress * 100)}%
             </span>
-          </p>
-        ) : null}
-
-        {milestone.needsManualCompletion && !locked ? (
-          <button
-            type="button"
-            disabled={completing}
-            onClick={() => onComplete(milestone)}
-            className="btn btn-line mt-4 border-valid/40 px-3 py-1.5 text-[0.75rem] text-valid"
-          >
-            {completing ? "Marking complete" : "Mark milestone complete"}
-          </button>
-        ) : null}
-      </header>
-
-      <div className={locked ? "opacity-45" : ""}>
-        {milestone.phases.map((phase) => {
-          const renderedTopics = phase.topics.filter(
-            (topic) => topic.tasks.length > 0,
-          );
-          if (renderedTopics.length === 0) return null;
-          return (
-            <details
-              key={phase.id}
-              className="group border-b border-stone-400"
-              open={anyFilterActive}
-            >
-              <summary className="flex items-center gap-3 py-3 text-[0.9rem] font-semibold text-graphite">
-                <span
-                  aria-hidden
-                  className="grid h-5 w-5 place-items-center rounded-md bg-amber/12 text-[0.85rem] leading-none text-amber-ink transition-transform duration-150 ease-out group-open:rotate-45"
-                >
-                  +
-                </span>
-                <span className="min-w-0 flex-1 truncate">{phase.title}</span>
-                <span className="shrink-0 font-mono text-[0.68rem] text-graphite-2">
-                  {renderedTopics.length} topic
-                  {renderedTopics.length === 1 ? "" : "s"}
-                </span>
-              </summary>
-              <div className="pb-1">
-                {renderedTopics.map((topic) => (
-                  <div key={topic.id} className="pb-2">
-                    <p className="pt-2 text-[0.72rem] font-semibold text-graphite-2">
-                      {topic.title}
-                    </p>
-                    <div className="border-t border-stone-400">
-                      {topic.tasks.map((task, taskIndex) => {
-                        const isDone = task.status === "COMPLETED";
-                        const pinned = Boolean(pinnedById[task.id]);
-                        return (
-                          <div
-                            key={task.id}
-                            className="relative border-b border-stone-400 last:border-b-0"
-                          >
-                            <span className="hl" data-on={isDone} aria-hidden />
-                            <div className="relative z-10 flex items-center gap-3 py-2.5 pl-1">
-                              <span className="w-5 shrink-0 font-mono text-[0.62rem] tabular-nums text-graphite-3">
-                                {String(taskIndex + 1).padStart(2, "0")}
-                              </span>
-                              <Bubble
-                                filled={isDone}
-                                busy={mutating === task.id}
-                                disabled={locked}
-                                label={
-                                  isDone
-                                    ? "Mark task incomplete"
-                                    : "Mark task complete"
-                                }
-                                onClick={() => onToggleTask(task)}
-                              />
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2">
-                                  <p
-                                    className={
-                                      isDone
-                                        ? "truncate text-[0.875rem] leading-6 text-graphite-2 line-through decoration-graphite/50"
-                                        : "truncate text-[0.875rem] leading-6 text-graphite"
-                                    }
-                                  >
-                                    {task.title}
-                                  </p>
-                                  <span className="badge badge-roadmap">
-                                    Roadmap
-                                  </span>
-                                </div>
-                                <p className="mt-0.5 truncate font-mono text-[0.65rem] text-graphite-2">
-                                  {[
-                                    task.taskType,
-                                    task.difficulty,
-                                    task.priority,
-                                  ]
-                                    .filter(Boolean)
-                                    .join(" · ")}
-                                </p>
-                              </div>
-                              <button
-                                type="button"
-                                disabled={locked || mutating === task.id}
-                                onClick={() => onTogglePin(task)}
-                                title={
-                                  locked
-                                    ? "Unlock the milestone first"
-                                    : pinned
-                                      ? "Remove from daily"
-                                      : "Add to daily"
-                                }
-                                aria-pressed={pinned}
-                                className={`btn shrink-0 gap-1.5 px-2 py-1 text-[0.7rem] ${
-                                  pinned
-                                    ? "btn-line text-amber-ink shadow-[inset_0_0_0_1.5px_var(--color-amber-ink)]"
-                                    : locked
-                                      ? "cursor-not-allowed text-graphite-3"
-                                      : "text-graphite-2 hover:text-graphite"
-                                }`}
-                              >
-                                <Link2 className="h-3.5 w-3.5" aria-hidden />
-                                {locked
-                                  ? "Locked"
-                                  : pinned
-                                    ? "In daily"
-                                    : "Daily"}
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </details>
-          );
-        })}
+          </div>
+          <span className="inline-flex items-center gap-1 font-mono text-[0.7rem] text-amber-ink group-hover:text-highlighter-amber">
+            <ArrowRight className="h-3 w-3" />
+            View details
+          </span>
+        </div>
       </div>
-    </section>
+    </Link>
   );
 }
+
+const defaultFilters: Filters = {
+  q: "",
+  category: "",
+  phaseId: "",
+  topicId: "",
+  taskType: "",
+  status: "",
+  difficulty: "",
+};

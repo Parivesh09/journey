@@ -86,6 +86,42 @@ export interface RoadmapSummary {
   description: string | null;
   activated: boolean;
   dailyTaskCount?: number;
+  phases?: RoadmapPhase[];
+}
+
+export interface RoadmapPhase {
+  id: string;
+  title: string;
+  category: string | null;
+  topics?: RoadmapTopic[];
+}
+
+export interface RoadmapTopic {
+  id: string;
+  title: string;
+  tasks?: RoadmapTask[];
+}
+
+export interface RoadmapTask {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  taskType: string | null;
+  difficulty: string | null;
+  phaseTitle: string | null;
+  topicTitle: string | null;
+  sequenceOrder: number;
+}
+
+export interface Filters {
+  q: string;
+  category: string;
+  phaseId: string;
+  topicId: string;
+  taskType: string;
+  status: string;
+  difficulty: string;
 }
 
 export interface RoadmapsResponse {
@@ -201,9 +237,7 @@ export interface MilestonesData {
   phases: MilestonePhase[];
 }
 
-export interface MilestonesResponse {
-  data: MilestonesData;
-  pinnedTaskIds: string[];
+export interface MilestonesResponse extends MilestonesData {
 }
 
 export interface CompleteMilestoneRequest {
