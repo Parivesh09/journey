@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Sheet, PrimaryButton, FormGroup } from "@/app/components/ui";
+import { useSignupMutation } from "@/lib/api";
 
 export default function SignupForm() {
   const router = useRouter();
@@ -12,6 +13,7 @@ export default function SignupForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [signup] = useSignupMutation();
 
   function browserTimezone() {
     try {
@@ -25,26 +27,24 @@ export default function SignupForm() {
     event.preventDefault();
     setLoading(true);
     setError("");
-    const response = await fetch("/api/auth/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      await signup({
         name,
         email,
         password,
         timezone: browserTimezone(),
-      }),
-    });
-    const data = (await response.json().catch(() => null)) as {
-      error?: string;
-    } | null;
-    if (!response.ok) {
-      setError(data?.error ?? "Unable to create your account.");
+      }).unwrap();
+      router.push("/");
+      router.refresh();
+    } catch (reason: any) {
+      setError(
+        typeof reason?.data?.error === "string"
+          ? reason.data.error
+          : "Unable to create your account.",
+      );
+    } finally {
       setLoading(false);
-      return;
     }
-    router.push("/");
-    router.refresh();
   }
 
   return (

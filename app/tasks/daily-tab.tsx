@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
-import { Plus, Search, Link2, Link as LinkIcon, X } from "lucide-react";
+import { useMemo, useState, type FormEvent } from "react";
+import { Plus, Link as LinkIcon, Edit, Trash2 } from "lucide-react";
 import {
   SectionHead,
   Stamp,
@@ -10,8 +10,18 @@ import {
   SecondaryButton,
   EmptyState,
   FormGroup,
-  IconButton,
 } from "@/app/components/ui";
+import {
+  useGetDailyTasksQuery,
+  useCreateTaskMutation,
+  useToggleTaskCompleteTodayMutation,
+  useGetRoadmapsQuery,
+  useGetDailyRoadmapsQuery,
+  useLinkRoadmapMutation,
+  useUnlinkRoadmapMutation,
+  useUpdateTaskMutation,
+  useDeleteTaskMutation,
+} from "@/lib/api";
 
 type Routine = {
   id: string;
@@ -21,6 +31,7 @@ type Routine = {
   estimatedMinutes: number | null;
   dailySlot: string | null;
   doneToday: boolean;
+  isPersonalDaily: boolean;
 };
 
 type Connected = {
@@ -34,16 +45,6 @@ type Connected = {
     topicTitle: string | null;
     milestoneTitle: string | null;
   };
-};
-
-type PickerTask = {
-  id: string;
-  title: string;
-  status: string;
-  priority: string;
-  phaseTitle: string | null;
-  topicTitle: string | null;
-  milestoneTitle: string | null;
 };
 
 type ActiveRoadmap = {
@@ -63,24 +64,23 @@ type LinkedRoadmap = {
   };
 };
 
-type DailyFeed = {
-  routines: Routine[];
-  connected: Connected[];
-};
-
 function RoutineRow({
   routine,
   updating,
   onToggle,
+  onEdit,
+  onDelete,
 }: {
   routine: Routine;
   updating: boolean;
   onToggle: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }) {
   const minutes = routine.plannedMinutes ?? routine.estimatedMinutes ?? 60;
-  
+
   return (
-    <div className="task-row py-3">
+    <div className="task-row py-3 group">
       <Bubble
         filled={routine.doneToday}
         busy={updating}
@@ -89,7 +89,9 @@ function RoutineRow({
       />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className={`truncate text-[0.9rem] ${routine.doneToday ? "text-graphite-faint line-through" : "text-graphite font-medium"}`}>
+          <p
+            className={`truncate text-[0.9rem] ${routine.doneToday ? "text-graphite-faint line-through" : "text-graphite font-medium"}`}
+          >
             {routine.title}
           </p>
           <Stamp tone="valid">Routine</Stamp>
@@ -98,87 +100,101 @@ function RoutineRow({
           Every day · {minutes}m {routine.doneToday && "· done today"}
         </p>
       </div>
-      <Stamp tone="neutral" className="text-[0.7rem]">
-        {routine.priority}
-      </Stamp>
+      <div className="flex items-center gap-2">
+        <Stamp tone="neutral" className="text-[0.7rem]">
+          {routine.priority}
+        </Stamp>
+        {onEdit && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEdit();
+            }}
+            className="p-1 hover:text-graphite text-graphite-faint opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Edit routine"
+          >
+            <Edit className="h-3.5 w-3.5" />
+          </button>
+        )}
+        {onDelete && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="p-1 hover:text-stamp-red text-graphite-faint opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Delete routine"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        )}
+      </div>
     </div>
   );
 }
 
 export default function DailyTab() {
-  const [routines, setRoutines] = useState<Routine[]>([]);
-  const [connected, setConnected] = useState<Connected[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    data: dailyData,
+    isLoading: loading,
+    error: dailyError,
+  } = useGetDailyTasksQuery("daily");
+
+  const { data: roadmapsData, isLoading: roadmapsLoading } =
+    useGetRoadmapsQuery(undefined, {
+      skip: false,
+    });
+  const { data: dailyRoadmapsData } = useGetDailyRoadmapsQuery();
+
+  const [createTask, { isLoading: adding }] = useCreateTaskMutation();
+  const [toggleTaskCompleteToday] = useToggleTaskCompleteTodayMutation();
+  const [linkRoadmap] = useLinkRoadmapMutation();
+  const [unlinkRoadmap] = useUnlinkRoadmapMutation();
+  const [updateTask] = useUpdateTaskMutation();
+  const [deleteTask] = useDeleteTaskMutation();
+
+  const routines: Routine[] = dailyData?.routines ?? [];
+  const connected: Connected[] = dailyData?.connected ?? [];
+  const activeRoadmaps: ActiveRoadmap[] = roadmapsData?.roadmaps ?? [];
+  const linkedRoadmaps: LinkedRoadmap[] =
+    dailyRoadmapsData?.linkedRoadmaps ?? [];
+
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [newTitle, setNewTitle] = useState("");
-  const [adding, setAdding] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
-  const [activeTabInModal, setActiveTabInModal] = useState<"personal" | "roadmap">("personal");
-  const [activeRoadmaps, setActiveRoadmaps] = useState<ActiveRoadmap[]>([]);
-  const [linkedRoadmaps, setLinkedRoadmaps] = useState<LinkedRoadmap[]>([]);
-  const [roadmapsLoading, setRoadmapsLoading] = useState(false);
+  const [activeTabInModal, setActiveTabInModal] = useState<
+    "personal" | "roadmap"
+  >("personal");
   const [linkingRoadmap, setLinkingRoadmap] = useState<string | null>(null);
   const [unlinkingRoadmap, setUnlinkingRoadmap] = useState<string | null>(null);
+  const [editingRoutine, setEditingRoutine] = useState<Routine | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [deletingRoutine, setDeletingRoutine] = useState<Routine | null>(null);
 
   const linkedRoadmapIds = useMemo(
-    () => new Set(linkedRoadmaps.map(item => item.roadmapId)),
+    () => new Set(linkedRoadmaps.map((item) => item.roadmapId)),
     [linkedRoadmaps],
   );
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/tasks?tab=daily")
-      .then((response) => {
-        if (!response.ok) throw new Error("load");
-        return response.json() as Promise<DailyFeed>;
-      })
-      .then((daily) => {
-        if (cancelled) return;
-        setRoutines(daily.routines);
-        setConnected(daily.connected);
-        setError("");
-      })
-      .catch(() => {
-        if (!cancelled)
-          setError("Unable to load your daily feed. Please try again.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   async function addRoutine(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const title = newTitle.trim();
     if (!title) return;
-    setAdding(true);
     setError("");
     try {
-      const response = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          priority: "MEDIUM",
-          isPersonalDaily: true,
-        }),
-      });
-      if (!response.ok) throw new Error("create");
-      const data = (await response.json()) as { task: Routine };
-      setRoutines((current) => [
-        { ...data.task, doneToday: false },
-        ...current,
-      ]);
+      await createTask({
+        title,
+        priority: "MEDIUM",
+        isPersonalDaily: true,
+      }).unwrap();
       setNewTitle("");
       setAddModalOpen(false);
     } catch {
       setError("Unable to add that routine. Please try again.");
-    } finally {
-      setAdding(false);
     }
   }
 
@@ -186,19 +202,7 @@ export default function DailyTab() {
     setUpdating(routine.id);
     setError("");
     try {
-      const response = await fetch(`/api/tasks/${routine.id}/complete-today`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!response.ok) throw new Error("toggle");
-      const data = (await response.json()) as { doneToday: boolean };
-      setRoutines((current) =>
-        current.map((item) =>
-          item.id === routine.id
-            ? { ...item, doneToday: data.doneToday }
-            : item,
-        ),
-      );
+      await toggleTaskCompleteToday(routine.id).unwrap();
     } catch {
       setError("Unable to update that routine. Please try again.");
     } finally {
@@ -206,118 +210,78 @@ export default function DailyTab() {
     }
   }
 
-  async function loadActiveRoadmaps() {
-    setRoadmapsLoading(true);
+  async function handleEditRoutine(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editingRoutine || !editTitle.trim()) return;
+    setError("");
     try {
-      const response = await fetch("/api/roadmaps");
-      if (!response.ok) throw new Error("load");
-      const data = (await response.json()) as { roadmaps: ActiveRoadmap[] };
-      setActiveRoadmaps(data.roadmaps);
+      await updateTask({
+        id: editingRoutine.id,
+        title: editTitle.trim(),
+      }).unwrap();
+      setEditingRoutine(null);
+      setEditTitle("");
+      setSuccess("Routine updated successfully.");
+      setTimeout(() => setSuccess(""), 3000);
     } catch {
-      setActiveRoadmaps([]);
-    } finally {
-      setRoadmapsLoading(false);
+      setError("Unable to update routine. Please try again.");
     }
   }
 
-  async function loadLinkedRoadmaps() {
+  async function handleDeleteRoutine() {
+    if (!deletingRoutine) return;
+    setError("");
     try {
-      const response = await fetch("/api/daily-roadmaps");
-      if (!response.ok) throw new Error("load");
-      const data = (await response.json()) as { linkedRoadmaps: LinkedRoadmap[] };
-      setLinkedRoadmaps(data.linkedRoadmaps);
+      await deleteTask(deletingRoutine.id).unwrap();
+      setDeletingRoutine(null);
+      setSuccess("Routine deleted successfully.");
+      setTimeout(() => setSuccess(""), 3000);
     } catch {
-      setLinkedRoadmaps([]);
+      setError("Unable to delete routine. Please try again.");
     }
   }
 
-  async function linkRoadmap(roadmapId: string) {
+  async function handleLinkRoadmap(roadmapId: string) {
     setLinkingRoadmap(roadmapId);
     setError("");
     try {
-      const response = await fetch("/api/daily-roadmaps", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roadmapId }),
-      });
-      if (!response.ok) {
-        const data = (await response.json()) as { error?: string };
-        throw new Error(data.error ?? "link");
-      }
-      await loadLinkedRoadmaps();
-      // Reload daily feed to get updated connected tasks
-      const dailyResponse = await fetch("/api/tasks?tab=daily");
-      if (dailyResponse.ok) {
-        const daily = (await dailyResponse.json()) as DailyFeed;
-        setConnected(daily.connected);
-      }
-    } catch (reason) {
+      await linkRoadmap(roadmapId).unwrap();
+    } catch (reason: any) {
       setError(
-        reason instanceof Error
-          ? reason.message
-          : "Unable to link roadmap."
+        typeof reason?.data?.error === "string"
+          ? reason.data.error
+          : "Unable to link roadmap.",
       );
     } finally {
       setLinkingRoadmap(null);
     }
   }
 
-  async function unlinkRoadmap(roadmapId: string) {
+  async function handleUnlinkRoadmap(roadmapId: string) {
     setUnlinkingRoadmap(roadmapId);
     setError("");
     try {
-      const response = await fetch(`/api/daily-roadmaps?roadmapId=${roadmapId}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) {
-        const data = (await response.json()) as { error?: string };
-        throw new Error(data.error ?? "unlink");
-      }
-      await loadLinkedRoadmaps();
-      // Reload daily feed to get updated connected tasks
-      const dailyResponse = await fetch("/api/tasks?tab=daily");
-      if (dailyResponse.ok) {
-        const daily = (await dailyResponse.json()) as DailyFeed;
-        setConnected(daily.connected);
-      }
-    } catch (reason) {
+      await unlinkRoadmap(roadmapId).unwrap();
+    } catch (reason: any) {
       setError(
-        reason instanceof Error
-          ? reason.message
-          : "Unable to unlink roadmap."
+        typeof reason?.data?.error === "string"
+          ? reason.data.error
+          : "Unable to unlink roadmap.",
       );
     } finally {
       setUnlinkingRoadmap(null);
     }
   }
 
-  useEffect(() => {
-    if (addModalOpen && activeTabInModal === "roadmap") {
-      loadActiveRoadmaps();
-      loadLinkedRoadmaps();
-    }
-  }, [addModalOpen, activeTabInModal]);
-
   async function completeConnected(item: Connected) {
     setUpdating(item.task.id);
     setError("");
     try {
-      const response = await fetch(`/api/tasks/${item.task.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ completed: true }),
-      });
-      if (!response.ok) {
-        const data = (await response.json()) as { error?: string };
-        throw new Error(data.error ?? "complete");
-      }
-      setConnected((current) =>
-        current.filter((row) => row.pinId !== item.pinId),
-      );
-    } catch (reason) {
+      await updateTask({ id: item.task.id, status: "COMPLETED" }).unwrap();
+    } catch (reason: any) {
       setError(
-        reason instanceof Error
-          ? reason.message
+        typeof reason?.data?.error === "string"
+          ? reason.data.error
           : "Unable to complete that task.",
       );
     } finally {
@@ -329,16 +293,20 @@ export default function DailyTab() {
 
   return (
     <div className="space-y-10">
-      {error && (
+      {(error || dailyError) && (
         <div className="rounded bg-stamp-red/10 border border-stamp-red/20 p-3 text-[0.85rem] text-stamp-red">
-          {error}
+          {error || "Unable to load your daily feed. Please try again."}
         </div>
       )}
 
       <div className="flex justify-between items-center pb-4 border-b border-hairline">
         <div>
-          <h2 className="text-[1.1rem] font-semibold text-graphite">Today's Workspace</h2>
-          <p className="text-[0.85rem] text-graphite-muted">Personal daily routines and roadmap tasks</p>
+          <h2 className="text-[1.1rem] font-semibold text-graphite">
+            Today's Workspace
+          </h2>
+          <p className="text-[0.85rem] text-graphite-muted">
+            Personal daily routines and roadmap tasks
+          </p>
         </div>
         <PrimaryButton onClick={() => setAddModalOpen(true)}>
           <Plus className="h-4 w-4" />
@@ -360,7 +328,10 @@ export default function DailyTab() {
         {loading ? (
           <div className="mt-6 space-y-3">
             {[...Array(3)].map((_, i) => (
-              <div key={i} className="h-12 bg-paper-shade animate-pulse rounded" />
+              <div
+                key={i}
+                className="h-12 bg-paper-shade animate-pulse rounded"
+              />
             ))}
           </div>
         ) : routines.length === 0 ? (
@@ -368,10 +339,12 @@ export default function DailyTab() {
             title="No routines yet"
             description="Start with one habit you can keep every day"
             action={
-              <SecondaryButton onClick={() => {
-                setActiveTabInModal("personal");
-                setAddModalOpen(true);
-              }}>
+              <SecondaryButton
+                onClick={() => {
+                  setActiveTabInModal("personal");
+                  setAddModalOpen(true);
+                }}
+              >
                 Add Personal Routine
               </SecondaryButton>
             }
@@ -384,6 +357,11 @@ export default function DailyTab() {
                 routine={routine}
                 updating={updating === routine.id}
                 onToggle={() => toggleRoutine(routine)}
+                onEdit={() => {
+                  setEditingRoutine(routine);
+                  setEditTitle(routine.title);
+                }}
+                onDelete={() => setDeletingRoutine(routine)}
               />
             ))}
           </div>
@@ -401,7 +379,10 @@ export default function DailyTab() {
         {loading ? (
           <div className="mt-6 space-y-3">
             {[...Array(2)].map((_, i) => (
-              <div key={i} className="h-16 bg-paper-shade animate-pulse rounded" />
+              <div
+                key={i}
+                className="h-16 bg-paper-shade animate-pulse rounded"
+              />
             ))}
           </div>
         ) : connected.length === 0 ? (
@@ -409,10 +390,12 @@ export default function DailyTab() {
             title="Nothing connected"
             description="Pick unfinished roadmap tasks to work on here"
             action={
-              <SecondaryButton onClick={() => {
-                setActiveTabInModal("roadmap");
-                setAddModalOpen(true);
-              }}>
+              <SecondaryButton
+                onClick={() => {
+                  setActiveTabInModal("roadmap");
+                  setAddModalOpen(true);
+                }}
+              >
                 Pull From Roadmap
               </SecondaryButton>
             }
@@ -435,7 +418,8 @@ export default function DailyTab() {
                     <Stamp tone="amber">Roadmap</Stamp>
                   </div>
                   <p className="mt-0.5 truncate font-mono text-[0.7rem] text-graphite-faint">
-                    {item.task.milestoneTitle ?? item.task.phaseTitle} / {item.task.topicTitle ?? "General"}
+                    {item.task.milestoneTitle ?? item.task.phaseTitle} /{" "}
+                    {item.task.topicTitle ?? "General"}
                   </p>
                 </div>
                 <Stamp tone="neutral" className="text-[0.7rem]">
@@ -452,7 +436,9 @@ export default function DailyTab() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-ground/80 backdrop-blur-sm p-4">
           <div className="bg-paper rounded shadow-xl max-w-xl w-full max-h-[85vh] flex flex-col">
             <div className="p-6 border-b border-hairline flex items-center justify-between">
-              <h3 className="text-[1.1rem] font-semibold text-graphite">Add Daily Task</h3>
+              <h3 className="text-[1.1rem] font-semibold text-graphite">
+                Add Daily Task
+              </h3>
               <button
                 onClick={() => setAddModalOpen(false)}
                 className="text-graphite-muted hover:text-graphite text-xl leading-none"
@@ -500,13 +486,17 @@ export default function DailyTab() {
                     />
                   </FormGroup>
                   <p className="text-[0.75rem] text-graphite-faint">
-                    Personal routines repeat every day and help build strong study habits.
+                    Personal routines repeat every day and help build strong
+                    study habits.
                   </p>
                   <div className="pt-4 flex justify-end gap-3">
                     <SecondaryButton onClick={() => setAddModalOpen(false)}>
                       Cancel
                     </SecondaryButton>
-                    <PrimaryButton type="submit" disabled={adding || !newTitle.trim()}>
+                    <PrimaryButton
+                      type="submit"
+                      disabled={adding || !newTitle.trim()}
+                    >
                       {adding ? "Adding..." : "Add Routine"}
                     </PrimaryButton>
                   </div>
@@ -514,14 +504,18 @@ export default function DailyTab() {
               ) : (
                 <div className="space-y-4">
                   <p className="text-[0.85rem] text-graphite-muted">
-                    Link a roadmap to automatically include its daily tasks in your workspace. 
-                    Daily tasks from linked roadmaps will appear in your "Focus Tasks" section.
+                    Link a roadmap to automatically include its daily tasks in
+                    your workspace. Daily tasks from linked roadmaps will appear
+                    in your "Focus Tasks" section.
                   </p>
 
                   {roadmapsLoading ? (
                     <div className="space-y-2">
                       {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-16 bg-paper-shade animate-pulse rounded" />
+                        <div
+                          key={i}
+                          className="h-16 bg-paper-shade animate-pulse rounded"
+                        />
                       ))}
                     </div>
                   ) : activeRoadmaps.length === 0 ? (
@@ -540,7 +534,7 @@ export default function DailyTab() {
                         const isLinked = linkedRoadmapIds.has(roadmap.id);
                         const isLinking = linkingRoadmap === roadmap.id;
                         const isUnlinking = unlinkingRoadmap === roadmap.id;
-                        
+
                         return (
                           <div
                             key={roadmap.id}
@@ -567,7 +561,7 @@ export default function DailyTab() {
                             </div>
                             {isLinked ? (
                               <SecondaryButton
-                                onClick={() => unlinkRoadmap(roadmap.id)}
+                                onClick={() => handleUnlinkRoadmap(roadmap.id)}
                                 disabled={isUnlinking}
                                 className="shrink-0"
                               >
@@ -575,7 +569,7 @@ export default function DailyTab() {
                               </SecondaryButton>
                             ) : (
                               <PrimaryButton
-                                onClick={() => linkRoadmap(roadmap.id)}
+                                onClick={() => handleLinkRoadmap(roadmap.id)}
                                 disabled={isLinking}
                                 className="shrink-0"
                               >

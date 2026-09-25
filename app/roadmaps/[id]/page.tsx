@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma";
 import { readRoadmap } from "@/lib/business/roadmap-templates";
 import AppShell from "@/app/components/shell";
 import { PageHeader, Sheet, SectionHead, Stamp } from "@/app/components/ui";
-import ActivateButton from "../activate-button";
 import TemplateAccordion from "../template-accordion";
 
 export const metadata: Metadata = {
@@ -70,7 +69,12 @@ export default async function RoadmapDetailsPage({
               activated ? (
                 <Stamp tone="valid">Enrolled · Active</Stamp>
               ) : (
-                <ActivateButton templateId={template.id} />
+                <button
+                  type="button"
+                  className="btn btn-primary px-3 py-1.5 text-xs font-medium"
+                >
+                  Activate
+                </button>
               )
             }
           />

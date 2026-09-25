@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Archivo, Roboto_Mono } from "next/font/google";
 import { getCurrentUser } from "@/lib/auth";
 import BrowserReminderListener from "@/app/notifications/browser-listener";
+import { ReduxProvider } from "./ReduxProvider";
 import "./globals.css";
 
 const archivo = Archivo({
@@ -30,8 +31,10 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${archivo.variable} ${robotoMono.variable} h-full antialiased`}
     >
       <body className="min-h-full">
-        {children}
-        <BrowserReminderListener />
+        <ReduxProvider>
+          {children}
+          <BrowserReminderListener />
+        </ReduxProvider>
       </body>
     </html>
   );

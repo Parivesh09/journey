@@ -4,16 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { BellRing } from "lucide-react";
 import { Stamp } from "@/app/components/ui";
+import { useDismissOnboardingMutation } from "@/lib/api";
 
 export default function OnboardingBanner({ show }: { show: boolean }) {
   const router = useRouter();
   const [visible, setVisible] = useState(show);
+  const [dismissOnboarding] = useDismissOnboardingMutation();
 
   if (!visible) return null;
 
   async function dismiss(goToSettings = false, enrollRoadmapRoute?: string) {
     try {
-      await fetch("/api/settings/dismiss-onboarding", { method: "POST" });
+      await dismissOnboarding().unwrap();
     } finally {
       setVisible(false);
       if (enrollRoadmapRoute) router.push(enrollRoadmapRoute);

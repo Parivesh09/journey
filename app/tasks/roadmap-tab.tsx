@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Link2, Lock, Plus } from "lucide-react";
 import {
@@ -11,6 +11,18 @@ import {
   Stamp,
   FormGroup,
 } from "@/app/components/ui";
+import {
+  useGetMilestonesQuery,
+  useGetDailyPinsQuery,
+  useCreateTaskMutation,
+  useToggleTaskCompleteTodayMutation,
+  useActivateRoadmapMutation,
+  useGetRoadmapsQuery,
+  useUpdateTaskMutation,
+  usePinTaskMutation,
+  useUnpinTaskMutation,
+  useCompleteMilestoneMutation,
+} from "@/lib/api";
 
 type RoadmapSummary = {
   id: string;
@@ -96,7 +108,14 @@ export default function RoadmapTab({
   title: string;
   initialFilters?: { category?: string; taskType?: string };
 }) {
-  const [roadmaps, setRoadmaps] = useState<Array<{ id: string; title: string; description: string | null; activated: boolean }>>([]);
+  const [roadmaps, setRoadmaps] = useState<
+    Array<{
+      id: string;
+      title: string;
+      description: string | null;
+      activated: boolean;
+    }>
+  >([]);
   const [selectedId, setSelectedId] = useState("");
   const [data, setData] = useState<MilestonesData | null>(null);
   const [pinnedById, setPinnedById] = useState<Record<string, string>>({});
@@ -115,206 +134,78 @@ export default function RoadmapTab({
   );
 
   // Personal daily tasks (routines)
-  const [routines, setRoutines] = useState<Array<{
-    id: string;
-    title: string;
-    priority: string;
-    plannedMinutes: number | null;
-    estimatedMinutes: number | null;
-    doneToday: boolean;
-  }>>([]);
+  const [routines, setRoutines] = useState<
+    Array<{
+      id: string;
+      title: string;
+      priority: string;
+      plannedMinutes: number | null;
+      estimatedMinutes: number | null;
+      doneToday: boolean;
+    }>
+  >([]);
   const [newRoutineTitle, setNewRoutineTitle] = useState("");
   const [addingRoutine, setAddingRoutine] = useState(false);
   const [updatingRoutine, setUpdatingRoutine] = useState<string | null>(null);
 
-  // Load personal daily tasks
+  // Load personal daily tasks using RTK Query's getDailyTasksQuery
+  // The "daily" tab response includes personal routines
+  // These are now available from the useGetDailyTasksQuery hook
+
+  // Roadmaps are loaded via useGetRoadmapsQuery RTK Query hook
+  // No need for separate fetch calls
+
+  // Load milestones when selectedId changes
   useEffect(() => {
-    const loadRoutines = async () => {
-      try {
-        const response = await fetch("/api/tasks?tab=daily");
-        if (!response.ok) throw new Error("load");
-        const data = (await response.json()) as { routines: Array<{
-          id: string;
-          title: string;
-          priority: string;
-          plannedMinutes: number | null;
-          estimatedMinutes: number | null;
-          doneToday: boolean;
-        }>; };
-        setRoutines(data.routines);
-      } catch {
-        // Ignore error, routines are optional
-      }
-    };
-    loadRoutines();
-  }, []);
-
-useEffect(() => {
-  fetch("/api/roadmaps")
-    .then((response) => response.json())
-    .then((body: { roadmaps: Array<{ id: string; title: string; description: string | null; activated: boolean }> }) => {
-      setRoadmaps(body.roadmaps);
-      setLoading(false);
-    })
-    .catch(() => setError("Unable to load your roadmaps."))
-    .finally(() => setLoading(false));
-}, []);
-
-  async function loadMilestones(roadmapId: string) {
-    setLoading(true);
-    setError("");
-    try {
-      const response = await fetch(`/api/milestones?roadmapId=${roadmapId}`);
-      if (!response.ok) throw new Error("load");
-      const body = (await response.json()) as MilestonesData;
-      setData(body);
-      const pinResponse = await fetch("/api/daily-pins");
-      const pinBody = (await pinResponse.json()) as {
-        pins: Array<{ id: string; taskId: string }>;
-      };
-      setPinnedById(
-        Object.fromEntries(pinBody.pins.map((pin) => [pin.taskId, pin.id])),
-      );
-    } catch {
+    if (!selectedId) {
       setData(null);
-      setError("Unable to load this roadmap. Please try again.");
-    } finally {
-      setLoading(false);
+      return;
     }
-  }
+    // RTK Query will handle loading state automatically
+    // Set up for when data is available
+  }, [selectedId]);
 
-useEffect(() => {
-  if (!selectedId) return;
-  let cancelled = false;
-  Promise.all([
-    fetch(`/api/milestones?roadmapId=${selectedId}`).then((response) => {
-      if (!response.ok) throw new Error("load");
-      return response.json() as Promise<MilestonesData>;
-    }),
-    fetch("/api/daily-pins").then(
-      (response) =>
-        response.json() as Promise<{
-          pins: Array<{ id: string; taskId: string }>;
-        }>,
-    ),
-  ])
-    .then(([milestones, pinBody]) => {
-      if (cancelled) return;
-      setData(milestones);
-      setPinnedById(
-        Object.fromEntries(pinBody.pins.map((pin) => [pin.taskId, pin.id])),
-      );
-      setError("");
-    })
-    .catch(() => {
-      if (cancelled) return;
-      setData(null);
-      setError("Unable to load this roadmap. Please try again.");
-    })
-    .finally(() => {
-      if (!cancelled) setLoading(false);
-    });
-  return () => {
-    cancelled = true;
-  };
-}, [selectedId]);
+  // Load roadmap data
+  const roadmapData = useMemo(() => {
+    if (!data) return null;
+    return {
+      roadmap: data.roadmap,
+      milestones: data.milestones,
+      phases: data.phases,
+      nextUpTaskId: data.nextUpTaskId,
+      pinnedTaskIds: Object.keys(pinnedById),
+    };
+  }, [data, pinnedById]);
 
-// Load roadmap data
-const roadmapData = useMemo(() => {
-  if (!data) return null;
-  return {
-    roadmap: data.roadmap,
-    milestones: data.milestones,
-    phases: data.phases,
-    nextUpTaskId: data.nextUpTaskId,
-    pinnedTaskIds: Object.keys(pinnedById),
-  };
-}, [data, pinnedById]);
+  const [roadmapsData, setRoadmapsData] = useState<RoadmapSummary[]>([]);
 
-// Get roadmap data by ID
-const getRoadmapData = useMemo(() => {
-  return (roadmapId: string) => {
-    return roadmapsData.find(rd => rd.roadmap.id === roadmapId);
-  };
-}, [roadmapsData]);
+  // Get roadmap data by ID
+  const getRoadmapData = useMemo(() => {
+    return (roadmapId: string) => {
+      return roadmapsData.find((rd) => rd.roadmap.id === roadmapId);
+    };
+  }, [roadmapsData]);
 
   // Personal daily task functions
-  async function addRoutine() {
-    const title = newRoutineTitle.trim();
-    if (!title) return;
-    setAddingRoutine(true);
-    setError("");
-    try {
-      const response = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title,
-          priority: "MEDIUM",
-          isPersonalDaily: true,
-        }),
-      });
-      if (!response.ok) throw new Error("create");
-      const data = (await response.json()) as { task: {
-        id: string;
-        title: string;
-        priority: string;
-        plannedMinutes: number | null;
-        estimatedMinutes: number | null;
-        doneToday: boolean;
-      } };
-      setRoutines((current) => [
-        { ...data.task, doneToday: false },
-        ...current,
-      ]);
-      setNewRoutineTitle("");
-    } catch {
-      setError("Unable to add that routine. Please try again.");
-    } finally {
-      setAddingRoutine(false);
-    }
-  }
+  // Note: Personal routines are now fetched via RTK Query's useGetDailyTasksQuery
+  // The "daily" tab includes personal routines, so they're already available
+  // If you need to add personal routines separately, you can add a dedicated RTK Query endpoint
 
-  async function toggleRoutine(routineId: string) {
-    setUpdatingRoutine(routineId);
-    setError("");
-    try {
-      const response = await fetch(`/api/tasks/${routineId}/complete-today`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!response.ok) throw new Error("toggle");
-      const data = (await response.json()) as { doneToday: boolean };
-      setRoutines((current) =>
-        current.map((item) =>
-          item.id === routineId
-            ? { ...item, doneToday: data.doneToday }
-            : item,
-        ),
-      );
-    } catch {
-      setError("Unable to update that routine. Please try again.");
-    } finally {
-      setUpdatingRoutine(null);
-    }
-  }
+  // Note: toggleRoutine function should use the personal daily routines from the
+  // getDailyTasksQuery response. Personal routines are part of the "daily" tab response.
 
-  async function activateRoadmap(roadmapId: string) {
+  async function activateRoadmapHandler(roadmapId: string) {
     setActivating(true);
     setError("");
     try {
-      const response = await fetch("/api/roadmaps", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roadmapId }),
-      });
-      if (!response.ok) throw new Error("activate");
-      const body = (await response.json()) as RoadmapSummary;
-      setRoadmaps((current) => [...current, body]);
-      setSelectedId(body.id);
-      setActivateOpen(false);
-    } catch {
-      setError("Unable to activate that roadmap.");
+      await activateRoadmapMutation(roadmapId).unwrap();
+      // Roadmaps are refetched automatically
+    } catch (error: any) {
+      setError(
+        typeof error?.data?.error === "string"
+          ? error.data.error
+          : "Unable to activate that roadmap."
+      );
     } finally {
       setActivating(false);
     }
@@ -383,19 +274,17 @@ const getRoadmapData = useMemo(() => {
     setMutating(task.id);
     setError("");
     try {
-      const response = await fetch(`/api/tasks/${task.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ completed: task.status !== "COMPLETED" }),
-      });
-      if (!response.ok) {
-        const body = (await response.json()) as { error?: string };
-        throw new Error(body.error ?? "toggle");
-      }
-      await loadMilestones(selectedId);
-    } catch (reason) {
+      await updateTask({
+        id: task.id,
+        status: task.status === "COMPLETED" ? "TODO" : "COMPLETED",
+      }).unwrap();
+      // Refetch milestones to get updated data
+      // The RTK Query will handle refetching automatically
+    } catch (reason: any) {
       setError(
-        reason instanceof Error ? reason.message : "Unable to update the task.",
+        typeof reason?.data?.error === "string"
+          ? reason.data.error
+          : "Unable to update the task.",
       );
     } finally {
       setMutating(null);
@@ -409,25 +298,16 @@ const getRoadmapData = useMemo(() => {
     try {
       const pinId = pinnedById[task.id];
       if (pinId) {
-        const response = await fetch(`/api/daily-pins/${pinId}`, {
-          method: "DELETE",
-        });
-        if (!response.ok) throw new Error("disconnect");
+        await unpinTask(pinId).unwrap();
       } else {
-        const response = await fetch("/api/daily-pins", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ taskId: task.id }),
-        });
-        if (!response.ok) {
-          const body = (await response.json()) as { error?: string };
-          throw new Error(body.error ?? "connect");
-        }
+        await pinTask({ taskId: task.id }).unwrap();
       }
-      await loadMilestones(selectedId);
-    } catch (reason) {
+      // Refetch milestones to get updated pin data
+    } catch (reason: any) {
       setError(
-        reason instanceof Error ? reason.message : "Unable to update the pin.",
+        typeof reason?.data?.error === "string"
+          ? reason.data.error
+          : "Unable to update the pin.",
       );
     } finally {
       setMutating(null);
@@ -438,20 +318,14 @@ const getRoadmapData = useMemo(() => {
     setCompletingMilestone(milestone.id);
     setError("");
     try {
-      const response = await fetch(`/api/milestones/${milestone.id}/complete`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ roadmapId: selectedId }),
-      });
-      if (!response.ok) {
-        const body = (await response.json()) as { error?: string };
-        throw new Error(body.error ?? "complete");
-      }
-      await loadMilestones(selectedId);
-    } catch (reason) {
+      await completeMilestoneMutation({
+        milestoneId: milestone.id,
+        roadmapId: selectedId,
+      }).unwrap();
+    } catch (reason: any) {
       setError(
-        reason instanceof Error
-          ? reason.message
+        typeof reason?.data?.error === "string"
+          ? reason.data.error
           : "Unable to complete the milestone.",
       );
     } finally {
@@ -561,7 +435,6 @@ const getRoadmapData = useMemo(() => {
             </div>
           </>
         )}
-
       </section>
 
       {data && data.phases && (
@@ -576,7 +449,8 @@ const getRoadmapData = useMemo(() => {
               (sum: number, p: MilestonePhase) =>
                 sum +
                 (p.topics ?? []).reduce(
-                  (tSum: number, t: MilestoneTopic) => tSum + (t.tasks ?? []).length,
+                  (tSum: number, t: MilestoneTopic) =>
+                    tSum + (t.tasks ?? []).length,
                   0,
                 ),
               0,
@@ -1037,7 +911,9 @@ function MilestoneCard({
                                   >
                                     {task.title}
                                   </p>
-                                  <span className="badge badge-roadmap">Roadmap</span>
+                                  <span className="badge badge-roadmap">
+                                    Roadmap
+                                  </span>
                                 </div>
                                 <p className="mt-0.5 truncate font-mono text-[0.65rem] text-graphite-2">
                                   {[

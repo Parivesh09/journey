@@ -1,7 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sheet, PageHeader, SectionHead, Stamp, Drawer, IconButton } from "@/app/components/ui";
+import {
+  Sheet,
+  PageHeader,
+  SectionHead,
+  Stamp,
+  Drawer,
+  IconButton,
+} from "@/app/components/ui";
+import {
+  useGetSettingsQuery,
+  useSaveNotificationSettingsMutation,
+} from "@/lib/api";
 
 type User = {
   id: string;
@@ -10,6 +21,32 @@ type User = {
   timezone: string;
   dailyStudyTargetMinutes: number;
   theme: string;
+};
+
+const defaultNotificationSettings = {
+  browserEnabled: false,
+  emailEnabled: false,
+  smsEnabled: false,
+  phoneNumber: null as string | null,
+  reminderSchedule: [
+    { key: "morning", time: "08:00", enabled: false },
+    { key: "midday", time: "13:00", enabled: false },
+    { key: "evening", time: "19:00", enabled: false },
+    { key: "final", time: "22:00", enabled: false },
+    { key: "nextDay", time: "08:00", enabled: false },
+  ],
+  excludeCompletedTasks: true,
+  dailyReminderEnabled: false,
+  missedTaskReminderEnabled: false,
+  revisionReminderEnabled: false,
+  weeklySummaryEnabled: false,
+  weeklySummaryDay: 0,
+  quietHoursEnabled: true,
+  quietHoursStart: "22:00",
+  quietHoursEnd: "07:00",
+  maxDailyNotifications: 5,
+  minNotificationInterval: 30,
+  preferredChannel: "BROWSER",
 };
 
 export default function NotificationsClient({
@@ -23,67 +60,33 @@ export default function NotificationsClient({
   deliveredCount: number;
   failedCount: number;
 }) {
-  const [notificationSettings, setNotificationSettings] = useState({
-    browserEnabled: false,
-    emailEnabled: false,
-    smsEnabled: false,
-    phoneNumber: null as string | null,
-    reminderSchedule: [
-      { key: "morning", time: "08:00", enabled: false },
-      { key: "midday", time: "13:00", enabled: false },
-      { key: "evening", time: "19:00", enabled: false },
-      { key: "final", time: "22:00", enabled: false },
-      { key: "nextDay", time: "08:00", enabled: false },
-    ],
-    excludeCompletedTasks: true,
-    dailyReminderEnabled: false,
-    missedTaskReminderEnabled: false,
-    revisionReminderEnabled: false,
-    weeklySummaryEnabled: false,
-    weeklySummaryDay: 0,
-    quietHoursEnabled: true,
-    quietHoursStart: "22:00",
-    quietHoursEnd: "07:00",
-    maxDailyNotifications: 5,
-    minNotificationInterval: 30,
-    preferredChannel: "BROWSER",
-  });
+  const { data } = useGetSettingsQuery();
+  const [saveNotificationSettings] = useSaveNotificationSettingsMutation();
 
+  const [notificationSettings, setNotificationSettings] = useState(
+    defaultNotificationSettings,
+  );
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   useEffect(() => {
-    const loadSettings = async () => {
-      try {
-        const response = await fetch("/api/settings", { cache: "no-store" });
-        if (!response.ok) throw new Error("Unable to load settings");
-        const data = await response.json();
-        if (data.notifications) {
-          setNotificationSettings(data.notifications);
-        }
-      } catch (error) {
-        console.error("Failed to load notification settings:", error);
-      }
-    };
-
-    loadSettings();
-  }, []);
+    if (data?.notifications) {
+      setNotificationSettings({
+        ...defaultNotificationSettings,
+        ...data.notifications,
+      });
+    }
+  }, [data?.notifications]);
 
   const saveSettings = async () => {
     try {
-      const response = await fetch("/api/settings/notifications", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(notificationSettings),
-      });
-      if (!response.ok) {
-        const errorData = await response.json();
-        alert(errorData.error || "Failed to save notification settings");
-        return false;
-      }
+      await saveNotificationSettings(notificationSettings).unwrap();
       return true;
-    } catch (error) {
-      console.error("Failed to save notification settings:", error);
-      alert("Failed to save notification settings");
+    } catch (reason: any) {
+      alert(
+        typeof reason?.data?.error === "string"
+          ? reason.data.error
+          : "Failed to save notification settings",
+      );
       return false;
     }
   };

@@ -1,8 +1,9 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SectionHead, PrimaryButton, FormGroup, Loader } from "@/app/components/ui";
+import { useGetSettingsQuery, useSaveSettingsMutation } from "@/lib/api";
 
 type UserSettings = {
   id: string;
@@ -21,177 +22,58 @@ const timezones = (() => {
   }
 })();
 
-function ToggleRow({
-  label,
-  checked,
-  onChange,
-  disabled,
-  children,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  disabled?: boolean;
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between py-3 border-b border-hairline last:border-b-0">
-      <span className="text-[0.875rem] text-graphite">{label}</span>
-      <div className="flex items-center gap-3">
-        {children}
-        <input
-          type="checkbox"
-          checked={checked}
-          disabled={disabled}
-          onChange={(event) => onChange(event.target.checked)}
-          className="h-4 w-4 accent-amber-ink"
-        />
-      </div>
-    </div>
-  );
-}
-
 export default function SettingsForm() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState("");
+  const { data, isLoading, error: queryError } = useGetSettingsQuery();
+  const [saveSettings, { isLoading: saving }] = useSaveSettingsMutation();
+
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [user, setUser] = useState<UserSettings | null>(null);
   const [password, setPassword] = useState({ current: "", next: "" });
 
-  const load = useCallback(async (): Promise<boolean> => {
-    try {
-      const response = await fetch("/api/settings", { cache: "no-store" });
-      if (!response.ok) throw new Error("Unable to load settings");
-      const data = (await response.json()) as {
-        user: UserSettings;
-        notifications:
-          | (Partial<{
-              browserEnabled: boolean;
-              emailEnabled: boolean;
-              smsEnabled: boolean;
-              phoneNumber: string | null;
-              reminderSchedule: Array<{ key: string; time: string; enabled: boolean }>;
-              excludeCompletedTasks: boolean;
-              dailyReminderEnabled: boolean;
-              missedTaskReminderEnabled: boolean;
-              revisionReminderEnabled: boolean;
-              weeklySummaryEnabled: boolean;
-              weeklySummaryDay: number;
-              quietHoursEnabled: boolean;
-              quietHoursStart: string;
-              quietHoursEnd: string;
-              maxDailyNotifications: number;
-              minNotificationInterval: number;
-              preferredChannel: string;
-            }> & {
-              reminderSchedule?: unknown;
-            })
-          | null;
-      };
-      setUser(data.user);
-      // We're not using notifications in the settings form anymore
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load settings");
-      return false;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const response = await fetch("/api/settings", { cache: "no-store" });
-        if (!response.ok) throw new Error("Unable to load settings");
-        const data = (await response.json()) as {
-          user: UserSettings;
-          notifications:
-            | (Partial<{
-                browserEnabled: boolean;
-                emailEnabled: boolean;
-                smsEnabled: boolean;
-                phoneNumber: string | null;
-                reminderSchedule: Array<{ key: string; time: string; enabled: boolean }>;
-                excludeCompletedTasks: boolean;
-                dailyReminderEnabled: boolean;
-                missedTaskReminderEnabled: boolean;
-                revisionReminderEnabled: boolean;
-                weeklySummaryEnabled: boolean;
-                weeklySummaryDay: number;
-                quietHoursEnabled: boolean;
-                quietHoursStart: string;
-                quietHoursEnd: string;
-                maxDailyNotifications: number;
-                minNotificationInterval: number;
-                preferredChannel: string;
-              }> & {
-                reminderSchedule?: unknown;
-              })
-            | null;
-        };
-        if (cancelled) return;
-        setUser(data.user);
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : "Unable to load settings",
-          );
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  async function saveSettings(endpoint: string, body: unknown) {
-    const response = await fetch(endpoint, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    return response;
+  if (data?.user && !user) {
+    setUser(data.user);
   }
 
   async function saveAccount(event?: FormEvent) {
     event?.preventDefault();
     if (!user) return;
-    setSaving("account");
     setMessage("");
     setError("");
-    const response = await saveSettings("/api/settings", {
-      name: user.name,
-      email: user.email,
-      timezone: user.timezone,
-      dailyStudyTargetMinutes: user.dailyStudyTargetMinutes,
-      theme: user.theme,
-      ...(password.next
-        ? { currentPassword: password.current, newPassword: password.next }
-        : {}),
-    });
-    if (!response.ok) {
-      const data = (await response.json().catch(() => null)) as {
-        error?: string;
-      } | null;
-      setError(data?.error ?? "Unable to save account settings.");
-      setSaving("");
-      return;
+    try {
+      await saveSettings({
+        name: user.name ?? undefined,
+        email: user.email,
+        timezone: user.timezone,
+        dailyStudyTargetMinutes: user.dailyStudyTargetMinutes,
+        theme: user.theme,
+        ...(password.next
+          ? { currentPassword: password.current, newPassword: password.next }
+          : {}),
+      }).unwrap();
+      setPassword({ current: "", next: "" });
+      setMessage("Account settings saved.");
+      router.refresh();
+    } catch (reason: any) {
+      setError(
+        typeof reason?.data?.error === "string"
+          ? reason.data.error
+          : "Unable to save account settings.",
+      );
     }
-    setPassword({ current: "", next: "" });
-    setMessage("Account settings saved.");
-    setSaving("");
-    await load();
-    router.refresh();
   }
 
-  if (loading) {
+  if (isLoading) {
     return <Loader label="Loading settings" />;
+  }
+
+  if (queryError || !user) {
+    return (
+      <div className="rounded border border-stamp-red/30 bg-stamp-red/5 px-4 py-3 text-[0.85rem] text-stamp-red">
+        Unable to load settings.
+      </div>
+    );
   }
 
   return (
@@ -234,7 +116,7 @@ export default function SettingsForm() {
             />
           </FormGroup>
         </div>
-        
+
         <div className="mt-6 border border-hairline rounded p-4">
           <p className="text-[0.7rem] uppercase tracking-wide text-graphite-muted font-semibold">
             Change Password
@@ -272,8 +154,8 @@ export default function SettingsForm() {
         </div>
 
         <div className="mt-6">
-          <PrimaryButton type="submit" disabled={saving === "account"}>
-            {saving === "account" ? "Saving..." : "Save Account"}
+          <PrimaryButton type="submit" disabled={saving}>
+            {saving ? "Saving..." : "Save Account"}
           </PrimaryButton>
         </div>
       </form>

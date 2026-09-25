@@ -2,6 +2,10 @@
 
 import { useState } from "react";
 import { Bubble, Stamp, EmptyState } from "@/app/components/ui";
+import {
+  useToggleTaskCompleteTodayMutation,
+  useUpdateTaskMutation,
+} from "@/lib/api";
 
 export type DashboardTaskRow = {
   id: string;
@@ -23,31 +27,22 @@ export default function DashboardTaskList({
   const [items, setItems] = useState(initialItems);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [toggleTaskCompleteToday] = useToggleTaskCompleteTodayMutation();
+  const [updateTask] = useUpdateTaskMutation();
 
   async function toggleTask(row: DashboardTaskRow) {
     setUpdatingId(row.id);
     setError("");
     try {
       if (row.kind === "routine") {
-        const response = await fetch(`/api/tasks/${row.id}/complete-today`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        });
-        if (!response.ok) throw new Error("Unable to update routine");
-        const data = (await response.json()) as { doneToday: boolean };
+        const data = await toggleTaskCompleteToday(row.id).unwrap();
         setItems((current) =>
           current.map((item) =>
             item.id === row.id ? { ...item, done: data.doneToday } : item,
           ),
         );
       } else {
-        const response = await fetch(`/api/tasks/${row.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ completed: !row.done }),
-        });
-        if (!response.ok) throw new Error("Unable to update task");
-        await response.json();
+        await updateTask({ id: row.id, completed: !row.done }).unwrap();
         setItems((current) =>
           current.map((item) =>
             item.id === row.id && item.kind !== "routine"

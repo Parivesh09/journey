@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useActivateRoadmapMutation } from "@/lib/api";
 
 type Props = {
   templateId: string;
@@ -10,6 +11,7 @@ export default function ActivateButton({ templateId }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activated, setActivated] = useState(false);
+  const [activateRoadmap] = useActivateRoadmapMutation();
 
   const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,21 +19,14 @@ export default function ActivateButton({ templateId }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/roadmaps", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ roadmapId: templateId }),
-      });
-      if (!res.ok) {
-        const err = await res.text();
-        throw new Error(err || "Failed to activate roadmap");
-      }
-      // Optimistically mark as activated
+      await activateRoadmap(templateId).unwrap();
       setActivated(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
+    } catch (err: any) {
+      setError(
+        typeof err?.data?.error === "string"
+          ? err.data.error
+          : "Failed to activate roadmap",
+      );
     } finally {
       setLoading(false);
     }

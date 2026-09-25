@@ -332,21 +332,24 @@ export function Drawer({
 }) {
   return (
     <>
-      {open && (
+      <div
+        className={`fixed inset-0 z-50 flex justify-end sm:items-center p-0 sm:p-4 transition-opacity duration-200 ease-out ${
+          open ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={onClose}
+        role="dialog"
+        aria-modal="true"
+      >
         <div
-          className="fixed inset-0 z-50 flex justify-end sm:items-center p-0 sm:p-4"
+          className="absolute inset-0 bg-ink-ground/80 backdrop-blur-sm"
           onClick={onClose}
-          role="dialog"
-          aria-modal="true"
+        />
+        <aside
+          className={`relative w-full sm:w-[420px] h-full sm:max-h-[90vh] bg-paper shadow-xl border-l sm:border border-hairline flex flex-col transition-transform duration-250 ease-out ${
+            open ? "translate-x-0" : "translate-x-full"
+          }`}
+          onClick={(e) => e.stopPropagation()}
         >
-          <div
-            className="absolute inset-0 bg-ink-ground/80 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          <aside
-            className="relative w-full sm:w-[420px] h-full sm:max-h-[90vh] bg-paper shadow-xl border-l sm:border border-hairline flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
             {title && (
               <div className="flex items-center justify-between border-b border-hairline px-5 py-4">
                 <h3 className="text-[1.05rem] font-semibold text-graphite">{title}</h3>
@@ -366,7 +369,6 @@ export function Drawer({
             </div>
           </aside>
         </div>
-      )}
     </>
   );
 }

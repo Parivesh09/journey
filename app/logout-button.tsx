@@ -1,11 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useLogoutMutation } from "@/lib/api";
 
 export default function LogoutButton() {
   const router = useRouter();
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
+  const [logout] = useLogoutMutation();
+
+  async function handleLogout() {
+    await logout().unwrap();
     router.push("/login");
     router.refresh();
   }
@@ -13,7 +16,7 @@ export default function LogoutButton() {
   return (
     <button
       type="button"
-      onClick={logout}
+      onClick={handleLogout}
       className="btn btn-tertiary px-3 py-1.5 text-[0.8rem]"
     >
       Sign out

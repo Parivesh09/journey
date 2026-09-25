@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Sheet } from "@/app/components/ui";
+import { useLoginMutation } from "@/lib/api";
 
 export default function LoginForm() {
   const router = useRouter();
@@ -11,23 +12,21 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [login] = useLoginMutation();
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
     setError("");
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-    if (!response.ok) {
+    try {
+      await login({ email, password }).unwrap();
+      router.push("/");
+      router.refresh();
+    } catch {
       setError("Invalid email or password.");
+    } finally {
       setLoading(false);
-      return;
     }
-    router.push("/");
-    router.refresh();
   }
 
   return (

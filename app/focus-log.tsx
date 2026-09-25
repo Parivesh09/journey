@@ -2,12 +2,14 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useCreateStudySessionMutation } from "@/lib/api";
 
 export default function FocusLog() {
   const router = useRouter();
   const [minutes, setMinutes] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [createStudySession] = useCreateStudySessionMutation();
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
@@ -19,19 +21,16 @@ export default function FocusLog() {
     setSaving(true);
     setMessage(null);
     try {
-      const response = await fetch("/api/study-sessions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ minutes: value }),
-      });
-      if (!response.ok) {
-        const body = await response.json().catch(() => null);
-        setMessage(body?.error ?? "Could not log the session.");
-        return;
-      }
+      await createStudySession({ minutes: value }).unwrap();
       setMinutes("");
       setMessage(`Logged ${value} min of focus.`);
       router.refresh();
+    } catch (reason: any) {
+      setMessage(
+        typeof reason?.data?.error === "string"
+          ? reason.data.error
+          : "Could not log the session.",
+      );
     } finally {
       setSaving(false);
     }

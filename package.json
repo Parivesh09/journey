@@ -17,6 +17,7 @@
     "@auth/prisma-adapter": "^2.11.3",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^6.19.3",
+    "@reduxjs/toolkit": "^2.12.0",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -26,6 +27,7 @@
     "nodemailer": "^7.0.13",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "react-redux": "^9.3.0",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.5"
   },
