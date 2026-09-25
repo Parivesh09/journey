@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCreateStudySessionMutation } from "@/lib/api";
+import type { ApiError } from "@/lib/types";
 
 export default function FocusLog() {
   const router = useRouter();
@@ -25,10 +26,13 @@ export default function FocusLog() {
       setMinutes("");
       setMessage(`Logged ${value} min of focus.`);
       router.refresh();
-    } catch (reason: any) {
+    } catch (reason: unknown) {
+      const message = reason && typeof reason === "object" && "data" in reason
+        ? (reason as { data?: ApiError }).data?.error
+        : undefined;
       setMessage(
-        typeof reason?.data?.error === "string"
-          ? reason.data.error
+        typeof message === "string"
+          ? message
           : "Could not log the session.",
       );
     } finally {

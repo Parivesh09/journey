@@ -22,6 +22,7 @@ import {
   useUpdateTaskMutation,
   useDeleteTaskMutation,
 } from "@/lib/api";
+import type { ApiError, RoadmapSummary } from "@/lib/types";
 
 type Routine = {
   id: string;
@@ -47,12 +48,7 @@ type Connected = {
   };
 };
 
-type ActiveRoadmap = {
-  id: string;
-  title: string;
-  description: string | null;
-  dailyTaskCount: number;
-};
+type ActiveRoadmap = RoadmapSummary;
 
 type LinkedRoadmap = {
   id: string;
@@ -198,6 +194,16 @@ export default function DailyTab() {
     }
   }
 
+  function extractErrorMessage(reason: unknown): string {
+    if (reason && typeof reason === "object" && "data" in reason) {
+      const data = (reason as { data?: ApiError }).data;
+      if (data && typeof data.error === "string") {
+        return data.error;
+      }
+    }
+    return "";
+  }
+
   async function toggleRoutine(routine: Routine) {
     setUpdating(routine.id);
     setError("");
@@ -246,12 +252,9 @@ export default function DailyTab() {
     setError("");
     try {
       await linkRoadmap(roadmapId).unwrap();
-    } catch (reason: any) {
-      setError(
-        typeof reason?.data?.error === "string"
-          ? reason.data.error
-          : "Unable to link roadmap.",
-      );
+    } catch (reason: unknown) {
+      const message = extractErrorMessage(reason);
+      setError(message || "Unable to link roadmap.");
     } finally {
       setLinkingRoadmap(null);
     }
@@ -262,12 +265,9 @@ export default function DailyTab() {
     setError("");
     try {
       await unlinkRoadmap(roadmapId).unwrap();
-    } catch (reason: any) {
-      setError(
-        typeof reason?.data?.error === "string"
-          ? reason.data.error
-          : "Unable to unlink roadmap.",
-      );
+    } catch (reason: unknown) {
+      const message = extractErrorMessage(reason);
+      setError(message || "Unable to unlink roadmap.");
     } finally {
       setUnlinkingRoadmap(null);
     }
@@ -278,12 +278,9 @@ export default function DailyTab() {
     setError("");
     try {
       await updateTask({ id: item.task.id, status: "COMPLETED" }).unwrap();
-    } catch (reason: any) {
-      setError(
-        typeof reason?.data?.error === "string"
-          ? reason.data.error
-          : "Unable to complete that task.",
-      );
+    } catch (reason: unknown) {
+      const message = extractErrorMessage(reason);
+      setError(message || "Unable to complete that task.");
     } finally {
       setUpdating(null);
     }
@@ -302,7 +299,7 @@ export default function DailyTab() {
       <div className="flex justify-between items-center pb-4 border-b border-hairline">
         <div>
           <h2 className="text-[1.1rem] font-semibold text-graphite">
-            Today's Workspace
+            Today&apos;s Workspace
           </h2>
           <p className="text-[0.85rem] text-graphite-muted">
             Personal daily routines and roadmap tasks
@@ -504,9 +501,9 @@ export default function DailyTab() {
               ) : (
                 <div className="space-y-4">
                   <p className="text-[0.85rem] text-graphite-muted">
-                    Link a roadmap to automatically include its daily tasks in
-                    your workspace. Daily tasks from linked roadmaps will appear
-                    in your "Focus Tasks" section.
+                    {
+                      "Link a roadmap to automatically include its daily tasks in your workspace. Daily tasks from linked roadmaps will appear in your 'Focus Tasks' section."
+                    }
                   </p>
 
                   {roadmapsLoading ? (
