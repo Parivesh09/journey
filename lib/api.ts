@@ -1,4 +1,19 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import type {
+  DailyFeed,
+  RoadmapsResponse,
+  DailyRoadmapsResponse,
+  LinkRoadmapResponse,
+  UnlinkRoadmapResponse,
+  MilestonesResponse,
+  DailyPinsResponse,
+  PinTaskResponse,
+  SettingsResponse,
+  SaveSettingsResponse,
+  SessionResponse,
+  PendingNotificationsResponse,
+  Task,
+} from "@/lib/types";
 
 const baseUrl = typeof window !== "undefined" ? "/api" : undefined;
 
@@ -25,18 +40,12 @@ export const apiSlice = createApi({
   ],
   endpoints: (builder) => ({
     // Tasks API
-    getDailyTasks: builder.query<
-      { tab: string; routines: any; connected: any },
-      string
-    >({
+    getDailyTasks: builder.query<DailyFeed, string>({
       query: (tab) => `tasks?tab=${tab}`,
       providesTags: ["Tasks"],
     }),
 
-    createTask: builder.mutation<
-      { task: any },
-      { title: string; priority?: string; isPersonalDaily?: boolean }
-    >({
+    createTask: builder.mutation<{ task: Task }, { title: string; priority?: string; isPersonalDaily?: boolean }>({
       query: (body) => ({
         url: "tasks",
         method: "POST",
@@ -45,17 +54,26 @@ export const apiSlice = createApi({
       invalidatesTags: ["Tasks"],
     }),
 
-    toggleTaskCompleteToday: builder.mutation<
-      { task: any; doneToday: boolean },
-      string
-    >({
+    toggleTaskCompleteToday: builder.mutation<{ task: Task; doneToday: boolean }, string>({
       query: (id) => `tasks/${id}/complete-today`,
       invalidatesTags: ["Tasks"],
     }),
 
     updateTask: builder.mutation<
-      { task: any },
-      { id: string; title?: string; description?: string; status?: string; priority?: string; categoryId?: string; estimatedMinutes?: number; plannedMinutes?: number; dueDate?: string; dailySlot?: string; completed?: boolean }
+      { task: Task },
+      {
+        id: string;
+        title?: string;
+        description?: string;
+        status?: string;
+        priority?: string;
+        categoryId?: string;
+        estimatedMinutes?: number;
+        plannedMinutes?: number;
+        dueDate?: string;
+        dailySlot?: string;
+        completed?: boolean;
+      }
     >({
       query: ({ id, ...body }) => ({
         url: `tasks/${id}`,
@@ -65,10 +83,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["Tasks"],
     }),
 
-    deleteTask: builder.mutation<
-      { deleted: boolean; id: string },
-      string
-    >({
+    deleteTask: builder.mutation<{ deleted: boolean; id: string }, string>({
       query: (id) => ({
         url: `tasks/${id}`,
         method: "DELETE",
@@ -77,7 +92,7 @@ export const apiSlice = createApi({
     }),
 
     // Roadmaps API
-    getRoadmaps: builder.query<{ roadmaps: any }, void>({
+    getRoadmaps: builder.query<RoadmapsResponse, void>({
       query: () => "roadmaps",
       providesTags: ["Roadmaps"],
     }),
@@ -95,15 +110,12 @@ export const apiSlice = createApi({
     }),
 
     // Daily Roadmaps API
-    getDailyRoadmaps: builder.query<{ linkedRoadmaps: any }, void>({
+    getDailyRoadmaps: builder.query<DailyRoadmapsResponse, void>({
       query: () => "daily-roadmaps",
       providesTags: ["DailyRoadmaps"],
     }),
 
-    linkRoadmap: builder.mutation<
-      { message: string; linked: boolean; userDailyRoadmap: any },
-      string
-    >({
+    linkRoadmap: builder.mutation<LinkRoadmapResponse, string>({
       query: (roadmapId) => ({
         url: "daily-roadmaps",
         method: "POST",
@@ -112,10 +124,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["DailyRoadmaps"],
     }),
 
-    unlinkRoadmap: builder.mutation<
-      { message: string; linked: boolean },
-      string
-    >({
+    unlinkRoadmap: builder.mutation<UnlinkRoadmapResponse, string>({
       query: (roadmapId) => ({
         url: "daily-roadmaps",
         method: "DELETE",
@@ -125,18 +134,12 @@ export const apiSlice = createApi({
     }),
 
     // Milestones API
-    getMilestones: builder.query<
-      { data: any; pinnedTaskIds: string[] },
-      string
-    >({
+    getMilestones: builder.query<MilestonesResponse, string>({
       query: (roadmapId) => `milestones?roadmapId=${roadmapId}`,
       providesTags: ["Milestones"],
     }),
 
-    completeMilestone: builder.mutation<
-      void,
-      { milestoneId: string; roadmapId: string }
-    >({
+    completeMilestone: builder.mutation<void, { milestoneId: string; roadmapId: string }>({
       query: ({ milestoneId, roadmapId }) => ({
         url: `milestones/${milestoneId}/complete`,
         method: "POST",
@@ -146,15 +149,12 @@ export const apiSlice = createApi({
     }),
 
     // Daily Pins API
-    getDailyPins: builder.query<{ pins: any }, void>({
+    getDailyPins: builder.query<DailyPinsResponse, void>({
       query: () => "daily-pins",
       providesTags: ["DailyPins"],
     }),
 
-    pinTask: builder.mutation<
-      { pin: any },
-      { taskId: string }
-    >({
+    pinTask: builder.mutation<PinTaskResponse, { taskId: string }>({
       query: (taskId) => ({
         url: "daily-pins",
         method: "POST",
@@ -163,10 +163,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["DailyPins"],
     }),
 
-    unpinTask: builder.mutation<
-      void,
-      { pinId: string }
-    >({
+    unpinTask: builder.mutation<void, { pinId: string }>({
       query: (pinId) => ({
         url: `daily-pins/${pinId}`,
         method: "DELETE",
@@ -175,16 +172,13 @@ export const apiSlice = createApi({
     }),
 
     // Settings API
-    getSettings: builder.query<
-      { user: any; notifications: any },
-      void
-    >({
+    getSettings: builder.query<SettingsResponse, void>({
       query: () => "settings",
       providesTags: ["Settings"],
     }),
 
     saveSettings: builder.mutation<
-      { user: any },
+      SaveSettingsResponse,
       { name?: string; email?: string; timezone?: string; dailyStudyTargetMinutes?: number; theme?: string; currentPassword?: string; newPassword?: string }
     >({
       query: (body) => ({
@@ -195,10 +189,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["Settings"],
     }),
 
-    saveNotificationSettings: builder.mutation<
-      void,
-      any
-    >({
+    saveNotificationSettings: builder.mutation<void, SettingsResponse["notifications"]>({
       query: (body) => ({
         url: "settings/notifications",
         method: "PUT",
@@ -216,10 +207,7 @@ export const apiSlice = createApi({
     }),
 
     // Study Sessions API
-    createStudySession: builder.mutation<
-      void,
-      { minutes: number }
-    >({
+    createStudySession: builder.mutation<void, { minutes: number }>({
       query: (minutes) => ({
         url: "study-sessions",
         method: "POST",
@@ -228,12 +216,12 @@ export const apiSlice = createApi({
       invalidatesTags: ["StudySessions"],
     }),
 
-    getSession: builder.query<any, void>({
+    getSession: builder.query<SessionResponse, void>({
       query: () => "auth/session",
       providesTags: ["Auth"],
     }),
 
-    login: builder.mutation<{ user?: any }, { email: string; password: string }>({
+    login: builder.mutation<{ user: SessionResponse["user"] }, { email: string; password: string }>({
       query: (body) => ({
         url: "auth/login",
         method: "POST",
@@ -242,7 +230,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["Auth"],
     }),
 
-    signup: builder.mutation<{ user?: any }, { name: string; email: string; password: string; timezone?: string }>({
+    signup: builder.mutation<{ user: SessionResponse["user"] }, { name: string; email: string; password: string; timezone?: string }>({
       query: (body) => ({
         url: "auth/signup",
         method: "POST",
@@ -260,10 +248,7 @@ export const apiSlice = createApi({
     }),
 
     // Notifications API
-    getPendingNotifications: builder.query<
-      { reminders: any[] },
-      void
-    >({
+    getPendingNotifications: builder.query<PendingNotificationsResponse, void>({
       query: () => "notifications/pending",
       providesTags: ["Notifications"],
     }),

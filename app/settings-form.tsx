@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { SectionHead, PrimaryButton, FormGroup, Loader } from "@/app/components/ui";
 import { useGetSettingsQuery, useSaveSettingsMutation } from "@/lib/api";
+import type { ApiError } from "@/lib/types";
 
 type UserSettings = {
   id: string;
@@ -55,10 +56,13 @@ export default function SettingsForm() {
       setPassword({ current: "", next: "" });
       setMessage("Account settings saved.");
       router.refresh();
-    } catch (reason: any) {
+    } catch (reason: unknown) {
+      const message = reason && typeof reason === "object" && "data" in reason
+        ? (reason as { data?: ApiError }).data?.error
+        : undefined;
       setError(
-        typeof reason?.data?.error === "string"
-          ? reason.data.error
+        typeof message === "string"
+          ? message
           : "Unable to save account settings.",
       );
     }

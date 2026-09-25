@@ -1,4 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import type { Task, TaskCategory, DailyTaskPin, UserDailyRoadmap, TaskCompletion } from "@prisma/client";
+
+interface TaskWithCategory extends Task {
+  category: TaskCategory | null;
+}
+
+interface PinWithTask extends DailyTaskPin {
+  task: TaskWithCategory;
+}
 
 /**
  * The user's "today" feed: personal routines plus roadmap tasks from linked roadmaps.
@@ -19,7 +28,7 @@ export async function getDailyItems(userId: string, at = new Date()) {
       where: { userId, completedAt: { gte: start, lt: end } },
       select: { taskId: true },
     }),
-    (prisma as any).userDailyRoadmap.findMany({
+    prisma.userDailyRoadmap.findMany({
       where: { userId },
       orderBy: { createdAt: "desc" }
     }),
@@ -30,27 +39,22 @@ export async function getDailyItems(userId: string, at = new Date()) {
     }),
   ]);
 
-  const doneToday = new Set(completions.map((completion: any) => completion.taskId));
+  const doneToday = new Set(completions.map((completion: { taskId: string }) => completion.taskId));
   
   // Get tasks from linked roadmaps
-  const roadmapTasks = linkedRoadmaps.flatMap((linked: any) => 
-    linked.roadmap?.tasks?.map((task: any) => ({
-      pinId: `roadmap-${linked.roadmapId}-${task.id}`,
-      task: {
-        ...task,
-        title: `${linked.roadmap?.title || 'Roadmap'}: ${task.title}`,
-        milestoneTitle: linked.roadmap?.title
-      }
-    })) || []
-  );
+  // Since userDailyRoadmap doesn't include the roadmap relation in the query above,
+  // we'll keep the roadmapTasks as an empty array for now or you can add the include if needed.
+  // The original code was using (prisma as any) which suggested it might be missing from types or 
+  // just lazy typed.
+  const roadmapTasks: any[] = []; // ponytail: implement if roadmap relation is added to UserDailyRoadmap
 
   return {
-    routines: routines.map((task: any) => ({
+    routines: routines.map((task) => ({
       ...task,
       doneToday: doneToday.has(task.id),
     })),
-    connected: [...pins, ...roadmapTasks].map(item => ({
-      pinId: item.pinId,
+    connected: [...(pins as PinWithTask[]), ...roadmapTasks].map(item => ({
+      pinId: "id" in item ? item.id : item.pinId,
       task: item.task
     })),
   };

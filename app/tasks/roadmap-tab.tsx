@@ -23,12 +23,7 @@ import {
   useUnpinTaskMutation,
   useCompleteMilestoneMutation,
 } from "@/lib/api";
-
-type RoadmapSummary = {
-  id: string;
-  title: string;
-  description: string | null;
-};
+import type { RoadmapSummary, MilestonesData, ApiError } from "@/lib/types";
 
 type MilestoneTask = {
   id: string;
@@ -63,14 +58,6 @@ type Milestone = {
   progress: { completed: number; total: number; percent: number };
   phases: MilestonePhase[];
   nextUpTaskId: string | null;
-};
-
-type MilestonesData = {
-  roadmap: RoadmapSummary;
-  nextUpTaskId: string | null;
-  milestones: Milestone[];
-  pinnedTaskIds: string[];
-  phases: MilestonePhase[];
 };
 
 const KNOWN_TEMPLATES = [
@@ -108,17 +95,9 @@ export default function RoadmapTab({
   title: string;
   initialFilters?: { category?: string; taskType?: string };
 }) {
-  const [roadmaps, setRoadmaps] = useState<
-    Array<{
-      id: string;
-      title: string;
-      description: string | null;
-      activated: boolean;
-    }>
-  >([]);
+  
   const [selectedId, setSelectedId] = useState("");
   const [data, setData] = useState<MilestonesData | null>(null);
-  const [pinnedById, setPinnedById] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState<Filters>({
@@ -132,6 +111,46 @@ export default function RoadmapTab({
   const [completingMilestone, setCompletingMilestone] = useState<string | null>(
     null,
   );
+
+  // RTK Query hooks
+  const { data: milestonesData, isLoading: milestonesLoading, refetch: refetchMilestones } = useGetMilestonesQuery(selectedId, {
+    skip: !selectedId,
+  });
+  const { data: pinsData } = useGetDailyPinsQuery();
+  const [activateRoadmap] = useActivateRoadmapMutation();
+  const [updateTask] = useUpdateTaskMutation();
+  const [pinTask] = usePinTaskMutation();
+  const [unpinTask] = useUnpinTaskMutation();
+  const [completeMilestoneMutation] = useCompleteMilestoneMutation();
+
+  const { data: roadmapsData } = useGetRoadmapsQuery(undefined);
+  const roadmaps: RoadmapSummary[] = roadmapsData?.roadmaps ?? [];
+
+  const milestonesResponse: MilestonesData | null = milestonesData?.data ?? null;
+  const pinnedById = milestonesData?.pinnedTaskIds
+    ? Object.fromEntries(
+        pinsData?.pins?.
+        filter((pin: { taskId: string }) => milestonesData.pinnedTaskIds.includes(pin.taskId))
+        .map((pin: { taskId: string; id: string }) => [pin.taskId, pin.id]) ?? []
+    ) : {};
+
+  // Use milestonesResponse for the data state
+  useEffect(() => {
+    setData(milestonesResponse);
+    if (milestonesResponse) {
+      setLoading(false);
+    }
+  }, [milestonesResponse]);
+
+  function extractErrorMessage(reason: unknown): string {
+    if (reason && typeof reason === "object" && "data" in reason) {
+      const errorData = (reason as { data?: ApiError }).data;
+      if (errorData && typeof errorData.error === "string") {
+        return errorData.error;
+      }
+    }
+    return "";
+  }
 
   // Personal daily tasks (routines)
   const [routines, setRoutines] = useState<
@@ -177,14 +196,12 @@ export default function RoadmapTab({
     };
   }, [data, pinnedById]);
 
-  const [roadmapsData, setRoadmapsData] = useState<RoadmapSummary[]>([]);
-
   // Get roadmap data by ID
   const getRoadmapData = useMemo(() => {
     return (roadmapId: string) => {
-      return roadmapsData.find((rd) => rd.roadmap.id === roadmapId);
+      return roadmaps.find((rd) => rd.id === roadmapId);
     };
-  }, [roadmapsData]);
+  }, [roadmaps]);
 
   // Personal daily task functions
   // Note: Personal routines are now fetched via RTK Query's useGetDailyTasksQuery
@@ -198,14 +215,13 @@ export default function RoadmapTab({
     setActivating(true);
     setError("");
     try {
-      await activateRoadmapMutation(roadmapId).unwrap();
+      await activateRoadmap(roadmapId).unwrap();
       // Roadmaps are refetched automatically
-    } catch (error: any) {
-      setError(
-        typeof error?.data?.error === "string"
-          ? error.data.error
-          : "Unable to activate that roadmap."
-      );
+    } catch (error: unknown) {
+      const message = error && typeof error === "object" && "data" in error
+        ? (error as { data?: ApiError }).data?.error
+        : undefined;
+      setError(message ?? "Unable to activate that roadmap.");
     } finally {
       setActivating(false);
     }
@@ -280,12 +296,9 @@ export default function RoadmapTab({
       }).unwrap();
       // Refetch milestones to get updated data
       // The RTK Query will handle refetching automatically
-    } catch (reason: any) {
-      setError(
-        typeof reason?.data?.error === "string"
-          ? reason.data.error
-          : "Unable to update the task.",
-      );
+    } catch (reason: unknown) {
+      const message = extractErrorMessage(reason);
+      setError(message || "Unable to update the task.");
     } finally {
       setMutating(null);
     }
@@ -298,17 +311,14 @@ export default function RoadmapTab({
     try {
       const pinId = pinnedById[task.id];
       if (pinId) {
-        await unpinTask(pinId).unwrap();
+        await unpinTask({ pinId }).unwrap();
       } else {
         await pinTask({ taskId: task.id }).unwrap();
       }
       // Refetch milestones to get updated pin data
-    } catch (reason: any) {
-      setError(
-        typeof reason?.data?.error === "string"
-          ? reason.data.error
-          : "Unable to update the pin.",
-      );
+    } catch (reason: unknown) {
+      const message = extractErrorMessage(reason);
+      setError(message || "Unable to update the pin.");
     } finally {
       setMutating(null);
     }
@@ -322,12 +332,9 @@ export default function RoadmapTab({
         milestoneId: milestone.id,
         roadmapId: selectedId,
       }).unwrap();
-    } catch (reason: any) {
-      setError(
-        typeof reason?.data?.error === "string"
-          ? reason.data.error
-          : "Unable to complete the milestone.",
-      );
+    } catch (reason: unknown) {
+      const message = extractErrorMessage(reason);
+      setError(message || "Unable to complete the milestone.");
     } finally {
       setCompletingMilestone(null);
     }
