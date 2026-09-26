@@ -9,7 +9,7 @@ import {
   type RoadmapTemplate,
 } from "@/lib/business/roadmap-templates";
 import AppShell from "@/app/components/shell";
-import { PageHeader, Sheet, SectionHead, Stamp, Card, CardContent } from "@/app/components/ui";
+import { PageHeader, Sheet, SectionHead, Stamp, Card, CardContent, Num } from "@/app/components/ui";
 
 export const metadata: Metadata = {
   title: "Roadmaps — Library",
@@ -56,13 +56,21 @@ export default async function RoadmapsPage() {
     (t): t is { template: RoadmapTemplate; activated: boolean } => t !== null,
   );
 
+  const enrolledCount = validTemplates.filter(t => t.activated).length;
+
   return (
     <AppShell active="roadmap" user={{ name: user.name, email: user.email }}>
       <main className="px-6 py-8 sm:px-8 lg:px-12">
         <Sheet>
+          {/* Hero */}
+          <div className="mb-10">
+            <p className="text-lg text-graphite-muted mb-2">Your path to SDE mastery.</p>
+            <p className="text-sm text-graphite-faint">Pick a curriculum track to inspect its full structure, then enroll to schedule it into your daily plan.</p>
+          </div>
+
           <PageHeader
             title="Roadmap Library"
-            subtitle="Pick a curriculum track to inspect its full structure, then enroll to schedule it into your daily plan"
+            subtitle={`${validTemplates.length} tracks · ${enrolledCount} enrolled`}
           />
 
           <SectionHead
@@ -115,19 +123,19 @@ export default async function RoadmapsPage() {
                       <div className="mt-4 grid grid-cols-3 gap-3">
                         <div className="text-center py-3 rounded-lg bg-muted">
                           <div className="font-mono text-xl font-semibold text-foreground">
-                            {totalPhases}
+                            <Num>{totalPhases}</Num>
                           </div>
                           <div className="label">Phases</div>
                         </div>
                         <div className="text-center py-3 rounded-lg bg-muted">
                           <div className="font-mono text-xl font-semibold text-foreground">
-                            {totalTopics}
+                            <Num>{totalTopics}</Num>
                           </div>
                           <div className="label">Topics</div>
                         </div>
                         <div className="text-center py-3 rounded-lg bg-muted">
                           <div className="font-mono text-xl font-semibold text-foreground">
-                            {totalTasks}
+                            <Num>{totalTasks}</Num>
                           </div>
                           <div className="label">Tasks</div>
                         </div>
