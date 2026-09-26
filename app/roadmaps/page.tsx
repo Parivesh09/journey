@@ -9,7 +9,7 @@ import {
   type RoadmapTemplate,
 } from "@/lib/business/roadmap-templates";
 import AppShell from "@/app/components/shell";
-import { PageHeader, Sheet, SectionHead, Stamp } from "@/app/components/ui";
+import { PageHeader, Sheet, SectionHead, Stamp, Card, CardContent } from "@/app/components/ui";
 
 export const metadata: Metadata = {
   title: "Roadmaps — Library",
@@ -20,9 +20,15 @@ export default async function RoadmapsPage() {
   const user = await getCurrentUser();
   if (!user) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center p-6 text-bone-muted">
-        Please sign in to browse roadmaps.
-      </div>
+      <AppShell active="roadmap">
+        <main className="px-6 py-8 sm:px-8 lg:px-12">
+          <Sheet>
+            <div className="text-center py-12">
+              <p className="text-graphite-muted">Please sign in to browse roadmaps.</p>
+            </div>
+          </Sheet>
+        </main>
+      </AppShell>
     );
   }
 
@@ -86,62 +92,58 @@ export default async function RoadmapsPage() {
                 <Link
                   key={template.id}
                   href={`/roadmaps/${template.id}`}
-                  className="group border border-hairline rounded hover:border-hairline-strong transition-colors bg-paper"
+                  className="group"
                 >
-                  <div className="p-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-[1.05rem] font-semibold text-graphite group-hover:text-amber-ink">
-                          {template.title}
-                        </h3>
-                        {template.description && (
-                          <p className="mt-2 text-[0.85rem] leading-relaxed text-graphite-muted line-clamp-2">
-                            {template.description}
-                          </p>
-                        )}
+                  <Card className="h-full">
+                    <CardContent className="p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-lg font-semibold text-foreground group-hover:text-primary font-display">
+                            {template.title}
+                          </h3>
+                          {template.description && (
+                            <p className="mt-2 text-sm leading-relaxed text-graphite-muted line-clamp-2">
+                              {template.description}
+                            </p>
+                          )}
+                        </div>
+                        <Stamp tone={activated ? "valid" : "amber"} className="shrink-0">
+                          {activated ? "Enrolled" : "Available"}
+                        </Stamp>
                       </div>
-                      <Stamp tone={activated ? "valid" : "amber"} className="shrink-0">
-                        {activated ? "Enrolled" : "Available"}
-                      </Stamp>
-                    </div>
 
-                    <div className="mt-4 grid grid-cols-3 gap-3">
-                      <div className="text-center py-2 border border-hairline rounded">
-                        <div className="font-mono text-[1.1rem] font-semibold text-graphite">
-                          {totalPhases}
+                      <div className="mt-4 grid grid-cols-3 gap-3">
+                        <div className="text-center py-3 rounded-lg bg-muted">
+                          <div className="font-mono text-xl font-semibold text-foreground">
+                            {totalPhases}
+                          </div>
+                          <div className="label">Phases</div>
                         </div>
-                        <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
-                          Phases
+                        <div className="text-center py-3 rounded-lg bg-muted">
+                          <div className="font-mono text-xl font-semibold text-foreground">
+                            {totalTopics}
+                          </div>
+                          <div className="label">Topics</div>
                         </div>
-                      </div>
-                      <div className="text-center py-2 border border-hairline rounded">
-                        <div className="font-mono text-[1.1rem] font-semibold text-graphite">
-                          {totalTopics}
-                        </div>
-                        <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
-                          Topics
-                        </div>
-                      </div>
-                      <div className="text-center py-2 border border-hairline rounded">
-                        <div className="font-mono text-[1.1rem] font-semibold text-graphite">
-                          {totalTasks}
-                        </div>
-                        <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
-                          Tasks
+                        <div className="text-center py-3 rounded-lg bg-muted">
+                          <div className="font-mono text-xl font-semibold text-foreground">
+                            {totalTasks}
+                          </div>
+                          <div className="label">Tasks</div>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="mt-4 pt-4 border-t border-hairline flex items-center justify-between">
-                      <span className="font-mono text-[0.7rem] text-graphite-faint">
-                        {template.milestones.length} milestones
-                      </span>
-                      <span className="inline-flex items-center gap-1 font-mono text-[0.7rem] text-amber-ink group-hover:text-highlighter-amber">
-                        View
-                        <ArrowRight className="h-3 w-3" />
-                      </span>
-                    </div>
-                  </div>
+                      <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+                        <span className="font-mono text-xs text-graphite-faint">
+                          {template.milestones.length} milestones
+                        </span>
+                        <span className="inline-flex items-center gap-1 font-mono text-xs text-primary group-hover:text-primary/80">
+                          View
+                          <ArrowRight className="h-3 w-3" />
+                        </span>
+                      </div>
+                    </CardContent>
+                  </Card>
                 </Link>
               );
             })}

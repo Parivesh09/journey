@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { SectionHead, PrimaryButton, FormGroup, Loader } from "@/app/components/ui";
+import { SectionHead, PrimaryButton, FormGroup, Loader, Card } from "@/app/components/ui";
 import { useGetSettingsQuery, useSaveSettingsMutation } from "@/lib/api";
 import type { ApiError } from "@/lib/types";
 
@@ -74,7 +74,7 @@ export default function SettingsForm() {
 
   if (queryError || !user) {
     return (
-      <div className="rounded border border-stamp-red/30 bg-stamp-red/5 px-4 py-3 text-[0.85rem] text-stamp-red">
+      <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
         Unable to load settings.
       </div>
     );
@@ -83,12 +83,12 @@ export default function SettingsForm() {
   return (
     <div className="space-y-10">
       {message && (
-        <div className="rounded border border-valid-green/30 bg-valid-green/5 px-4 py-3 text-[0.85rem] text-valid-green">
+        <div className="rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success">
           {message}
         </div>
       )}
       {error && (
-        <div className="rounded border border-stamp-red/30 bg-stamp-red/5 px-4 py-3 text-[0.85rem] text-stamp-red">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
@@ -121,7 +121,7 @@ export default function SettingsForm() {
           </FormGroup>
         </div>
 
-        <div className="mt-6 border border-hairline rounded p-4">
+        <Card className="mt-6 p-4">
           <p className="text-[0.7rem] uppercase tracking-wide text-graphite-muted font-semibold">
             Change Password
           </p>
@@ -155,7 +155,7 @@ export default function SettingsForm() {
           <p className="mt-2 text-[0.75rem] text-graphite-muted">
             Leave both fields empty to keep your current password.
           </p>
-        </div>
+        </Card>
 
         <div className="mt-6">
           <PrimaryButton type="submit" disabled={saving}>

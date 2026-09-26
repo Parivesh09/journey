@@ -70,21 +70,21 @@ export default function DashboardTaskList({
   return (
     <div className="mt-6">
       {error && (
-        <div className="mb-4 rounded border border-stamp-red/30 bg-stamp-red/5 px-4 py-3 text-[0.85rem] text-stamp-red">
+        <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
-      <div className="border-t border-hairline">
+      <div className="border-t border-border">
         {items.map((row, index) => {
           const busy = updatingId === row.id;
           const urgent = ["HIGH", "CRITICAL"].includes(row.priority);
-          
+
           return (
             <div
               key={`${row.kind}-${row.id}`}
               className="task-row py-3"
             >
-              <div className="ml-1 font-mono text-[0.7rem] text-graphite-faint w-6 tabular-nums">
+              <div className="ml-1 font-mono text-xs text-graphite-faint w-6 tabular-nums">
                 {String(index + 1).padStart(2, "0")}
               </div>
               <Bubble
@@ -95,7 +95,7 @@ export default function DashboardTaskList({
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className={`truncate text-[0.9rem] ${row.done ? "text-graphite-faint line-through" : "text-graphite font-medium"}`}>
+                  <p className={`truncate text-sm ${row.done ? "text-graphite-faint line-through" : "text-foreground font-medium"}`}>
                     {row.title}
                   </p>
                   {row.kind === "routine" && (

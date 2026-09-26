@@ -24,24 +24,24 @@ export function RoadmapStats({ data }: RoadmapStatsProps) {
 
   return (
     <div className="mt-8 mb-6 grid grid-cols-3 gap-4">
-      <div className="text-center py-3 border border-hairline rounded bg-paper-shade/50">
-        <div className="font-mono text-[1.25rem] font-semibold text-graphite">
+      <div className="text-center py-3 border border-border rounded bg-muted/50">
+        <div className="font-mono text-[1.25rem] font-semibold text-foreground">
           {totalPhases}
         </div>
         <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
           Phases
         </div>
       </div>
-      <div className="text-center py-3 border border-hairline rounded bg-paper-shade/50">
-        <div className="font-mono text-[1.25rem] font-semibold text-graphite">
+      <div className="text-center py-3 border border-border rounded bg-muted/50">
+        <div className="font-mono text-[1.25rem] font-semibold text-foreground">
           {totalTopics}
         </div>
         <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
           Topics
         </div>
       </div>
-      <div className="text-center py-3 border border-hairline rounded bg-paper-shade/50">
-        <div className="font-mono text-[1.25rem] font-semibold text-graphite">
+      <div className="text-center py-3 border border-border rounded bg-muted/50">
+        <div className="font-mono text-[1.25rem] font-semibold text-foreground">
           {totalTasks}
         </div>
         <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">

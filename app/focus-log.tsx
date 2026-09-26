@@ -43,7 +43,7 @@ export default function FocusLog() {
   return (
     <form onSubmit={onSubmit} className="mt-4">
       <div className="flex flex-wrap items-end gap-3">
-        <label className="min-w-[8rem] flex-1 text-[0.72rem] font-semibold text-graphite-2">
+        <label className="min-w-[8rem] flex-1 text-[0.72rem] font-semibold text-graphite-muted">
           Minutes studied
           <input
             type="number"
@@ -70,7 +70,7 @@ export default function FocusLog() {
         </button>
       </div>
       {message ? (
-        <p className="mt-3 text-[0.75rem] font-medium text-graphite-2" role="status">
+        <p className="mt-3 text-[0.75rem] font-medium text-graphite-muted" role="status">
           {message}
         </p>
       ) : null}

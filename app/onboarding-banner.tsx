@@ -29,17 +29,17 @@ export default function OnboardingBanner({ show }: { show: boolean }) {
       <div className="sheet p-4 sm:p-5">
         <div className="flex items-start gap-3">
           <BellRing
-            className="mt-0.5 h-4 w-4 shrink-0 text-amber-ink"
+            className="mt-0.5 h-4 w-4 shrink-0 text-primary"
             aria-hidden
           />
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="text-[0.95rem] font-semibold tracking-tight text-graphite">
+              <h2 className="text-[0.95rem] font-semibold tracking-tight text-foreground">
                 Nothing on today&rsquo;s list yet
               </h2>
               <Stamp tone="amber">Get started</Stamp>
             </div>
-            <p className="mt-1.5 text-[0.8125rem] leading-5 text-graphite-2">
+            <p className="mt-1.5 text-[0.8125rem] leading-5 text-graphite-muted">
               Enroll a roadmap to populate your daily tasks, or set up
               reminders from Settings. Nothing appears until you do.
             </p>

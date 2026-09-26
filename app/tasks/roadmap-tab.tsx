@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useGetMilestonesQuery, useGetDailyPinsQuery, useGetRoadmapsQuery, useUpdateTaskMutation } from "@/lib/api";
 import type { RoadmapSummary, MilestonesData, Filters } from "@/lib/types";
 import { MilestoneCard } from "./components/MilestoneCard";
-import { SkeletonRows, SectionHead, Stamp } from "@/app/components/ui";
+import { SkeletonRows, SectionHead, Stamp, Card, CardContent, Num } from "@/app/components/ui";
 import { extractErrorMessage } from "@/lib/utils";
 import { taskMatches, visiblePhases } from "./components/roadmap-types";
 
@@ -34,10 +34,10 @@ export default function RoadmapTab({
           <p className="text-graphite-muted">No active roadmaps yet</p>
           <Link
             href="/roadmaps"
-            className="mt-4 inline-flex items-center gap-1.5 font-mono text-[0.75rem] text-amber-ink hover:text-highlighter-amber"
+            className="mt-4 inline-flex items-center gap-1.5 font-mono text-sm text-primary hover:text-primary/80"
           >
             Browse roadmap library
-            <ArrowRight className="h-3.5 w-3.5" />
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       ) : (
@@ -110,70 +110,66 @@ function RoadmapCard({ roadmap }: { roadmap: RoadmapSummary }) {
   return (
     <Link
       href={`/tasks/roadmap/${roadmap.id}`}
-      className="group border border-hairline rounded hover:border-hairline-strong hover:ring-2 hover:ring-amber-ink/20 transition-colors bg-paper block"
+      className="group block h-full"
     >
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0 flex-1">
-            <h3 className="text-[1.05rem] font-semibold text-graphite group-hover:text-amber-ink">
-              {roadmap.title}
-            </h3>
-            {roadmap.description && (
-              <p className="mt-2 text-[0.85rem] leading-relaxed text-graphite-muted line-clamp-2">
-                {roadmap.description}
-              </p>
-            )}
+      <Card className="h-full">
+        <CardContent className="p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <h3 className="text-lg font-semibold text-foreground group-hover:text-primary font-display">
+                {roadmap.title}
+              </h3>
+              {roadmap.description && (
+                <p className="mt-2 text-sm leading-relaxed text-graphite-muted line-clamp-2">
+                  {roadmap.description}
+                </p>
+              )}
+            </div>
+            <Stamp tone="valid" className="shrink-0">
+              Enrolled
+            </Stamp>
           </div>
-          <Stamp tone="valid" className="shrink-0">
-            Enrolled
-          </Stamp>
-        </div>
 
-        <div className="mt-4 grid grid-cols-3 gap-3">
-          <div className="text-center py-2 border border-hairline rounded">
-            <div className="font-mono text-[1.1rem] font-semibold text-graphite">
-              {totalPhases}
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            <div className="text-center py-3 rounded-lg bg-muted">
+              <div className="font-mono text-xl font-semibold text-foreground">
+                <Num>{totalPhases}</Num>
+              </div>
+              <div className="label">Phases</div>
             </div>
-            <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
-              Phases
+            <div className="text-center py-3 rounded-lg bg-muted">
+              <div className="font-mono text-xl font-semibold text-foreground">
+                <Num>{totalTopics}</Num>
+              </div>
+              <div className="label">Topics</div>
             </div>
-          </div>
-          <div className="text-center py-2 border border-hairline rounded">
-            <div className="font-mono text-[1.1rem] font-semibold text-graphite">
-              {totalTopics}
-            </div>
-            <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
-              Topics
-            </div>
-          </div>
-          <div className="text-center py-2 border border-hairline rounded">
-            <div className="font-mono text-[1.1rem] font-semibold text-graphite">
-              {totalTasks}
-            </div>
-            <div className="text-[0.65rem] uppercase tracking-wide text-graphite-faint mt-0.5">
-              Tasks
+            <div className="text-center py-3 rounded-lg bg-muted">
+              <div className="font-mono text-xl font-semibold text-foreground">
+                <Num>{totalTasks}</Num>
+              </div>
+              <div className="label">Tasks</div>
             </div>
           </div>
-        </div>
 
-        <div className="mt-4 pt-4 border-t border-hairline flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-24 h-2 bg-rule rounded-full overflow-hidden">
-              <div
-                className="h-full bg-amber-ink transition-all duration-300"
-                style={{ width: `${Math.round(progress * 100)}%` }}
-              />
+          <div className="mt-4 pt-4 border-t border-border flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${Math.round(progress * 100)}%` }}
+                />
+              </div>
+              <span className="font-mono text-xs text-primary">
+                {Math.round(progress * 100)}%
+              </span>
             </div>
-            <span className="font-mono text-[0.7rem] text-amber-ink">
-              {Math.round(progress * 100)}%
+            <span className="inline-flex items-center gap-1 font-mono text-xs text-primary group-hover:text-primary/80">
+              <ArrowRight className="h-3 w-3" />
+              View details
             </span>
           </div>
-          <span className="inline-flex items-center gap-1 font-mono text-[0.7rem] text-amber-ink group-hover:text-highlighter-amber">
-            <ArrowRight className="h-3 w-3" />
-            View details
-          </span>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </Link>
   );
 }

@@ -31,7 +31,7 @@ export function ActivateRoadmapModal({
       title="Activate a roadmap"
     >
       <div className="space-y-8">
-        <div className="mt-4 border-t border-stone-400">
+        <div className="mt-4 border-t border-border">
           {KNOWN_TEMPLATES.map((template) => {
             const active = roadmaps.some(
               (roadmap) => roadmap.id === template.roadmapId,
@@ -39,9 +39,9 @@ export function ActivateRoadmapModal({
             return (
               <div
                 key={template.roadmapId}
-                className="flex items-center justify-between gap-3 border-b border-stone-400 py-3"
+                className="flex items-center justify-between gap-3 border-b border-border py-3"
               >
-                <span className="text-[0.9rem] font-medium text-graphite">
+                <span className="text-[0.9rem] font-medium text-foreground">
                   {template.title}
                 </span>
                 <button

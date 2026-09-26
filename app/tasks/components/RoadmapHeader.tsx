@@ -32,7 +32,7 @@ export function RoadmapHeader({
             aside={`${data.milestones.length} milestones`}
           />
           <div className="mt-4 flex flex-wrap items-end gap-2">
-            <label className="min-w-[12rem] flex-1 text-[0.72rem] font-semibold text-graphite-2">
+            <label className="min-w-[12rem] flex-1 text-[0.72rem] font-semibold text-graphite-muted">
               Active roadmap
               <select
                 value={selectedId}
@@ -68,7 +68,7 @@ export function RoadmapHeader({
             instruction="Milestones gate each other — a milestone unlocks only when its prerequisites are done."
           />
           <div className="mt-4 flex flex-wrap items-end gap-2">
-            <label className="min-w-[12rem] flex-1 text-[0.72rem] font-semibold text-graphite-2">
+            <label className="min-w-[12rem] flex-1 text-[0.72rem] font-semibold text-graphite-muted">
               Active roadmap
               <select
                 value={selectedId}

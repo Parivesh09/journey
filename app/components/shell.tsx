@@ -24,7 +24,7 @@ const NAV = [
 
 function Mark() {
   return (
-    <span className="grid h-7 w-7 place-items-center bg-highlighter-amber text-[0.7rem] font-bold text-white">
+    <span className="grid h-8 w-8 place-items-center bg-primary text-sm font-bold text-white rounded-lg">
       S
     </span>
   );
@@ -40,19 +40,19 @@ export default async function AppShell({
   const user = await getCurrentUser();
 
   return (
-    <div className="min-h-screen bg-ink-ground text-bone">
-      <div className="fixed inset-y-0 left-0 z-50 hidden w-64 bg-ink-raised border-r border-hairline md:flex md:flex-col">
-        <div className="flex h-16 items-center gap-3 px-5 border-b border-hairline">
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="fixed inset-y-0 left-0 z-50 hidden w-[280px] bg-surface border-r border-border md:flex md:flex-col">
+        <div className="flex h-16 items-center gap-3 px-5 border-b border-border">
           <Mark />
           <div>
-            <p className="text-[0.9rem] font-semibold leading-tight text-bone">
+            <p className="text-sm font-semibold leading-tight text-foreground font-display">
               SDE Command Center
             </p>
           </div>
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4">
-          <ul className="space-y-0.5 px-2">
+          <ul className="space-y-1 px-3">
             {NAV.map((item) => {
               const isActive = active === item.key;
               return (
@@ -61,16 +61,16 @@ export default async function AppShell({
                     href={item.href}
                     aria-current={isActive ? "page" : undefined}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2.5 text-[0.85rem] transition-colors rounded",
+                      "flex items-center gap-3 px-4 py-3 text-sm transition-colors rounded-lg",
                       isActive
-                        ? "bg-ink-panel text-highlighter-amber"
-                        : "text-bone-muted hover:text-bone hover:bg-ink-panel",
+                        ? "bg-primary/5 text-primary border-l-4 border-primary"
+                        : "text-graphite-muted hover:text-foreground hover:bg-muted",
                     )}
                   >
                     <span
                       className={cn(
-                        "font-mono text-[0.7rem] w-6 tabular-nums",
-                        isActive ? "text-highlighter-amber" : "text-bone-faint",
+                        "font-mono text-xs w-6 tabular-nums",
+                        isActive ? "text-primary" : "text-graphite-faint",
                       )}
                     >
                       {item.number}
@@ -84,12 +84,12 @@ export default async function AppShell({
         </nav>
 
         {user && (
-          <div className="border-t border-hairline p-4">
-            <div className="rounded bg-ink-panel p-3">
-              <p className="truncate text-[0.85rem] font-medium text-bone">
+          <div className="border-t border-border p-4">
+            <div className="rounded-lg bg-muted/50 p-3">
+              <p className="truncate text-sm font-medium text-foreground">
                 {user.name ?? "Signed in"}
               </p>
-              <p className="truncate font-mono text-[0.65rem] text-bone-faint mt-0.5">
+              <p className="truncate font-mono text-xs text-graphite-faint mt-0.5">
                 {user.email}
               </p>
               <div className="mt-3">
@@ -100,11 +100,11 @@ export default async function AppShell({
         )}
       </div>
 
-      <div className="md:pl-64">
-        <header className="sticky top-0 z-40 border-b border-hairline bg-ink-ground/80 backdrop-blur">
+      <div className="md:pl-[280px]">
+        <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur">
           <div className="flex items-center gap-4 px-6 py-4 md:hidden">
             <Mark />
-            <span className="text-[0.95rem] font-semibold">
+            <span className="text-base font-semibold text-foreground font-display">
               SDE Command Center
             </span>
           </div>

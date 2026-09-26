@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import AppShell from "@/app/components/shell";
-import { PageHeader, Sheet, SectionHead, ProgressBar, Stamp } from "@/app/components/ui";
+import { PageHeader, Sheet, SectionHead, ProgressBar, Stamp, Card, CardContent, Num } from "@/app/components/ui";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toPercent, formatMinutes } from "@/lib/utils";
@@ -62,68 +62,76 @@ export default async function ProgressPage() {
             subtitle="Your study progress and performance analytics"
           />
 
-          <div className="grid gap-8 mt-8 md:grid-cols-2">
-            <div>
-              <SectionHead
-                index="01"
-                title="Daily Completion"
-                instruction="Tasks completed today"
-                aside={`${progressPercent}%`}
-              />
-              <div className="mt-4">
-                <ProgressBar value={progressPercent} />
-                <div className="mt-2 font-mono text-[0.7rem] text-graphite-faint">
-                  <span>{completedToday} of {todayTasks.length} tasks finished</span>
+          <div className="grid gap-6 mt-8 md:grid-cols-2">
+            <Card>
+              <CardContent className="pt-0">
+                <SectionHead
+                  index="01"
+                  title="Daily Completion"
+                  instruction="Tasks completed today"
+                  aside={`${progressPercent}%`}
+                />
+                <div className="mt-4">
+                  <ProgressBar value={progressPercent} />
+                  <div className="mt-2 font-mono text-sm text-graphite-faint">
+                    <span>{completedToday} of {todayTasks.length} tasks finished</span>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div>
-              <SectionHead
-                index="02"
-                title="Overall Progress"
-                instruction="All roadmap tasks completed"
-                aside={`${overallPercent}%`}
-              />
-              <div className="mt-4">
-                <ProgressBar value={overallPercent} />
-                <div className="mt-2 font-mono text-[0.7rem] text-graphite-faint">
-                  <span>{totalCompleted} of {allTasks.length} tasks finished</span>
+            <Card>
+              <CardContent className="pt-0">
+                <SectionHead
+                  index="02"
+                  title="Overall Progress"
+                  instruction="All roadmap tasks completed"
+                  aside={`${overallPercent}%`}
+                />
+                <div className="mt-4">
+                  <ProgressBar value={overallPercent} />
+                  <div className="mt-2 font-mono text-sm text-graphite-faint">
+                    <span>{totalCompleted} of {allTasks.length} tasks finished</span>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div>
-              <SectionHead
-                index="03"
-                title="Study Time"
-                instruction="Focus time logged today"
-              />
-              <div className="mt-4">
-                <div className="font-mono text-[1.5rem] font-semibold text-graphite">
-                  {formatMinutes(studyMinutes)}
+            <Card>
+              <CardContent className="pt-0">
+                <SectionHead
+                  index="03"
+                  title="Study Time"
+                  instruction="Focus time logged today"
+                />
+                <div className="mt-4">
+                  <div className="font-mono text-2xl font-semibold text-foreground font-display">
+                    <Num>{formatMinutes(studyMinutes)}</Num>
+                  </div>
+                  <p className="mt-1 text-sm text-graphite-muted">
+                    of {formatMinutes(user.dailyStudyTargetMinutes)} daily target
+                  </p>
                 </div>
-                <p className="mt-1 text-[0.85rem] text-graphite-muted">
-                  of {formatMinutes(user.dailyStudyTargetMinutes)} daily target
-                </p>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div>
-              <SectionHead
-                index="04"
-                title="Roadmaps"
-                instruction="Active roadmaps in your workspace"
-              />
-              <div className="mt-4">
-                <div className="font-mono text-[1.5rem] font-semibold text-graphite">
-                  {roadmapCount}
+            <Card>
+              <CardContent className="pt-0">
+                <SectionHead
+                  index="04"
+                  title="Roadmaps"
+                  instruction="Active roadmaps in your workspace"
+                />
+                <div className="mt-4">
+                  <div className="font-mono text-2xl font-semibold text-foreground font-display">
+                    <Num>{roadmapCount}</Num>
+                  </div>
+                  <p className="mt-1 text-sm text-graphite-muted">
+                    roadmaps enrolled
+                  </p>
                 </div>
-                <p className="mt-1 text-[0.85rem] text-graphite-muted">
-                  roadmaps enrolled
-                </p>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         </Sheet>
       </main>

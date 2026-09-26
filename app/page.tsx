@@ -2,7 +2,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AppShell from "@/app/components/shell";
-import { PageHeader, Sheet, SectionHead, ProgressBar, Num } from "@/app/components/ui";
+import { PageHeader, Sheet, SectionHead, ProgressBar, Num, Card, CardContent } from "@/app/components/ui";
 import DashboardTaskList from "@/app/dashboard-task-list";
 import OnboardingBanner from "@/app/onboarding-banner";
 import FocusLog from "@/app/focus-log";
@@ -144,29 +144,25 @@ export default async function HomePage() {
             action={
               <Link href="/tasks" className="btn btn-primary">
                 Manage Tasks
-                <ArrowRight className="h-3.5 w-3.5" />
+                <ArrowRight className="h-4 w-4" />
               </Link>
             }
           />
 
-          <div className="grid grid-cols-2 gap-4 border-b border-hairline pb-6 mb-8 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 mb-8 sm:grid-cols-4">
             {[
               { label: "Completed", value: `${completedToday}/${todayTasks.length}`, detail: `${remainingToday} open` },
               { label: "Focus", value: formatMinutes(studyMinutes), detail: `of ${formatMinutes(user.dailyStudyTargetMinutes)}` },
               { label: "High Priority", value: String(openHighPriority), detail: "urgent" },
               { label: "To Revise", value: String(revisionCount), detail: "topics" },
             ].map((metric) => (
-              <div key={metric.label}>
-                <p className="text-[0.7rem] uppercase tracking-wide text-graphite-faint font-medium">
-                  {metric.label}
-                </p>
-                <p className="mt-1 text-[1.25rem] font-semibold text-graphite">
+              <Card key={metric.label} className="p-5">
+                <p className="label">{metric.label}</p>
+                <p className="mt-1 text-2xl font-semibold text-foreground font-display">
                   <Num>{metric.value}</Num>
                 </p>
-                <p className="text-[0.7rem] text-graphite-faint">
-                  {metric.detail}
-                </p>
-              </div>
+                <p className="mt-1 caption">{metric.detail}</p>
+              </Card>
             ))}
           </div>
 
@@ -178,37 +174,41 @@ export default async function HomePage() {
           />
           <DashboardTaskList initialItems={todayList} />
 
-          <div className="grid gap-8 border-t border-hairline pt-8 mt-8 md:grid-cols-2">
-            <div>
-              <SectionHead
-                index="02"
-                title="Completion"
-                instruction="Progress today"
-                aside={`${progress}%`}
-              />
-              <div className="mt-4">
-                <ProgressBar value={progress} />
-                <div className="mt-2 font-mono text-[0.7rem] text-graphite-faint flex justify-between">
-                  <span>{completedToday} finished</span>
-                  <span>{remainingToday} remaining</span>
+          <div className="grid gap-6 mt-10 md:grid-cols-2">
+            <Card>
+              <CardContent className="pt-0">
+                <SectionHead
+                  index="02"
+                  title="Completion"
+                  instruction="Progress today"
+                  aside={`${progress}%`}
+                />
+                <div className="mt-4">
+                  <ProgressBar value={progress} />
+                  <div className="mt-2 font-mono text-sm text-graphite-faint flex justify-between">
+                    <span>{completedToday} finished</span>
+                    <span>{remainingToday} remaining</span>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
 
-            <div>
-              <SectionHead
-                index="03"
-                title="Overall Progress"
-                instruction={`${totalCompleted} of ${allTasks.length} tasks completed`}
-                aside={`${overallPercent}%`}
-              />
-              <div className="mt-4">
-                <ProgressBar value={overallPercent} />
-              </div>
-            </div>
+            <Card>
+              <CardContent className="pt-0">
+                <SectionHead
+                  index="03"
+                  title="Overall Progress"
+                  instruction={`${totalCompleted} of ${allTasks.length} tasks completed`}
+                  aside={`${overallPercent}%`}
+                />
+                <div className="mt-4">
+                  <ProgressBar value={overallPercent} />
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="mt-8 border-t border-hairline pt-6">
+          <div className="mt-10 pt-6 border-t border-border">
             <SectionHead
               index="04"
               title="Next Action"
@@ -218,7 +218,7 @@ export default async function HomePage() {
               {remainingToday > 0 ? (
                 <Link href="/tasks" className="btn btn-primary">
                   Open Task Plan
-                  <ArrowRight className="h-3.5 w-3.5" />
+                  <ArrowRight className="h-4 w-4" />
                 </Link>
               ) : (
                 <Link href="/roadmaps" className="btn btn-secondary">
@@ -228,7 +228,7 @@ export default async function HomePage() {
             </div>
           </div>
 
-          <div className="mt-8 border-t border-hairline pt-6">
+          <div className="mt-10 pt-6 border-t border-border">
             <SectionHead
               index="05"
               title="Focus Time"

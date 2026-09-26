@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Sheet } from "@/app/components/ui";
+import { Card } from "@/app/components/ui";
 import { useLoginMutation } from "@/lib/api";
 
 export default function LoginForm() {
@@ -30,15 +30,15 @@ export default function LoginForm() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-8 bg-ink-ground">
+    <main className="min-h-screen flex items-center justify-center px-4 py-8 bg-background">
       <div className="w-full max-w-sm">
-        <Sheet className="p-8">
+        <Card className="p-8">
           <div className="text-center mb-8">
-            <div className="grid h-12 w-12 place-items-center bg-highlighter-amber text-[0.9rem] font-bold text-white mx-auto rounded">
+            <div className="grid h-12 w-12 place-items-center bg-primary text-[0.9rem] font-bold text-white mx-auto rounded-lg">
               S
             </div>
-            <h1 className="mt-4 text-[1.85rem] font-bold text-graphite">SDE Command Center</h1>
-            <p className="mt-2 text-[0.9rem] text-graphite-muted">Sign in to your workspace</p>
+            <h1 className="mt-4 text-2xl font-bold text-foreground font-display">SDE Command Center</h1>
+            <p className="mt-2 text-sm text-graphite-muted">Sign in to your workspace</p>
           </div>
 
           <form onSubmit={submit} className="space-y-5">
@@ -48,7 +48,7 @@ export default function LoginForm() {
                 required
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="field border-b-2 w-full"
+                className="input w-full"
                 placeholder="Email"
               />
             </div>
@@ -59,13 +59,13 @@ export default function LoginForm() {
                 required
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="field border-b-2 w-full"
+                className="input w-full"
                 placeholder="Password"
               />
             </div>
 
             {error && (
-              <div className="rounded border border-stamp-red/50 bg-stamp-red/5 px-3 py-2 text-[0.8rem] text-stamp-red">
+              <div className="rounded-lg border border-destructive/50 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -78,15 +78,15 @@ export default function LoginForm() {
             </button>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-hairline text-center">
-            <p className="text-[0.85rem] text-graphite-muted">
+          <div className="mt-6 pt-6 border-t border-border text-center">
+            <p className="text-sm text-graphite-muted">
               New here?{" "}
-              <Link href="/signup" className="font-medium text-highlighter-amber hover:underline">
+              <Link href="/signup" className="font-medium text-primary hover:underline">
                 Create account
               </Link>
             </p>
           </div>
-        </Sheet>
+        </Card>
       </div>
     </main>
   );

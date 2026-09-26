@@ -86,18 +86,18 @@ function RoutineRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p
-            className={`truncate text-[0.9rem] ${routine.doneToday ? "text-graphite-faint line-through" : "text-graphite font-medium"}`}
+            className={`truncate text-sm ${routine.doneToday ? "text-graphite-faint line-through" : "text-foreground font-medium"}`}
           >
             {routine.title}
           </p>
           <Stamp tone="valid">Routine</Stamp>
         </div>
-        <p className="mt-0.5 font-mono text-[0.7rem] text-graphite-faint">
+        <p className="mt-0.5 font-mono text-xs text-graphite-faint">
           Every day · {minutes}m {routine.doneToday && "· done today"}
         </p>
       </div>
       <div className="flex items-center gap-2">
-        <Stamp tone="neutral" className="text-[0.7rem]">
+        <Stamp tone="neutral" className="text-xs">
           {routine.priority}
         </Stamp>
         {onEdit && (
@@ -105,9 +105,11 @@ function RoutineRow({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
+              e.preventDefault();
               onEdit();
             }}
-            className="p-1 hover:text-graphite text-graphite-faint opacity-0 group-hover:opacity-100 transition-opacity"
+            className="p-1 hover:text-foreground text-graphite-faint transition-opacity cursor-pointer"
+            style={{ pointerEvents: "auto", zIndex: 10 }}
             title="Edit routine"
           >
             <Edit className="h-3.5 w-3.5" />
@@ -118,9 +120,11 @@ function RoutineRow({
             type="button"
             onClick={(e) => {
               e.stopPropagation();
+              e.preventDefault();
               onDelete();
             }}
-            className="p-1 hover:text-stamp-red text-graphite-faint opacity-0 group-hover:opacity-100 transition-opacity"
+            className="p-1 hover:text-destructive text-graphite-faint cursor-pointer"
+            style={{ pointerEvents: "auto", zIndex: 10 }}
             title="Delete routine"
           >
             <Trash2 className="h-3.5 w-3.5" />
@@ -291,17 +295,17 @@ export default function DailyTab() {
   return (
     <div className="space-y-10">
       {(error || dailyError) && (
-        <div className="rounded bg-stamp-red/10 border border-stamp-red/20 p-3 text-[0.85rem] text-stamp-red">
+        <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 text-sm text-destructive">
           {error || "Unable to load your daily feed. Please try again."}
         </div>
       )}
 
-      <div className="flex justify-between items-center pb-4 border-b border-hairline">
+      <div className="flex justify-between items-center pb-4 border-b border-border">
         <div>
-          <h2 className="text-[1.1rem] font-semibold text-graphite">
+          <h2 className="text-xl font-semibold text-foreground font-display">
             Today&apos;s Workspace
           </h2>
-          <p className="text-[0.85rem] text-graphite-muted">
+          <p className="text-sm text-graphite-muted">
             Personal daily routines and roadmap tasks
           </p>
         </div>
@@ -327,7 +331,7 @@ export default function DailyTab() {
             {[...Array(3)].map((_, i) => (
               <div
                 key={i}
-                className="h-12 bg-paper-shade animate-pulse rounded"
+                className="h-12 bg-muted animate-pulse rounded-lg"
               />
             ))}
           </div>
@@ -347,7 +351,7 @@ export default function DailyTab() {
             }
           />
         ) : (
-          <div className="mt-6 border-t border-hairline">
+          <div className="mt-6 border-t border-border">
             {routines.map((routine) => (
               <RoutineRow
                 key={routine.id}
@@ -378,7 +382,7 @@ export default function DailyTab() {
             {[...Array(2)].map((_, i) => (
               <div
                 key={i}
-                className="h-16 bg-paper-shade animate-pulse rounded"
+                className="h-16 bg-muted animate-pulse rounded-lg"
               />
             ))}
           </div>
@@ -430,29 +434,29 @@ export default function DailyTab() {
 
       {/* Unified Add Task Modal */}
       {addModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink-ground/80 backdrop-blur-sm p-4">
-          <div className="bg-paper rounded shadow-xl max-w-xl w-full max-h-[85vh] flex flex-col">
-            <div className="p-6 border-b border-hairline flex items-center justify-between">
-              <h3 className="text-[1.1rem] font-semibold text-graphite">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="card max-w-xl w-full max-h-[85vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-border flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-foreground font-display">
                 Add Daily Task
               </h3>
               <button
                 onClick={() => setAddModalOpen(false)}
-                className="text-graphite-muted hover:text-graphite text-xl leading-none"
+                className="text-graphite-muted hover:text-foreground text-2xl leading-none"
               >
                 ×
               </button>
             </div>
 
             {/* Modal Tabs */}
-            <div className="flex border-b border-hairline px-6">
+            <div className="flex border-b border-border px-6">
               <button
                 type="button"
                 onClick={() => setActiveTabInModal("personal")}
-                className={`py-3 px-4 text-[0.9rem] font-medium border-b-2 transition-colors ${
+                className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
                   activeTabInModal === "personal"
-                    ? "border-highlighter-amber text-graphite"
-                    : "border-transparent text-graphite-muted hover:text-graphite"
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-graphite-muted hover:text-foreground"
                 }`}
               >
                 Personal Routine
@@ -460,10 +464,10 @@ export default function DailyTab() {
               <button
                 type="button"
                 onClick={() => setActiveTabInModal("roadmap")}
-                className={`py-3 px-4 text-[0.9rem] font-medium border-b-2 transition-colors ${
+                className={`py-3 px-4 text-sm font-medium border-b-2 transition-colors ${
                   activeTabInModal === "roadmap"
-                    ? "border-highlighter-amber text-graphite"
-                    : "border-transparent text-graphite-muted hover:text-graphite"
+                    ? "border-primary text-foreground"
+                    : "border-transparent text-graphite-muted hover:text-foreground"
                 }`}
               >
                 From Active Roadmap
@@ -479,10 +483,10 @@ export default function DailyTab() {
                       value={newTitle}
                       onChange={(event) => setNewTitle(event.target.value)}
                       placeholder="e.g. 30 min DSA Practice, Review Flashcards"
-                      className="field border-b-2"
+                      className="input"
                     />
                   </FormGroup>
-                  <p className="text-[0.75rem] text-graphite-faint">
+                  <p className="caption">
                     Personal routines repeat every day and help build strong
                     study habits.
                   </p>
@@ -500,7 +504,7 @@ export default function DailyTab() {
                 </form>
               ) : (
                 <div className="space-y-4">
-                  <p className="text-[0.85rem] text-graphite-muted">
+                  <p className="text-sm text-graphite-muted">
                     {
                       "Link a roadmap to automatically include its daily tasks in your workspace. Daily tasks from linked roadmaps will appear in your 'Focus Tasks' section."
                     }
@@ -511,7 +515,7 @@ export default function DailyTab() {
                       {[...Array(3)].map((_, i) => (
                         <div
                           key={i}
-                          className="h-16 bg-paper-shade animate-pulse rounded"
+                          className="h-16 bg-muted animate-pulse rounded-lg"
                         />
                       ))}
                     </div>
@@ -535,21 +539,21 @@ export default function DailyTab() {
                         return (
                           <div
                             key={roadmap.id}
-                            className="flex items-center justify-between p-4 border border-hairline rounded hover:border-hairline-strong hover:bg-paper-shade/50 transition-colors"
+                            className="flex items-center justify-between p-4 border border-border rounded-lg hover:border-primary/30 hover:bg-muted/50 transition-colors"
                           >
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <p className="text-[0.9rem] font-medium text-graphite truncate">
+                                <p className="text-sm font-medium text-foreground truncate">
                                   {roadmap.title}
                                 </p>
                                 {isLinked && <Stamp tone="valid">Linked</Stamp>}
                               </div>
                               {roadmap.description && (
-                                <p className="mt-1 text-[0.8rem] text-graphite-faint truncate">
+                                <p className="mt-1 text-xs text-graphite-faint truncate">
                                   {roadmap.description}
                                 </p>
                               )}
-                              <div className="mt-2 flex items-center gap-3 text-[0.75rem] text-graphite-faint">
+                              <div className="mt-2 flex items-center gap-3 text-xs text-graphite-faint">
                                 <span className="flex items-center gap-1">
                                   <LinkIcon className="h-3.5 w-3.5" />
                                   {roadmap.dailyTaskCount} daily tasks

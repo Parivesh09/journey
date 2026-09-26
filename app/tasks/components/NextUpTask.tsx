@@ -11,12 +11,12 @@ export function NextUpTask({ nextUpTask }: NextUpTaskProps) {
   if (!nextUpTask) return null;
 
   return (
-    <div className="mt-8 flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border border-amber/25 bg-amber/[0.07] px-4 py-3">
+    <div className="mt-8 flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-xl border border-primary/25 bg-primary/10 px-4 py-3">
       <Stamp tone="amber">Next up</Stamp>
-      <span className="min-w-0 flex-1 truncate text-[0.875rem] font-medium text-graphite">
+      <span className="min-w-0 flex-1 truncate text-[0.875rem] font-medium text-foreground">
         {nextUpTask.title}
       </span>
-      <span className="shrink-0 font-mono text-[0.68rem] text-graphite-2">
+      <span className="shrink-0 font-mono text-[0.68rem] text-graphite-muted">
         {nextUpTask.phaseTitle} / {nextUpTask.topicTitle}
       </span>
     </div>

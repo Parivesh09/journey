@@ -5,7 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { readRoadmap } from "@/lib/business/roadmap-templates";
 import AppShell from "@/app/components/shell";
-import { PageHeader, Sheet, SectionHead, Stamp } from "@/app/components/ui";
+import { PageHeader, Sheet, SectionHead, Stamp, Card, CardContent, Num } from "@/app/components/ui";
 import TemplateAccordion from "../template-accordion";
 
 export const metadata: Metadata = {
@@ -24,9 +24,15 @@ export default async function RoadmapDetailsPage({
   const user = await getCurrentUser();
   if (!user) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center p-6 text-bone-muted">
-        Please sign in to view roadmap details.
-      </div>
+      <AppShell active="roadmap">
+        <main className="px-6 py-8 sm:px-8 lg:px-12">
+          <Sheet>
+            <div className="text-center py-12">
+              <p className="text-graphite-muted">Please sign in to view roadmap details.</p>
+            </div>
+          </Sheet>
+        </main>
+      </AppShell>
     );
   }
 
@@ -56,9 +62,9 @@ export default async function RoadmapDetailsPage({
         <Sheet>
           <Link
             href="/roadmaps"
-            className="inline-flex items-center gap-1.5 font-mono text-[0.75rem] text-graphite-muted hover:text-graphite mb-6"
+            className="inline-flex items-center gap-1.5 font-mono text-sm text-graphite-muted hover:text-foreground mb-6"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className="h-4 w-4" />
             Back to roadmaps
           </Link>
 
@@ -69,10 +75,7 @@ export default async function RoadmapDetailsPage({
               activated ? (
                 <Stamp tone="valid">Enrolled · Active</Stamp>
               ) : (
-                <button
-                  type="button"
-                  className="btn btn-primary px-3 py-1.5 text-xs font-medium"
-                >
+                <button type="button" className="btn btn-primary px-4 py-2 text-sm font-medium">
                   Activate
                 </button>
               )
@@ -85,14 +88,12 @@ export default async function RoadmapDetailsPage({
               { label: "Topics", value: totalTopics },
               { label: "Tasks", value: totalTasks },
             ].map((stat) => (
-              <div key={stat.label} className="border border-hairline rounded p-4 text-center">
-                <div className="font-mono text-[1.5rem] font-semibold text-graphite">
-                  {stat.value}
+              <Card key={stat.label} className="p-5 text-center">
+                <div className="font-mono text-2xl font-semibold text-foreground">
+                  <Num>{stat.value}</Num>
                 </div>
-                <div className="text-[0.7rem] uppercase tracking-wide text-graphite-faint mt-1">
-                  {stat.label}
-                </div>
-              </div>
+                <div className="label mt-1">{stat.label}</div>
+              </Card>
             ))}
           </div>
 

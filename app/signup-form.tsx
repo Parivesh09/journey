@@ -3,7 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Sheet, PrimaryButton, FormGroup } from "@/app/components/ui";
+import { Card, PrimaryButton, FormGroup } from "@/app/components/ui";
 import { useSignupMutation } from "@/lib/api";
 
 export default function SignupForm() {
@@ -48,15 +48,15 @@ export default function SignupForm() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4 py-8 bg-ink-ground">
+    <main className="min-h-screen flex items-center justify-center px-4 py-8 bg-background">
       <div className="w-full max-w-md">
-        <Sheet className="p-8">
+        <Card className="p-8">
           <div className="text-center mb-8">
-            <div className="grid h-12 w-12 place-items-center bg-highlighter-amber text-[0.9rem] font-bold text-white mx-auto rounded">
+            <div className="grid h-12 w-12 place-items-center bg-primary text-[0.9rem] font-bold text-white mx-auto rounded-lg">
               S
             </div>
-            <h1 className="mt-4 text-[1.85rem] font-bold text-graphite">Create Workspace</h1>
-            <p className="mt-2 text-[0.9rem] text-graphite-muted">
+            <h1 className="mt-4 text-2xl font-bold text-foreground font-display">Create Workspace</h1>
+            <p className="mt-2 text-sm text-graphite-muted">
               Start your SDE roadmap journey
             </p>
           </div>
@@ -67,7 +67,7 @@ export default function SignupForm() {
                 required
                 value={name}
                 onChange={(event) => setName(event.target.value)}
-                className="field border-b-2"
+                className="input"
                 placeholder="Your name"
               />
             </FormGroup>
@@ -78,7 +78,7 @@ export default function SignupForm() {
                 required
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                className="field border-b-2"
+                className="input"
                 placeholder="you@company.com"
               />
             </FormGroup>
@@ -90,13 +90,13 @@ export default function SignupForm() {
                 minLength={8}
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
-                className="field border-b-2"
+                className="input"
                 placeholder="At least 8 characters"
               />
             </FormGroup>
 
             {error && (
-              <div className="rounded border border-stamp-red/50 bg-stamp-red/5 px-3 py-2 text-[0.85rem] text-stamp-red">
+              <div className="rounded-lg border border-destructive/50 bg-destructive/5 px-3 py-2 text-sm text-destructive">
                 {error}
               </div>
             )}
@@ -106,15 +106,15 @@ export default function SignupForm() {
             </PrimaryButton>
           </form>
 
-          <div className="mt-6 pt-6 border-t border-hairline text-center">
-            <p className="text-[0.9rem] text-graphite-muted">
+          <div className="mt-6 pt-6 border-t border-border text-center">
+            <p className="text-sm text-graphite-muted">
               Already have an account?{" "}
-              <Link href="/login" className="font-medium text-highlighter-amber hover:underline">
+              <Link href="/login" className="font-medium text-primary hover:underline">
                 Sign in
               </Link>
             </p>
           </div>
-        </Sheet>
+        </Card>
       </div>
     </main>
   );

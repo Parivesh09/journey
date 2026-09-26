@@ -73,11 +73,11 @@ export default function RoadmapDetailPage() {
   ) ?? 0;
 
   return (
-    <div className="min-h-screen bg-ink-ground">
+    <div className="min-h-screen bg-background">
       <main className="px-6 py-8 sm:px-8 lg:px-12">
         <Link
           href="/tasks?tab=roadmap"
-          className="inline-flex items-center gap-1.5 font-mono text-[0.75rem] text-graphite-muted hover:text-graphite mb-6"
+          className="inline-flex items-center gap-1.5 font-mono text-[0.75rem] text-graphite-muted hover:text-foreground mb-6"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to roadmaps
@@ -88,7 +88,7 @@ export default function RoadmapDetailPage() {
             <div className="mb-8">
               <div className="flex items-start justify-between gap-4 mb-4">
                 <div>
-                  <h1 className="text-[1.85rem] font-bold text-graphite">
+                  <h1 className="text-[1.85rem] font-bold text-foreground">
                     {roadmap.title}
                   </h1>
                   {roadmap.description && (
@@ -103,24 +103,24 @@ export default function RoadmapDetailPage() {
               </div>
 
               <div className="grid grid-cols-3 gap-4 mb-8">
-                <div className="text-center py-3 border border-hairline rounded bg-paper-shade/50">
-                  <div className="font-mono text-[1.5rem] font-semibold text-graphite">
+                <div className="text-center py-3 border border-border rounded bg-muted/50">
+                  <div className="font-mono text-[1.5rem] font-semibold text-foreground">
                     {totalPhases}
                   </div>
                   <div className="text-[0.7rem] uppercase tracking-wide text-graphite-faint mt-1">
                     Phases
                   </div>
                 </div>
-                <div className="text-center py-3 border border-hairline rounded bg-paper-shade/50">
-                  <div className="font-mono text-[1.5rem] font-semibold text-graphite">
+                <div className="text-center py-3 border border-border rounded bg-muted/50">
+                  <div className="font-mono text-[1.5rem] font-semibold text-foreground">
                     {totalTopics}
                   </div>
                   <div className="text-[0.7rem] uppercase tracking-wide text-graphite-faint mt-1">
                     Topics
                   </div>
                 </div>
-                <div className="text-center py-3 border border-hairline rounded bg-paper-shade/50">
-                  <div className="font-mono text-[1.5rem] font-semibold text-graphite">
+                <div className="text-center py-3 border border-border rounded bg-muted/50">
+                  <div className="font-mono text-[1.5rem] font-semibold text-foreground">
                     {totalTasks}
                   </div>
                   <div className="text-[0.7rem] uppercase tracking-wide text-graphite-faint mt-1">
@@ -130,14 +130,14 @@ export default function RoadmapDetailPage() {
               </div>
 
               <div className="mb-8">
-                <div className="w-48 h-3 bg-rule rounded-full overflow-hidden mb-2">
+                <div className="w-48 h-3 bg-muted rounded-full overflow-hidden mb-2">
                   <div
-                    className="h-full bg-amber-ink transition-all duration-300"
+                    className="h-full bg-primary transition-all duration-300"
                     style={{ width: `${Math.round(progress * 100)}%` }}
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="font-mono text-[0.85rem] text-amber-ink">
+                  <span className="font-mono text-[0.85rem] text-primary">
                     {Math.round(progress * 100)}% complete
                   </span>
                   <span className="font-mono text-[0.7rem] text-graphite-muted">
@@ -152,7 +152,7 @@ export default function RoadmapDetailPage() {
         {isFetching && !data ? (
           <SkeletonRows rows={6} />
         ) : isError ? (
-          <div className="rounded border border-stamp-red/50 bg-stamp-red/5 px-4 py-3 text-[0.85rem] text-stamp-red mb-4">
+          <div className="rounded border border-destructive/50 bg-destructive/5 px-4 py-3 text-[0.85rem] text-destructive mb-4">
             Failed to load roadmap data.
           </div>
         ) : data && data.milestones.length > 0 ? (
@@ -185,7 +185,7 @@ export default function RoadmapDetailPage() {
             <p className="text-graphite-muted">Roadmap not found</p>
             <Link
               href="/tasks?tab=roadmap"
-              className="mt-4 inline-flex items-center gap-1.5 font-mono text-[0.75rem] text-amber-ink hover:text-highlighter-amber"
+              className="mt-4 inline-flex items-center gap-1.5 font-mono text-[0.75rem] text-primary hover:text-primary"
             >
               Back to roadmaps
               <ArrowLeft className="h-3.5 w-3.5" />

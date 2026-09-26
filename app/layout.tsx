@@ -1,18 +1,20 @@
 import type { Metadata } from "next";
-import { Archivo, Roboto_Mono } from "next/font/google";
+import { Cormorant_Garamond, Inter } from "next/font/google";
 import { getCurrentUser } from "@/lib/auth";
 import BrowserReminderListener from "@/app/notifications/browser-listener";
 import { ReduxProvider } from "./ReduxProvider";
 import "./globals.css";
 
-const archivo = Archivo({
-  variable: "--font-archivo",
+const cormorant = Cormorant_Garamond({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const robotoMono = Roboto_Mono({
-  variable: "--font-roboto-mono",
+const inter = Inter({
+  variable: "--font-body",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -28,7 +30,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       data-theme={theme}
-      className={`${archivo.variable} ${robotoMono.variable} h-full antialiased`}
+      className={`${cormorant.variable} ${inter.variable} h-full antialiased`}
     >
       <body className="min-h-full">
         <ReduxProvider>
