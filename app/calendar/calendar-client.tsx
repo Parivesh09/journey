@@ -3,8 +3,9 @@
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Plus, Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { Sheet, PageHeader, SectionHead, Stamp, Card, CardContent, Loader, Dialog, Input, FormGroup, PrimaryButton, SecondaryButton, EmptyState } from "@/app/components/ui";
-import { formatMonthYear, formatWeekRange, formatDay, addMonths, addWeeks, addDays, getDaysInMonth, getWeekDays, isSameDay, isToday, startOfWeek, endOfWeek } from "@/lib/utils";
+import { formatMonthYear, formatWeekRange, formatDay, addMonths, addWeeks, addDays, getDaysInMonth, getWeekDays, isSameDay, isToday, startOfWeek, endOfWeek, getTimeSlots } from "@/lib/utils";
 import { useGetDailyTasksQuery, useCreateTaskMutation, useCreateStudySessionMutation, useToggleTaskCompleteTodayMutation } from "@/lib/api";
 
 export default function CalendarClient({
@@ -141,6 +142,181 @@ export default function CalendarClient({
     return { routinesCount, completedRoutines, connectedCount };
   };
 
+  // Render functions for each view
+  const renderMonthView = () => (
+    <div className="grid grid-cols-7 gap-1 border-t border-l border-border bg-border rounded-xl overflow-hidden card">
+      {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
+        <div key={day} className="bg-muted/40 py-3 text-center label">
+          {day}
+        </div>
+      ))}
+      {calendarDays.map((day, idx) => {
+        const isCurrentMonth = day.getMonth() === currentDate.getMonth();
+        const isTodayDate = isToday(day);
+        const isSelected = isSameDay(day, selectedDate);
+        const summary = getDailySummary(day);
+
+        return (
+          <div
+            key={idx}
+            onClick={() => handleSelectDate(day)}
+            className={cn(
+              "bg-surface min-h-[110px] p-3 flex flex-col justify-between transition-all cursor-pointer relative",
+              !isCurrentMonth && "opacity-40 bg-muted/10",
+              isTodayDate && "ring-2 ring-primary ring-inset",
+              isSelected && "bg-primary/5"
+            )}
+          >
+            <div className="flex justify-between items-center mb-2">
+              <span className={cn(
+                "font-mono text-sm tabular-nums",
+                isTodayDate ? "text-primary font-bold" : "text-graphite-faint"
+              )}>
+                {day.getDate()}
+              </span>
+              {isTodayDate && (
+                <Stamp tone="amber" className="text-[0.6rem] px-1.5 py-0.5">Today</Stamp>
+              )}
+            </div>
+
+            <div className="space-y-1.5 mt-2">
+              {summary.routinesCount > 0 && (
+                <div className="flex items-center gap-1.5 px-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
+                  <span className="text-[0.68rem] text-graphite-muted">
+                    {summary.completedRoutines}/{summary.routinesCount}
+                  </span>
+                </div>
+              )}
+              {summary.connectedCount > 0 && (
+                <div className="flex items-center gap-1.5 px-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  <span className="text-[0.68rem] text-graphite-muted">
+                    {summary.connectedCount}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const renderWeekView = () => (
+    <div className="rounded-xl border border-border bg-surface overflow-hidden">
+      <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border bg-muted/30">
+        <div className="px-2 py-2 label text-center">Time</div>
+        {calendarDays.map((day, idx) => (
+          <div key={idx} className="px-2 py-2 text-center border-l border-border">
+            <div className="label">{day.toLocaleDateString("en-US", { weekday: "short" })}</div>
+            <div className={cn(
+              "font-mono text-lg font-semibold tabular-nums mt-1",
+              isToday(day) ? "text-primary" : "text-foreground"
+            )}>
+              {day.getDate()}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-[60px_repeat(7,1fr)]">
+        {getTimeSlots(selectedDate, 60).map((slot, slotIdx) => (
+          <div key={slotIdx} className="grid grid-cols-[60px_repeat(7,1fr)] border-t border-border">
+            <div className="px-2 py-1 label text-right pr-2 text-graphite-faint border-r border-border">
+              {slot.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
+            </div>
+            {calendarDays.map((day, dayIdx) => (
+              <div key={dayIdx} className="border-l border-border min-h-[80px] relative">
+                {isToday(day) && isSameDay(slot, new Date()) && (
+                  <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  const renderDayView = () => (
+    <div className="space-y-6">
+      <Card>
+        <CardContent className="p-6">
+          <SectionHead
+            index="01"
+            title="Daily Habit Routines"
+            instruction="Keep consistency with daily practice sessions"
+          />
+          {routines.length === 0 ? (
+            <EmptyState
+              title="No routines scheduled"
+              description="Routines repeat automatically every single day."
+            />
+          ) : (
+            <div className="space-y-2 mt-4">
+              {routines.map((routine) => (
+                <div
+                  key={routine.id}
+                  className="flex items-center justify-between p-4 border border-border rounded-xl bg-surface hover:bg-muted/10 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={async () => {
+                        try {
+                          await toggleTaskCompleteToday(routine.id).unwrap();
+                        } catch (err) {
+                          console.error(err);
+                        }
+                      }}
+                      className={cn(
+                        "h-6 w-6 rounded-full border border-border flex items-center justify-center transition-colors",
+                        routine.doneToday && "bg-success border-success text-white"
+                      )}
+                    >
+                      {routine.doneToday && <Check className="h-3.5 w-3.5" />}
+                    </button>
+                    <span className={cn("text-sm font-medium", routine.doneToday && "line-through text-graphite-faint")}>
+                      {routine.title}
+                    </span>
+                  </div>
+                  <Stamp tone="valid">Habit</Stamp>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6">
+          <SectionHead
+            index="02"
+            title="Focus Tasks scheduled"
+            instruction="Active tracks schedules and milestone focus elements"
+          />
+          {connected.length === 0 ? (
+            <EmptyState
+              title="No tasks connected"
+              description="Tasks pulled from your active study roadmap."
+            />
+          ) : (
+            <div className="space-y-2 mt-4">
+              {connected.map((item) => (
+                <div
+                  key={item.pinId}
+                  className="flex items-center justify-between p-4 border border-border rounded-xl bg-surface"
+                >
+                  <span className="text-sm font-medium">{item.task.title}</span>
+                  <Stamp tone="amber">Roadmap</Stamp>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   return (
     <main className="px-6 py-8 sm:px-8 lg:px-12 bg-background min-h-screen">
       <Sheet>
@@ -225,196 +401,11 @@ export default function CalendarClient({
                 <Loader label="Preparing planner..." />
               </div>
             ) : view === "month" ? (
-              <div className="grid grid-cols-7 gap-1 border-t border-l border-border bg-border rounded-xl overflow-hidden card">
-                {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-                  <div key={day} className="bg-muted/40 py-3 text-center label">
-                    {day}
-                  </div>
-                ))}
-                {calendarDays.map((day, idx) => {
-                  const isCurrentMonth = day.getMonth() === currentDate.getMonth();
-                  const isTodayDate = isToday(day);
-                  const isSelected = isSameDay(day, selectedDate);
-                  const summary = getDailySummary(day);
-
-                  return (
-                    <div
-                      key={idx}
-                      onClick={() => handleSelectDate(day)}
-                      className={cn(
-                        "bg-surface min-h-[110px] p-3 flex flex-col justify-between transition-all cursor-pointer relative",
-                        !isCurrentMonth && "opacity-40 bg-muted/10",
-                        isTodayDate && "ring-2 ring-primary ring-inset",
-                        isSelected && "bg-primary/5 border-primary/20"
-                      )}
-                    >
-                      <div className="flex justify-between items-center">
-                        <span className={cn(
-                          "font-mono text-sm tabular-nums",
-                          isTodayDate ? "text-primary font-bold" : "text-graphite-faint"
-                        )}>
-                          {day.getDate()}
-                        </span>
-                        {isTodayDate && (
-                          <Stamp tone="amber" className="text-[0.6rem] px-1.5 py-0.5">Today</Stamp>
-                        )}
-                      </div>
-
-                      {/* Micro activity indicator */}
-                      <div className="space-y-1.5 mt-2">
-                        {summary.routinesCount > 0 && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="h-1.5 w-1.5 rounded-full bg-success" />
-                            <span className="text-[0.68rem] text-graphite-muted">
-                              Routines ({summary.completedRoutines}/{summary.routinesCount})
-                            </span>
-                          </div>
-                        )}
-                        {summary.connectedCount > 0 && (
-                          <div className="flex items-center gap-1.5">
-                            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                            <span className="text-[0.68rem] text-graphite-muted">
-                              Tasks ({summary.connectedCount})
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              renderMonthView()
             ) : view === "week" ? (
-              <div className="grid grid-cols-7 gap-1 border-t border-l border-border bg-border rounded-xl overflow-hidden card">
-                {calendarDays.map((day, idx) => {
-                  const isTodayDate = isToday(day);
-                  const isSelected = isSameDay(day, selectedDate);
-                  const summary = getDailySummary(day);
-
-                  return (
-                    <div
-                      key={idx}
-                      onClick={() => handleSelectDate(day)}
-                      className={cn(
-                        "bg-surface min-h-[300px] p-4 flex flex-col justify-between transition-all cursor-pointer",
-                        isTodayDate && "ring-2 ring-primary ring-inset",
-                        isSelected && "bg-primary/5"
-                      )}
-                    >
-                      <div>
-                        <div className="flex justify-between items-center mb-4">
-                          <span className="label block">
-                            {day.toLocaleDateString("en-US", { weekday: "short" })}
-                          </span>
-                          <span className={cn(
-                            "font-mono text-base tabular-nums font-semibold",
-                            isTodayDate ? "text-primary" : "text-foreground"
-                          )}>
-                            {day.getDate()}
-                          </span>
-                        </div>
-
-                        {/* List items representation in week day slot */}
-                        <div className="space-y-2 mt-4">
-                          {summary.routinesCount > 0 && (
-                            <div className="p-2 rounded-lg bg-success/5 border border-success/10">
-                              <span className="text-xs font-medium text-success">Habits</span>
-                              <span className="block text-[0.68rem] text-graphite-muted mt-0.5">
-                                {summary.completedRoutines}/{summary.routinesCount} done
-                              </span>
-                            </div>
-                          )}
-                          {summary.connectedCount > 0 && (
-                            <div className="p-2 rounded-lg bg-primary/5 border border-primary/10">
-                              <span className="text-xs font-medium text-primary">Focus</span>
-                              <span className="block text-[0.68rem] text-graphite-muted mt-0.5">
-                                {summary.connectedCount} tasks
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+              renderWeekView()
             ) : (
-              /* Day view */
-              <div className="space-y-6">
-                <Card>
-                  <CardContent className="p-6">
-                    <SectionHead
-                      index="01"
-                      title="Daily Habit Routines"
-                      instruction="Keep consistency with daily practice sessions"
-                    />
-                    {routines.length === 0 ? (
-                      <EmptyState
-                        title="No routines scheduled"
-                        description="Routines repeat automatically every single day."
-                      />
-                    ) : (
-                      <div className="space-y-2 mt-4">
-                        {routines.map((routine) => (
-                          <div
-                            key={routine.id}
-                            className="flex items-center justify-between p-4 border border-border rounded-xl bg-surface hover:bg-muted/10 transition-colors"
-                          >
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={async () => {
-                                  try {
-                                    await toggleTaskCompleteToday(routine.id).unwrap();
-                                  } catch (err) {
-                                    console.error(err);
-                                  }
-                                }}
-                                className={cn(
-                                  "h-6 w-6 rounded-full border border-border flex items-center justify-center transition-colors",
-                                  routine.doneToday && "bg-success border-success text-white"
-                                )}
-                              >
-                                {routine.doneToday && <Check className="h-3.5 w-3.5" />}
-                              </button>
-                              <span className={cn("text-sm font-medium", routine.doneToday && "line-through text-graphite-faint")}>
-                                {routine.title}
-                              </span>
-                            </div>
-                            <Stamp tone="valid">Habit</Stamp>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardContent className="p-6">
-                    <SectionHead
-                      index="02"
-                      title="Focus Tasks scheduled"
-                      instruction="Active tracks schedules and milestone focus elements"
-                    />
-                    {connected.length === 0 ? (
-                      <EmptyState
-                        title="No tasks connected"
-                        description="Tasks pulled from your active study roadmap."
-                      />
-                    ) : (
-                      <div className="space-y-2 mt-4">
-                        {connected.map((item) => (
-                          <div
-                            key={item.pinId}
-                            className="flex items-center justify-between p-4 border border-border rounded-xl bg-surface"
-                          >
-                            <span className="text-sm font-medium">{item.task.title}</span>
-                            <Stamp tone="amber">Roadmap</Stamp>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
+              renderDayView()
             )}
           </div>
 
@@ -555,8 +546,4 @@ export default function CalendarClient({
       </Sheet>
     </main>
   );
-}
-
-function cn(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(" ");
 }

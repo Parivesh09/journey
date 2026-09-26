@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
-import { Plus, Link as LinkIcon, Edit, Trash2 } from "lucide-react";
+import { Plus, Link as LinkIcon, Edit, Trash2, Sun, Moon, Coffee } from "lucide-react";
 import {
   SectionHead,
   Stamp,
@@ -584,10 +584,57 @@ export default function DailyTab() {
                   )}
                 </div>
               )}
-            </div>
           </div>
+        </div>
         </div>
       )}
     </div>
   );
+}
+
+function ConnectedRow({
+  item,
+  updating,
+  onComplete,
+}: {
+  item: Connected;
+  updating: boolean;
+  onComplete: () => void;
+}) {
+  return (
+    <div className="task-row py-3 group">
+      <Bubble
+        filled={false}
+        busy={updating}
+        label={`Complete ${item.task.title}`}
+        onClick={onComplete}
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="truncate text-sm font-medium text-foreground">
+            {item.task.title}
+          </p>
+          <Stamp tone="amber">Roadmap</Stamp>
+        </div>
+        <p className="mt-0.5 flex items-center gap-2 font-mono text-xs text-graphite-faint">
+          <Moon className="h-3.5 w-3.5" />
+          <span>
+            {item.task.milestoneTitle ?? item.task.phaseTitle} / {item.task.topicTitle ?? "General"}
+          </span>
+        </p>
+      </div>
+      <Stamp tone="neutral" className="text-xs">
+        {item.task.priority}
+      </Stamp>
+    </div>
+  );
+}
+
+function getSlotIcon(slot: string | null) {
+  if (!slot) return <Coffee className="h-3.5 w-3.5" />;
+  const s = slot.toLowerCase();
+  if (s.includes("morning")) return <Sun className="h-3.5 w-3.5" />;
+  if (s.includes("afternoon")) return <Sun className="h-3.5 w-3.5" />;
+  if (s.includes("evening")) return <Moon className="h-3.5 w-3.5" />;
+  return <Coffee className="h-3.5 w-3.5" />;
 }

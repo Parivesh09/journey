@@ -14,7 +14,13 @@ export const dynamic = "force-dynamic";
 export default async function NotificationsPage() {
   const user = await getCurrentUser();
   if (!user) {
-    return <div>Please sign in to view notifications.</div>;
+    return (
+      <AppShell active="notifications" user={null}>
+        <div className="text-center py-12">
+          <p className="text-graphite-muted">Please sign in to view notifications.</p>
+        </div>
+      </AppShell>
+    );
   }
 
   const [totalNotifications, deliveredCount, failedCount] = await Promise.all([
@@ -30,7 +36,7 @@ export default async function NotificationsPage() {
   ]);
 
   return (
-    <AppShell active="notifications">
+    <AppShell active="notifications" user={{ name: user.name, email: user.email }}>
       <NotificationsClient
         user={user}
         totalNotifications={totalNotifications}

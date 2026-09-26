@@ -22,11 +22,10 @@ export default async function CalendarPage({
   const date = params.date ?? new Date().toISOString();
 
   return (
-    <AppShell active="calendar">
+    <AppShell active="calendar" user={{ name: user.name, email: user.email }}>
       <CalendarClient
         initialView={view}
         initialDate={date}
-        userTimezone={user.timezone}
       />
     </AppShell>
   );

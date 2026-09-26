@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Input, PrimaryButton, FormGroup } from "@/app/components/ui";
 import { useCreateStudySessionMutation } from "@/lib/api";
 import type { ApiError } from "@/lib/types";
 
@@ -43,34 +44,23 @@ export default function FocusLog() {
   return (
     <form onSubmit={onSubmit} className="mt-4">
       <div className="flex flex-wrap items-end gap-3">
-        <label className="min-w-[8rem] flex-1 text-[0.72rem] font-semibold text-graphite-muted">
-          Minutes studied
-          <input
+        <FormGroup label="Minutes studied">
+          <Input
+            required
             type="number"
             min={1}
             max={1440}
             value={minutes}
             onChange={(event) => setMinutes(event.target.value)}
             disabled={saving}
-            className="field mt-1"
           />
-        </label>
-        <button
-          type="submit"
-          disabled={saving || !minutes}
-          className="btn btn-primary"
-        >
-          {saving ? (
-            <span
-              aria-hidden
-              className="h-1 w-5 animate-pulse rounded-full bg-white"
-            />
-          ) : null}
+        </FormGroup>
+        <PrimaryButton type="submit" disabled={saving || !minutes}>
           {saving ? "Saving" : "Save"}
-        </button>
+        </PrimaryButton>
       </div>
       {message ? (
-        <p className="mt-3 text-[0.75rem] font-medium text-graphite-muted" role="status">
+        <p className="mt-3 text-sm font-medium text-graphite-muted" role="status">
           {message}
         </p>
       ) : null}
