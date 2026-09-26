@@ -2,7 +2,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import AppShell from "@/app/components/shell";
-import { PageHeader, Sheet, SectionHead, ProgressBar, Num, Card, CardContent } from "@/app/components/ui";
+import { PageHeader, Sheet, SectionHead, ProgressBar, Num, Card, CardContent, Stamp } from "@/app/components/ui";
 import DashboardTaskList from "@/app/dashboard-task-list";
 import OnboardingBanner from "@/app/onboarding-banner";
 import FocusLog from "@/app/focus-log";
@@ -18,6 +18,13 @@ function dayStart(date: Date) {
   const result = new Date(date);
   result.setHours(0, 0, 0, 0);
   return result;
+}
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
 }
 
 export default async function HomePage() {
@@ -133,84 +140,132 @@ export default async function HomePage() {
   const remainingToday = Math.max(todayTasks.length - completedToday, 0);
   const overallPercent = toPercent(totalCompleted, allTasks.length || 1);
 
+  // Get user's active roadmaps for "Continue Roadmap" section
+  const userRoadmaps = await prisma.userRoadmap.findMany({
+    where: { userId: user.id },
+    select: { roadmapId: true },
+  });
+
+  // Load roadmap data from templates
+  const { readRoadmap, ROADMAP_IDS } = await import("@/lib/business/roadmap-templates");
+  const activeRoadmaps = await Promise.all(
+    userRoadmaps.map(async ({ roadmapId }) => {
+      try {
+        const roadmap = readRoadmap(roadmapId);
+        return { roadmap };
+      } catch {
+        return null;
+      }
+    })
+  ).then(results => results.filter((r): r is { roadmap: any } => r !== null));
+
   return (
     <AppShell active="overview" user={{ name: user.name, email: user.email }}>
       <OnboardingBanner show={!user.onboardingDismissedAt} />
       <main className="px-6 py-8 sm:px-8 lg:px-12">
         <Sheet>
-          <PageHeader
-            title="Today"
-            subtitle={`${todayLabel} · ${completedToday} of ${todayTasks.length} tasks completed`}
-            action={
-              <Link href="/tasks" className="btn btn-primary">
-                Manage Tasks
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-            }
-          />
-
-          <div className="grid grid-cols-2 gap-4 mb-8 sm:grid-cols-4">
-            {[
-              { label: "Completed", value: `${completedToday}/${todayTasks.length}`, detail: `${remainingToday} open` },
-              { label: "Focus", value: formatMinutes(studyMinutes), detail: `of ${formatMinutes(user.dailyStudyTargetMinutes)}` },
-              { label: "High Priority", value: String(openHighPriority), detail: "urgent" },
-              { label: "To Revise", value: String(revisionCount), detail: "topics" },
-            ].map((metric) => (
-              <Card key={metric.label} className="p-5">
-                <p className="label">{metric.label}</p>
-                <p className="mt-1 text-2xl font-semibold text-foreground font-display">
-                  <Num>{metric.value}</Num>
-                </p>
-                <p className="mt-1 caption">{metric.detail}</p>
-              </Card>
-            ))}
+          {/* Greeting Header */}
+          <div className="mb-10">
+            <p className="text-lg text-graphite-muted mb-1">{getGreeting()}, {user.name ?? "there"}.</p>
+            <p className="text-sm text-graphite-faint">Here&apos;s where you stand today.</p>
+            <p className="text-sm text-graphite-faint mt-1">{todayLabel}</p>
           </div>
 
+          {/* Today's Summary - 3 Cards */}
+          <div className="grid grid-cols-1 gap-4 mb-10 sm:grid-cols-3">
+            <Card className="p-5">
+              <p className="label">Today's Progress</p>
+              <p className="mt-1 text-3xl font-bold text-foreground font-display">
+                <Num>{completedToday}</Num>
+                <span className="text-foreground/50 ml-1">/</span>
+                <Num className="text-foreground/50">{todayTasks.length}</Num>
+              </p>
+              <div className="mt-3">
+                <ProgressBar value={progress} />
+                <p className="mt-1 caption">{progress}% complete</p>
+              </div>
+            </Card>
+
+            <Card className="p-5">
+              <p className="label">Study Time</p>
+              <p className="mt-1 text-3xl font-bold text-foreground font-display">
+                <Num>{formatMinutes(studyMinutes)}</Num>
+              </p>
+              <p className="mt-1 caption">
+                of {formatMinutes(user.dailyStudyTargetMinutes)} daily target
+              </p>
+            </Card>
+
+            <Card className="p-5">
+              <p className="label">Current Streak</p>
+              <div className="flex items-center gap-3 mt-2">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                  <span className="text-primary font-semibold">🔥</span>
+                </div>
+                <div>
+                  <p className="text-3xl font-bold text-foreground font-display">12</p>
+                  <p className="caption">days</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Today's Tasks */}
           <SectionHead
             index="01"
-            title="Today's List"
-            instruction="Routines, connected tasks, and today's schedule"
+            title="Today's Tasks"
+            instruction="Your scheduled routines and roadmap tasks"
             aside={`${todayList.length} items`}
           />
           <DashboardTaskList initialItems={todayList} />
 
-          <div className="grid gap-6 mt-10 md:grid-cols-2">
-            <Card>
-              <CardContent className="pt-0">
-                <SectionHead
-                  index="02"
-                  title="Completion"
-                  instruction="Progress today"
-                  aside={`${progress}%`}
-                />
-                <div className="mt-4">
-                  <ProgressBar value={progress} />
-                  <div className="mt-2 font-mono text-sm text-graphite-faint flex justify-between">
-                    <span>{completedToday} finished</span>
-                    <span>{remainingToday} remaining</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Continue Roadmap */}
+          {activeRoadmaps.length > 0 && (
+            <>
+              <SectionHead
+                index="02"
+                title="Continue Roadmap"
+                instruction="Pick up where you left off"
+              />
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {activeRoadmaps.map(({ roadmap }) => (
+                  <Link key={roadmap.id} href={`/roadmaps/${roadmap.id}`}>
+                    <Card className="h-full">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            <h3 className="text-lg font-semibold text-foreground font-display">
+                              {roadmap.title}
+                            </h3>
+                            {roadmap.description && (
+                              <p className="mt-1 text-sm leading-relaxed text-graphite-muted line-clamp-2">
+                                {roadmap.description}
+                              </p>
+                            )}
+                          </div>
+                          <Stamp tone="valid">Active</Stamp>
+                        </div>
+                        <div className="mt-4">
+                          <p className="text-sm text-graphite-muted">
+                            Next: {roadmap.milestones[0]?.title ?? "No upcoming milestones"}
+                          </p>
+                        </div>
+                        <div className="mt-4 flex items-center justify-between">
+                          <span className="text-sm font-medium text-primary">Continue →</span>
+                          <ArrowRight className="h-4 w-4 text-primary" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </>
+          )}
 
-            <Card>
-              <CardContent className="pt-0">
-                <SectionHead
-                  index="03"
-                  title="Overall Progress"
-                  instruction={`${totalCompleted} of ${allTasks.length} tasks completed`}
-                  aside={`${overallPercent}%`}
-                />
-                <div className="mt-4">
-                  <ProgressBar value={overallPercent} />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
+          {/* Next Action */}
           <div className="mt-10 pt-6 border-t border-border">
             <SectionHead
-              index="04"
+              index="03"
               title="Next Action"
               instruction={remainingToday > 0 ? "Complete one scheduled task before adding anything new." : "Today is clear. Review topics or plan tomorrow."}
             />
@@ -228,9 +283,10 @@ export default async function HomePage() {
             </div>
           </div>
 
+          {/* Focus Time */}
           <div className="mt-10 pt-6 border-t border-border">
             <SectionHead
-              index="05"
+              index="04"
               title="Focus Time"
               instruction="Log your study sessions"
             />
