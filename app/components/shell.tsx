@@ -11,7 +11,7 @@ const NAV = [
   // { key: "dsa", label: "DSA", href: "/dsa", number: "04" },
   { key: "projects", label: "Projects", href: "/projects", number: "05" },
   // { key: "revision", label: "Revision", href: "/revision", number: "06" },
-  // { key: "calendar", label: "Calendar", href: "/calendar", number: "07" },
+  { key: "calendar", label: "Calendar", href: "/calendar", number: "07" },
   { key: "progress", label: "Progress", href: "/progress", number: "08" },
   {
     key: "notifications",
