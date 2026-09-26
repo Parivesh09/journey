@@ -32,7 +32,8 @@ export default async function ProgressPage() {
   today.setHours(0, 0, 0, 0);
   const tomorrow = new Date(today.getTime() + 86_400_000);
 
-const [todayTasks, allTasks, studySessions, roadmapCount, sessionsThisWeek, allTimeMinutes] = await Promise.all([
+const weekAgo = new Date(Date.now() - 7 * 86_400_000);
+  const [todayTasks, allTasks, studySessions, roadmapCount, sessionsThisWeek, allTimeMinutes] = await Promise.all([
     prisma.task.findMany({
       where: {
         userId: user.id,
@@ -56,7 +57,7 @@ const [todayTasks, allTasks, studySessions, roadmapCount, sessionsThisWeek, allT
       where: { userId: user.id },
     }),
     prisma.studySession.findMany({
-      where: { userId: user.id, startedAt: { gte: new Date(Date.now() - 7 * 86_400_000) } },
+      where: { userId: user.id, startedAt: { gte: weekAgo } },
       select: { durationMinutes: true, startedAt: true },
     }),
     prisma.studySession.aggregate({

@@ -53,10 +53,11 @@ export default async function StudyPage() {
     _sum: { durationMinutes: true },
   });
 
+  const weekAgo = new Date(Date.now() - 7 * 86_400_000);
   const sessionsThisWeek = await prisma.studySession.findMany({
     where: {
       userId: user.id,
-      startedAt: { gte: new Date(Date.now() - 7 * 86_400_000) },
+      startedAt: { gte: weekAgo },
     },
     select: { durationMinutes: true, startedAt: true },
   });

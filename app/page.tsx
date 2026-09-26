@@ -167,7 +167,7 @@ export default async function HomePage() {
           {/* Greeting Header */}
           <div className="mb-10">
             <p className="text-lg text-graphite-muted mb-1">{getGreeting()}, {user.name ?? "there"}.</p>
-            <p className="text-sm text-graphite-faint">Here&apos;s where you stand today.</p>
+            <p className="text-sm text-graphite-faint">Here&rsquo;s where you stand today.</p>
             <p className="text-sm text-graphite-faint mt-1">{todayLabel}</p>
           </div>
 
