@@ -1,21 +1,32 @@
 import type { Metadata } from "next";
-import AppShell from "@/app/components/shell";
-import TasksWorkspace from "@/app/tasks/tasks-workspace";
-import { isAuthenticated } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { getCurrentUser } from "@/lib/auth";
+import AppShell from "@/app/components/shell";
+import CalendarClient from "./calendar-client";
 
 export const metadata: Metadata = {
   title: "Calendar",
-  description: "View scheduled tasks and events",
+  description: "Your editorial study planner — visualize tasks, study sessions, and progress",
 };
 
-export default async function CalendarPage() {
-  if (!(await isAuthenticated())) redirect("/login");
+export default async function CalendarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string; date?: string }>;
+}) {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+
+  const params = await searchParams;
+  const view = (params.view as "month" | "week" | "day") ?? "month";
+  const date = params.date ?? new Date().toISOString();
+
   return (
     <AppShell active="calendar">
-      <TasksWorkspace
-        initialTab="daily"
-        initialFilters={{}}
+      <CalendarClient
+        initialView={view}
+        initialDate={date}
+        userTimezone={user.timezone}
       />
     </AppShell>
   );
