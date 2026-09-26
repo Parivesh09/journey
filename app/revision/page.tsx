@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import AppShell from "@/app/components/shell";
 import TasksWorkspace from "@/app/tasks/tasks-workspace";
-import { isAuthenticated } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
@@ -10,9 +10,10 @@ export const metadata: Metadata = {
 };
 
 export default async function RevisionPage() {
-  if (!(await isAuthenticated())) redirect("/login");
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
   return (
-    <AppShell active="revision">
+    <AppShell active="roadmap" user={{ name: user.name, email: user.email }}>
       <TasksWorkspace
         initialTab="roadmap"
         initialFilters={{ taskType: "revision" }}

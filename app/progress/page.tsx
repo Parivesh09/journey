@@ -53,8 +53,20 @@ export default async function ProgressPage() {
   const overallPercent = toPercent(totalCompleted, allTasks.length || 1);
   const studyMinutes = studySessions.reduce((s, t) => s + t.durationMinutes, 0);
 
+  if (!user) {
+    return (
+      <AppShell active="progress" user={null}>
+        <main className="px-6 py-8 sm:px-8 lg:px-12">
+          <div className="text-center py-12">
+            <p className="text-graphite-muted">Please sign in to view progress.</p>
+          </div>
+        </main>
+      </AppShell>
+    );
+  }
+
   return (
-    <AppShell active="progress">
+    <AppShell active="progress" user={{ name: user.name, email: user.email }}>
       <main className="px-6 py-8 sm:px-8 lg:px-12">
         <Sheet>
           <PageHeader

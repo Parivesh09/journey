@@ -134,7 +134,7 @@ export default async function HomePage() {
   const overallPercent = toPercent(totalCompleted, allTasks.length || 1);
 
   return (
-    <AppShell active="dashboard">
+    <AppShell active="overview" user={{ name: user.name, email: user.email }}>
       <OnboardingBanner show={!user.onboardingDismissedAt} />
       <main className="px-6 py-8 sm:px-8 lg:px-12">
         <Sheet>

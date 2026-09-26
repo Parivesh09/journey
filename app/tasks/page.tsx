@@ -1,6 +1,6 @@
 import AppShell from "@/app/components/shell";
 import TasksWorkspace from "./tasks-workspace";
-import { isAuthenticated } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
 export default async function TasksPage({
@@ -8,10 +8,11 @@ export default async function TasksPage({
 }: {
   searchParams: Promise<{ tab?: string; category?: string; taskType?: string }>;
 }) {
-  if (!(await isAuthenticated())) redirect("/login");
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
   const { tab, category, taskType } = await searchParams;
   return (
-    <AppShell active="tasks">
+    <AppShell active="today" user={{ name: user.name, email: user.email }}>
       <TasksWorkspace
         initialTab={tab === "daily" ? "daily" : "roadmap"}
         initialFilters={{

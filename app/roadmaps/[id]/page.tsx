@@ -24,7 +24,7 @@ export default async function RoadmapDetailsPage({
   const user = await getCurrentUser();
   if (!user) {
     return (
-      <AppShell active="roadmap">
+      <AppShell active="roadmap" user={null}>
         <main className="px-6 py-8 sm:px-8 lg:px-12">
           <Sheet>
             <div className="text-center py-12">
@@ -57,7 +57,7 @@ export default async function RoadmapDetailsPage({
   );
 
   return (
-    <AppShell active="roadmap">
+    <AppShell active="roadmap" user={{ name: user.name, email: user.email }}>
       <main className="px-6 py-8 sm:px-8 lg:px-12">
         <Sheet>
           <Link
