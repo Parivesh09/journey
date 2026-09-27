@@ -14,7 +14,7 @@
   --text-4xl: 2.25rem;
 }
 
-/* SDE Organic Color System */
+/* SDE Organic Color System - Light (default) */
 :root {
   /* Semantic Tokens */
   --background: #F5F5F0;
@@ -87,6 +87,53 @@
   --space-lg: 1.5rem;
   --space-xl: 2rem;
   --space-2xl: 3rem;
+}
+
+/* Dark Mode */
+[data-theme="dark"] {
+  /* Semantic Tokens - Dark Organic Palette */
+  --background: #0D1715;
+  --foreground: #F4F1EA;
+  --primary: #3A8F82;
+  --secondary: #1B2C28;
+  --accent: #ECBA82;
+  --muted: #1B2C28;
+  --border: rgba(255, 255, 255, 0.08);
+  --success: #3A8F82;
+  --warning: #ECBA82;
+  --destructive: #E86C6C;
+  --surface: #162522;
+
+  /* Extended palette for backwards compatibility */
+  --color-ink-ground: #0D1715;
+  --color-ink-raised: #11201D;
+  --color-ink-panel: #1B2C28;
+
+  --color-paper: #162522;
+  --color-paper-shade: #1B2C28;
+
+  --color-graphite: #F4F1EA;
+  --color-graphite-muted: #B8C2BE;
+  --color-graphite-faint: #7F8D88;
+
+  --color-bone: #F4F1EA;
+  --color-bone-muted: #B8C2BE;
+  --color-bone-faint: #7F8D88;
+
+  --color-hairline: rgba(255, 255, 255, 0.08);
+  --color-hairline-strong: rgba(255, 255, 255, 0.15);
+
+  --color-highlighter-amber: #ECBA82;
+  --color-amber-ink: #3A8F82;
+
+  --color-valid-green: #3A8F82;
+  --color-stamp-red: #E86C6C;
+
+  /* Shadows - Subtle elevation for dark mode */
+  --sheet-elevation: 0 4px 16px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --card-elevation: 0 2px 8px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.15);
+  --card-elevation-hover: 0 4px 12px rgba(0, 0, 0, 0.3), 0 2px 6px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 /* Tailwind Theme Configuration */
@@ -342,6 +389,15 @@ p {
 .btn-tertiary:hover:not(:disabled) {
   color: var(--foreground);
   background: var(--muted);
+}
+
+.btn-destructive {
+  background: var(--destructive);
+  color: white;
+}
+
+.btn-destructive:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--destructive) 90%, black);
 }
 
 /* Inputs */

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import type { InputHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
@@ -585,5 +586,125 @@ export function GearIcon(props: React.SVGProps<SVGSVGElement>) {
     >
       <path d="M12.22 2a10 10 0 0 0-10 10a10 10 0 0 0 10 10a10 10 0 0 0 10-10a10 10 0 0 0-10-10zm0 5a3 3 0 1 1 0 6 3 3 0 0 1-6 0z" />
     </svg>
+  );
+}
+
+export function SunIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <circle cx="12" cy="12" r="5" />
+      <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+    </svg>
+  );
+}
+
+export function MoonIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
+
+export function ThemeToggle({ className }: { className?: string }) {
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("theme") as "light" | "dark") || "dark";
+    }
+    return "dark";
+  });
+
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    try {
+      localStorage.setItem("theme", newTheme);
+      document.documentElement.setAttribute("data-theme", newTheme);
+    } catch {}
+  };
+
+  return (
+    <button
+      onClick={toggleTheme}
+      className={cn("p-2 rounded-lg transition-colors hover:bg-muted/50", className)}
+      aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+      title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+    >
+      {theme === "light" ? <MoonIcon /> : <SunIcon />}
+    </button>
+  );
+}
+
+export function CountdownTimer({ targetTime }: { targetTime: Date | string | null | undefined }) {
+  const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
+  const [isPast, setIsPast] = useState(false);
+
+  useEffect(() => {
+    if (!targetTime) {
+      setTimeLeft(null);
+      setIsPast(false);
+      return;
+    }
+
+    const target = new Date(targetTime).getTime();
+
+    const updateTimer = () => {
+      const diff = target - Date.now();
+      if (diff <= 0) {
+        setIsPast(true);
+        setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setTimeLeft({ hours, minutes, seconds });
+      setIsPast(false);
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [targetTime]);
+
+  if (!timeLeft) return null;
+
+  return (
+    <div className="flex items-center gap-1.5 font-mono text-xs">
+      <span className={`px-2 py-0.5 rounded bg-primary/10 text-primary ${isPast ? "opacity-50" : ""}`}>
+        {String(timeLeft.hours).padStart(2, "0")}
+      </span>
+      <span className="text-graphite-muted">:</span>
+      <span className={`px-2 py-0.5 rounded bg-primary/10 text-primary ${isPast ? "opacity-50" : ""}`}>
+        {String(timeLeft.minutes).padStart(2, "0")}
+      </span>
+      <span className="text-graphite-muted">:</span>
+      <span className={`px-2 py-0.5 rounded bg-primary/10 text-primary ${isPast ? "opacity-50" : ""}`}>
+        {String(timeLeft.seconds).padStart(2, "0")}
+      </span>
+      {isPast && <span className="text-xs text-destructive ml-1">Overdue</span>}
+    </div>
   );
 }

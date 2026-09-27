@@ -1,212 +1,204 @@
-"use client";
-
-import { useState, useEffect, useMemo } from "react";
-import { ArrowLeft } from "lucide-react";
+import type { Metadata } from "next";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useGetMilestonesQuery, useGetDailyPinsQuery, useUpdateTaskMutation, useGetRoadmapsQuery } from "@/lib/api";
-import type { RoadmapSummary, MilestonesData, Filters } from "@/lib/types";
-import { MilestoneCard } from "../../components/MilestoneCard";
-import { SkeletonRows, SectionHead, Stamp } from "@/app/components/ui";
-import { extractErrorMessage } from "@/lib/utils";
-import { taskMatches, visiblePhases } from "../../components/roadmap-types";
+import { ArrowLeft } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { readRoadmap } from "@/lib/business/roadmap-templates";
+import AppShell from "@/app/components/shell";
+import { PageHeader, Sheet, SectionHead, Stamp, Card, CardContent, Num, ProgressBar } from "@/app/components/ui";
+import TemplateAccordion from "../../../roadmaps/template-accordion";
+import { useGetDailyPinsQuery, useUpdateTaskMutation, usePinTaskMutation, useUnpinTaskMutation } from "@/lib/api";
 
-export default function RoadmapDetailPage() {
-  const params = useParams();
-  const roadmapId = params.id as string;
+export const metadata: Metadata = {
+  title: "Roadmap Details",
+  description: "Explore roadmap structure, phases, topics, and tasks",
+};
 
-  const { data: roadmapsData } = useGetRoadmapsQuery(undefined);
-  const roadmap = roadmapsData?.roadmaps?.find((r: RoadmapSummary) => r.id === roadmapId);
+export default async function RoadmapDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const paramsValue = await params;
+  const rawId = paramsValue.id;
 
-  const { data: milestonesData, isFetching, isError } = useGetMilestonesQuery(roadmapId);
-  const { data: pinsData } = useGetDailyPinsQuery(undefined);
-  const [updateTask] = useUpdateTaskMutation();
-
-  const [data, setData] = useState<MilestonesData | null>(null);
-
-  const pinnedById = useMemo(() => {
-    if (!milestonesData?.pinnedTaskIds || !pinsData?.pins) return {};
-    return Object.fromEntries(
-      pinsData.pins
-        .filter((pin: { taskId: string }) =>
-          milestonesData.pinnedTaskIds.includes(pin.taskId),
-        )
-        .map((pin: { taskId: string; id: string }) => [pin.taskId, pin.id]),
+  const user = await getCurrentUser();
+  if (!user) {
+    return (
+      <AppShell active="roadmap" user={null}>
+        <main className="px-6 py-8 sm:px-8 lg:px-12">
+          <Sheet>
+            <div className="text-center py-12">
+              <p className="text-graphite-muted">Please sign in to view roadmap details.</p>
+            </div>
+          </Sheet>
+        </main>
+      </AppShell>
     );
-  }, [milestonesData, pinsData]);
-
-  useEffect(() => {
-    if (milestonesData) {
-      setData(milestonesData as MilestonesData);
-    }
-  }, [milestonesData]);
-
-  async function handleToggleTask(task: any) {
-    try {
-      await updateTask({
-        id: task.id,
-        status: task.status === "COMPLETED" ? "TODO" : "COMPLETED",
-      }).unwrap();
-    } catch (reason: unknown) {
-      console.error(extractErrorMessage(reason));
-    }
   }
 
-  const progress = data
-    ? data.milestones.reduce((acc, m) => acc + m.progress.completed, 0) /
-      Math.max(1, data.milestones.reduce((acc, m) => acc + m.progress.total, 0))
-    : 0;
+  const userActivated = await prisma.userRoadmap.findUnique({
+    where: { userId_roadmapId: { userId: user.id, roadmapId: rawId } },
+    select: { id: true },
+  });
 
-  const totalPhases = roadmap?.phases?.length ?? 0;
-  const totalTopics = roadmap?.phases?.reduce(
+  const template = readRoadmap(rawId);
+  const activated = !!userActivated;
+
+  const totalPhases = template.phases.length;
+  const totalTopics = template.phases.reduce(
     (sum, p) => sum + (p.topics ?? []).length,
     0,
-  ) ?? 0;
-  const totalTasks = roadmap?.phases?.reduce(
+  );
+  const totalTasks = template.phases.reduce(
     (sum, p) =>
       sum +
-      (p.topics ?? []).reduce(
-        (tSum, t) => tSum + (t.tasks ?? []).length,
-        0,
-      ),
+      (p.topics ?? []).reduce((tSum, t) => tSum + (t.tasks ?? []).length, 0),
     0,
-  ) ?? 0;
+  );
+  const totalMilestones = template.milestones.length;
+
+  // Calculate overall progress if activated
+  let overallProgress = 0;
+  let completedMilestones = 0;
+  if (activated) {
+    const userMilestones = await prisma.userMilestone.findMany({
+      where: { userId: user.id, roadmapId: rawId },
+      select: { milestoneId: true },
+    });
+    completedMilestones = userMilestones.filter((m) => m.milestoneId).length;
+    overallProgress = totalMilestones > 0 ? Math.round((completedMilestones / totalMilestones) * 100) : 0;
+  }
 
   return (
-    <div className="min-h-screen bg-background">
+    <AppShell active="roadmap" user={{ name: user.name, email: user.email }}>
       <main className="px-6 py-8 sm:px-8 lg:px-12">
-        <Link
-          href="/tasks?tab=roadmap"
-          className="inline-flex items-center gap-1.5 font-mono text-[0.75rem] text-graphite-muted hover:text-foreground mb-6"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          Back to roadmaps
-        </Link>
+        <Sheet>
+          <Link
+            href="/tasks?tab=roadmap"
+            className="inline-flex items-center gap-1.5 font-mono text-sm text-graphite-muted hover:text-foreground mb-6"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to roadmaps
+          </Link>
 
-        {roadmap && (
-          <div>
-            <div className="mb-8">
-              <div className="flex items-start justify-between gap-4 mb-4">
-                <div>
-                  <h1 className="text-[1.85rem] font-bold text-foreground">
-                    {roadmap.title}
-                  </h1>
-                  {roadmap.description && (
-                    <p className="mt-2 text-[0.9rem] leading-relaxed text-graphite-muted">
-                      {roadmap.description}
-                    </p>
-                  )}
+          {/* Hero Section */}
+          <div className="mb-10">
+            <div className="flex items-start justify-between gap-6 mb-6">
+              <div className="max-w-3xl">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
+                    <span className="text-2xl">🗺</span>
+                  </div>
+                  <div>
+                    <p className="label text-primary">Roadmap</p>
+                    <h1 className="text-3xl font-bold text-foreground font-display tracking-tight">
+                      {template.title}
+                    </h1>
+                  </div>
                 </div>
-                <Stamp tone="valid" className="shrink-0">
-                  Enrolled
-                </Stamp>
+                {template.description && (
+                  <p className="text-base text-graphite-muted max-w-2xl leading-relaxed">
+                    {template.description}
+                  </p>
+                )}
               </div>
-
-              <div className="grid grid-cols-3 gap-4 mb-8">
-                <div className="text-center py-3 border border-border rounded bg-muted/50">
-                  <div className="font-mono text-[1.5rem] font-semibold text-foreground">
-                    {totalPhases}
-                  </div>
-                  <div className="text-[0.7rem] uppercase tracking-wide text-graphite-faint mt-1">
-                    Phases
-                  </div>
-                </div>
-                <div className="text-center py-3 border border-border rounded bg-muted/50">
-                  <div className="font-mono text-[1.5rem] font-semibold text-foreground">
-                    {totalTopics}
-                  </div>
-                  <div className="text-[0.7rem] uppercase tracking-wide text-graphite-faint mt-1">
-                    Topics
-                  </div>
-                </div>
-                <div className="text-center py-3 border border-border rounded bg-muted/50">
-                  <div className="font-mono text-[1.5rem] font-semibold text-foreground">
-                    {totalTasks}
-                  </div>
-                  <div className="text-[0.7rem] uppercase tracking-wide text-graphite-faint mt-1">
-                    Tasks
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <div className="w-48 h-3 bg-muted rounded-full overflow-hidden mb-2">
-                  <div
-                    className="h-full bg-primary transition-all duration-300"
-                    style={{ width: `${Math.round(progress * 100)}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-[0.85rem] text-primary">
-                    {Math.round(progress * 100)}% complete
-                  </span>
-                  <span className="font-mono text-[0.7rem] text-graphite-muted">
-                    {data?.milestones.reduce((acc, m) => acc + m.progress.completed, 0) ?? 0} / {data?.milestones.reduce((acc, m) => acc + m.progress.total, 0) ?? 0} tasks
-                  </span>
-                </div>
+              <div className="flex-shrink-0">
+                {activated ? (
+                  <Stamp tone="valid" className="text-sm">Enrolled &middot; Active</Stamp>
+                ) : (
+                  <button type="button" className="btn btn-primary px-6 py-3 text-sm font-medium">
+                    Activate Roadmap
+                  </button>
+                )}
               </div>
             </div>
-          </div>
-        )}
 
-        {isFetching && !data ? (
-          <SkeletonRows rows={6} />
-        ) : isError ? (
-          <div className="rounded border border-destructive/50 bg-destructive/5 px-4 py-3 text-[0.85rem] text-destructive mb-4">
-            Failed to load roadmap data.
+            {/* Progress Bar */}
+            {activated && (
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="label">Overall Progress</span>
+                  <span className="font-mono text-lg font-semibold text-primary">{overallProgress}%</span>
+                </div>
+                <ProgressBar value={overallProgress} />
+                <p className="mt-2 caption">
+                  {completedMilestones} of {totalMilestones} milestones complete
+                </p>
+              </div>
+            )}
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <span className="text-primary text-2xl">🎯</span>
+                  </div>
+                  <div>
+                    <p className="label">Milestones</p>
+                    <p className="text-2xl font-bold text-foreground font-display">
+                      <Num>{totalMilestones}</Num>
+                    </p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <span className="text-primary text-2xl">📚</span>
+                  </div>
+                  <div>
+                    <p className="label">Phases</p>
+                    <p className="text-2xl font-bold text-foreground font-display">
+                      <Num>{totalPhases}</Num>
+                    </p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <span className="text-primary text-2xl">📝</span>
+                  </div>
+                  <div>
+                    <p className="label">Topics</p>
+                    <p className="text-2xl font-bold text-foreground font-display">
+                      <Num>{totalTopics}</Num>
+                    </p>
+                  </div>
+                </div>
+              </Card>
+              <Card className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <span className="text-primary text-2xl">✓</span>
+                  </div>
+                  <div>
+                    <p className="label">Tasks</p>
+                    <p className="text-2xl font-bold text-foreground font-display">
+                      <Num>{totalTasks}</Num>
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </div>
           </div>
-        ) : data && data.milestones.length > 0 ? (
-          <div>
+
+          {template.milestones.length > 0 && (
             <SectionHead
               index="01"
               title="Milestones"
-              instruction="Track your progress through each milestone"
-              aside={`${data.milestones.length} milestones`}
+              instruction="High-level target checkpoints in this roadmap"
             />
-            <div className="space-y-4 mt-4">
-              {data.milestones.map((milestone, index) => (
-                <MilestoneCard
-                  key={milestone.id}
-                  milestone={milestone}
-                  pinnedById={pinnedById}
-                  filters={defaultFilters}
-                  mutating={null}
-                  completing={false}
-                  index={index}
-                  onToggleTask={handleToggleTask}
-                  onTogglePin={() => {}}
-                  onComplete={() => {}}
-                />
-              ))}
-            </div>
-          </div>
-        ) : !roadmap ? (
-          <div className="text-center py-12">
-            <p className="text-graphite-muted">Roadmap not found</p>
-            <Link
-              href="/tasks?tab=roadmap"
-              className="mt-4 inline-flex items-center gap-1.5 font-mono text-[0.75rem] text-primary hover:text-primary"
-            >
-              Back to roadmaps
-              <ArrowLeft className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        ) : (
-          <div className="text-center py-12 text-graphite-muted">
-            No milestones found for this roadmap.
-          </div>
-        )}
+          )}
+
+          <TemplateAccordion
+            milestones={template.milestones}
+            phases={template.phases}
+          />
+        </Sheet>
       </main>
-    </div>
+    </AppShell>
   );
 }
-
-const defaultFilters: Filters = {
-  q: "",
-  category: "",
-  phaseId: "",
-  topicId: "",
-  taskType: "",
-  status: "",
-  difficulty: "",
-};

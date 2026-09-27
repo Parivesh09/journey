@@ -45,7 +45,7 @@ export const apiSlice = createApi({
       providesTags: ["Tasks"],
     }),
 
-    createTask: builder.mutation<{ task: Task }, { title: string; priority?: string; isPersonalDaily?: boolean }>({
+    createTask: builder.mutation<{ task: Task }, { title: string; priority?: string; isPersonalDaily?: boolean; description?: string; categoryId?: string; estimatedMinutes?: number; plannedMinutes?: number; dueDate?: string; dailySlot?: string; startTime?: string; endTime?: string; taskType?: string }>({
       query: (body) => ({
         url: "tasks",
         method: "POST",
@@ -55,7 +55,7 @@ export const apiSlice = createApi({
     }),
 
     toggleTaskCompleteToday: builder.mutation<{ task: Task; doneToday: boolean }, string>({
-      query: (id) => `tasks/${id}/complete-today`,
+      query: (id) => ({ url: `tasks/${id}/complete-today`, method: "POST" }),
       invalidatesTags: ["Tasks"],
     }),
 
@@ -72,6 +72,8 @@ export const apiSlice = createApi({
         plannedMinutes?: number;
         dueDate?: string;
         dailySlot?: string;
+        startTime?: string;
+        endTime?: string;
         completed?: boolean;
       }
     >({

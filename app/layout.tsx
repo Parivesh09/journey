@@ -31,7 +31,24 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       data-theme={theme}
       className={`${cormorant.variable} ${inter.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  var theme = localStorage.getItem('theme');
+                  var userTheme = theme || '${theme}';
+                  document.documentElement.setAttribute('data-theme', userTheme);
+                  localStorage.setItem('theme', userTheme);
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full">
         <ReduxProvider>
           {children}

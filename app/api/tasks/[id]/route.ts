@@ -28,7 +28,7 @@ export async function PATCH(
 
   if (task.roadmapId && task.milestoneId) {
     const hasMutation = Object.keys(body).some((key) =>
-      ["title", "description", "completed", "status", "categoryId", "dueDate", "priority", "estimatedMinutes", "plannedMinutes", "dailySlot"].includes(key),
+      ["title", "description", "completed", "status", "categoryId", "dueDate", "priority", "estimatedMinutes", "plannedMinutes", "dailySlot", "startTime", "endTime"].includes(key),
     );
     if (hasMutation && (await isMilestoneLocked(user.id, task.roadmapId, task.milestoneId))) {
       return NextResponse.json(
@@ -76,6 +76,12 @@ export async function PATCH(
         : {}),
       ...(typeof body.dailySlot === "string"
         ? { dailySlot: body.dailySlot }
+        : {}),
+      ...(typeof body.startTime === "string" && body.startTime
+        ? { startTime: new Date(body.startTime) }
+        : {}),
+      ...(typeof body.endTime === "string" && body.endTime
+        ? { endTime: new Date(body.endTime) }
         : {}),
     },
     include: { category: true },

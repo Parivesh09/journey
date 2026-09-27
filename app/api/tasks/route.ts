@@ -165,6 +165,14 @@ export async function POST(request: Request) {
       taskType: typeof body.taskType === "string" ? body.taskType : "custom",
       dailySlot:
         typeof body.dailySlot === "string" ? body.dailySlot : undefined,
+      startTime:
+        typeof body.startTime === "string" && body.startTime
+          ? new Date(body.startTime)
+          : undefined,
+      endTime:
+        typeof body.endTime === "string" && body.endTime
+          ? new Date(body.endTime)
+          : undefined,
       isDailyTask: body.isDailyTask === true,
       isPersonalDaily: body.isPersonalDaily === true,
       // Int column max minus margin so the row always sorts last.

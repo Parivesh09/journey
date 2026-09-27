@@ -10,6 +10,10 @@ import {
   SecondaryButton,
   EmptyState,
   FormGroup,
+  Dialog,
+  Input,
+  Caption,
+  CountdownTimer,
 } from "@/app/components/ui";
 import {
   useGetDailyTasksQuery,
@@ -27,10 +31,13 @@ import type { ApiError, RoadmapSummary } from "@/lib/types";
 type Routine = {
   id: string;
   title: string;
+  description?: string | null;
   priority: string;
   plannedMinutes: number | null;
   estimatedMinutes: number | null;
   dailySlot: string | null;
+  startTime?: Date | string | null;
+  endTime?: Date | string | null;
   doneToday: boolean;
   isPersonalDaily: boolean;
 };
@@ -40,11 +47,14 @@ type Connected = {
   task: {
     id: string;
     title: string;
+    description?: string | null;
     status: string;
     priority: string;
     phaseTitle: string | null;
     topicTitle: string | null;
     milestoneTitle: string | null;
+    startTime?: Date | string | null;
+    endTime?: Date | string | null;
   };
 };
 
@@ -92,9 +102,19 @@ function RoutineRow({
           </p>
           <Stamp tone="valid">Routine</Stamp>
         </div>
-        <p className="mt-0.5 font-mono text-xs text-graphite-faint">
-          Every day · {minutes}m {routine.doneToday && "· done today"}
-        </p>
+        {routine.description && (
+          <p className="mt-1 truncate text-sm text-graphite-muted line-clamp-2">
+            {routine.description}
+          </p>
+        )}
+        <div className="mt-0.5 flex items-center gap-3 flex-wrap">
+          <p className="font-mono text-xs text-graphite-faint">
+            Every day · {minutes}m {routine.doneToday && "· done today"}
+          </p>
+          {(routine.startTime ?? routine.endTime) && (
+            <CountdownTimer targetTime={routine.startTime ?? routine.endTime} />
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <Stamp tone="neutral" className="text-xs">
@@ -164,6 +184,11 @@ export default function DailyTab() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newDailySlot, setNewDailySlot] = useState("");
+  const [newPlannedMinutes, setNewPlannedMinutes] = useState<number | "">(60);
+  const [newStartTime, setNewStartTime] = useState("");
+  const [newEndTime, setNewEndTime] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [activeTabInModal, setActiveTabInModal] = useState<
@@ -173,6 +198,11 @@ export default function DailyTab() {
   const [unlinkingRoadmap, setUnlinkingRoadmap] = useState<string | null>(null);
   const [editingRoutine, setEditingRoutine] = useState<Routine | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editDailySlot, setEditDailySlot] = useState("");
+  const [editPlannedMinutes, setEditPlannedMinutes] = useState<number | "">(60);
+  const [editStartTime, setEditStartTime] = useState("");
+  const [editEndTime, setEditEndTime] = useState("");
   const [deletingRoutine, setDeletingRoutine] = useState<Routine | null>(null);
 
   const linkedRoadmapIds = useMemo(
@@ -188,10 +218,20 @@ export default function DailyTab() {
     try {
       await createTask({
         title,
+        description: newDescription.trim() || undefined,
         priority: "MEDIUM",
         isPersonalDaily: true,
+        dailySlot: newDailySlot || undefined,
+        plannedMinutes: newPlannedMinutes ? Number(newPlannedMinutes) : undefined,
+        startTime: newStartTime || undefined,
+        endTime: newEndTime || undefined,
       }).unwrap();
       setNewTitle("");
+      setNewDescription("");
+      setNewDailySlot("");
+      setNewPlannedMinutes(60);
+      setNewStartTime("");
+      setNewEndTime("");
       setAddModalOpen(false);
     } catch {
       setError("Unable to add that routine. Please try again.");
@@ -228,9 +268,19 @@ export default function DailyTab() {
       await updateTask({
         id: editingRoutine.id,
         title: editTitle.trim(),
+        description: editDescription.trim() || undefined,
+        dailySlot: editDailySlot || undefined,
+        plannedMinutes: editPlannedMinutes ? Number(editPlannedMinutes) : undefined,
+        startTime: editStartTime || undefined,
+        endTime: editEndTime || undefined,
       }).unwrap();
       setEditingRoutine(null);
       setEditTitle("");
+      setEditDescription("");
+      setEditDailySlot("");
+      setEditPlannedMinutes(60);
+      setEditStartTime("");
+      setEditEndTime("");
       setSuccess("Routine updated successfully.");
       setTimeout(() => setSuccess(""), 3000);
     } catch {
@@ -361,6 +411,11 @@ export default function DailyTab() {
                 onEdit={() => {
                   setEditingRoutine(routine);
                   setEditTitle(routine.title);
+                  setEditDescription(routine.description ?? "");
+                  setEditDailySlot(routine.dailySlot ?? "");
+                  setEditPlannedMinutes(routine.plannedMinutes ?? 60);
+                  setEditStartTime(routine.startTime ? new Date(routine.startTime).toISOString().slice(0, 16) : "");
+                  setEditEndTime(routine.endTime ? new Date(routine.endTime).toISOString().slice(0, 16) : "");
                 }}
                 onDelete={() => setDeletingRoutine(routine)}
               />
@@ -486,12 +541,69 @@ export default function DailyTab() {
                       className="input"
                     />
                   </FormGroup>
+                  <FormGroup label="Description (optional)">
+                    <textarea
+                      value={newDescription}
+                      onChange={(event) => setNewDescription(event.target.value)}
+                      placeholder="What does this routine involve?"
+                      className="input min-h-[80px]"
+                      rows={3}
+                    />
+                  </FormGroup>
+                  <FormGroup label="Daily Slot (optional)">
+                    <select
+                      value={newDailySlot}
+                      onChange={(event) => setNewDailySlot(event.target.value)}
+                      className="input"
+                    >
+                      <option value="">None</option>
+                      <option value="morning">Morning</option>
+                      <option value="afternoon">Afternoon</option>
+                      <option value="evening">Evening</option>
+                    </select>
+                  </FormGroup>
+                  <FormGroup label="Planned Minutes">
+                    <input
+                      type="number"
+                      min="1"
+                      max="480"
+                      value={newPlannedMinutes}
+                      onChange={(event) => setNewPlannedMinutes(event.target.valueAsNumber || "")}
+                      className="input"
+                    />
+                  </FormGroup>
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormGroup label="Start Time (optional)">
+                      <input
+                        type="time"
+                        value={newStartTime}
+                        onChange={(event) => setNewStartTime(event.target.value)}
+                        className="input"
+                      />
+                    </FormGroup>
+                    <FormGroup label="End Time (optional)">
+                      <input
+                        type="time"
+                        value={newEndTime}
+                        onChange={(event) => setNewEndTime(event.target.value)}
+                        className="input"
+                      />
+                    </FormGroup>
+                  </div>
                   <p className="caption">
                     Personal routines repeat every day and help build strong
                     study habits.
                   </p>
                   <div className="pt-4 flex justify-end gap-3">
-                    <SecondaryButton onClick={() => setAddModalOpen(false)}>
+                    <SecondaryButton onClick={() => {
+                      setAddModalOpen(false);
+                      setNewTitle("");
+                      setNewDescription("");
+                      setNewDailySlot("");
+                      setNewPlannedMinutes(60);
+                      setNewStartTime("");
+                      setNewEndTime("");
+                    }}>
                       Cancel
                     </SecondaryButton>
                     <PrimaryButton
@@ -588,6 +700,131 @@ export default function DailyTab() {
         </div>
         </div>
       )}
+
+      {/* Edit Routine Modal */}
+      <Dialog
+        open={!!editingRoutine}
+        onClose={() => { 
+          setEditingRoutine(null); 
+          setEditTitle(""); 
+          setEditDescription("");
+          setEditDailySlot("");
+          setEditPlannedMinutes(60);
+          setEditStartTime("");
+          setEditEndTime("");
+        }}
+        title="Edit Routine"
+      >
+        <form onSubmit={handleEditRoutine} className="space-y-4">
+          <FormGroup label="Routine Title">
+            <Input
+              autoFocus
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              placeholder="e.g. 30 min DSA Practice"
+            />
+          </FormGroup>
+          <FormGroup label="Description (optional)">
+            <textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              placeholder="What does this routine involve?"
+              className="input min-h-[80px]"
+              rows={3}
+            />
+          </FormGroup>
+          <FormGroup label="Daily Slot (optional)">
+            <select
+              value={editDailySlot}
+              onChange={(e) => setEditDailySlot(e.target.value)}
+              className="input"
+            >
+              <option value="">None</option>
+              <option value="morning">Morning</option>
+              <option value="afternoon">Afternoon</option>
+              <option value="evening">Evening</option>
+            </select>
+          </FormGroup>
+          <FormGroup label="Planned Minutes">
+            <input
+              type="number"
+              min="1"
+              max="480"
+              value={editPlannedMinutes}
+              onChange={(e) => setEditPlannedMinutes(e.target.valueAsNumber || "")}
+              className="input"
+            />
+          </FormGroup>
+          <div className="grid grid-cols-2 gap-4">
+            <FormGroup label="Start Time (optional)">
+              <input
+                type="time"
+                value={editStartTime}
+                onChange={(e) => setEditStartTime(e.target.value)}
+                className="input"
+              />
+            </FormGroup>
+            <FormGroup label="End Time (optional)">
+              <input
+                type="time"
+                value={editEndTime}
+                onChange={(e) => setEditEndTime(e.target.value)}
+                className="input"
+              />
+            </FormGroup>
+          </div>
+          <Caption>Changes apply to this routine going forward.</Caption>
+          <div className="pt-4 flex justify-end gap-3">
+            <SecondaryButton onClick={() => { 
+              setEditingRoutine(null); 
+              setEditTitle(""); 
+              setEditDescription("");
+              setEditDailySlot("");
+              setEditPlannedMinutes(60);
+              setEditStartTime("");
+              setEditEndTime("");
+            }}>
+              Cancel
+            </SecondaryButton>
+            <PrimaryButton type="submit" disabled={!!updating || !editTitle.trim()}>
+              {updating ? "Saving..." : "Save Changes"}
+            </PrimaryButton>
+          </div>
+        </form>
+      </Dialog>
+
+      {/* Delete Routine Confirmation */}
+      <Dialog
+        open={!!deletingRoutine}
+        onClose={() => setDeletingRoutine(null)}
+        title="Delete Routine"
+        description="This will permanently remove the routine and its history."
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-foreground">
+            Are you sure you want to delete <strong className="font-medium">{deletingRoutine?.title}</strong>?
+            This cannot be undone.
+          </p>
+          <div className="pt-4 flex justify-end gap-3">
+            <SecondaryButton onClick={() => setDeletingRoutine(null)}>
+              Cancel
+            </SecondaryButton>
+            <PrimaryButton
+              onClick={handleDeleteRoutine}
+              disabled={!!updating}
+              className="btn-destructive"
+            >
+              {updating ? "Deleting..." : "Delete Routine"}
+            </PrimaryButton>
+          </div>
+        </div>
+      </Dialog>
+
+      {success && (
+        <div className="fixed bottom-4 right-4 z-50 rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success animate-slide-up">
+          {success}
+        </div>
+      )}
     </div>
   );
 }
@@ -616,12 +853,22 @@ function ConnectedRow({
           </p>
           <Stamp tone="amber">Roadmap</Stamp>
         </div>
-        <p className="mt-0.5 flex items-center gap-2 font-mono text-xs text-graphite-faint">
-          <Moon className="h-3.5 w-3.5" />
-          <span>
-            {item.task.milestoneTitle ?? item.task.phaseTitle} / {item.task.topicTitle ?? "General"}
-          </span>
-        </p>
+        {item.task.description && (
+          <p className="mt-1 truncate text-sm text-graphite-muted line-clamp-2">
+            {item.task.description}
+          </p>
+        )}
+        <div className="mt-0.5 flex items-center gap-3 flex-wrap">
+          <p className="flex items-center gap-2 font-mono text-xs text-graphite-faint">
+            <Moon className="h-3.5 w-3.5" />
+            <span>
+              {item.task.milestoneTitle ?? item.task.phaseTitle} / {item.task.topicTitle ?? "General"}
+            </span>
+          </p>
+          {(item.task.startTime ?? item.task.endTime) && (
+            <CountdownTimer targetTime={item.task.startTime ?? item.task.endTime} />
+          )}
+        </div>
       </div>
       <Stamp tone="neutral" className="text-xs">
         {item.task.priority}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bubble, Stamp, EmptyState } from "@/app/components/ui";
+import { Bubble, Stamp, EmptyState, CountdownTimer } from "@/app/components/ui";
 import {
   useToggleTaskCompleteTodayMutation,
   useUpdateTaskMutation,
@@ -10,10 +10,13 @@ import {
 export type DashboardTaskRow = {
   id: string;
   title: string;
+  description?: string;
   priority: string;
   plannedMinutes: number | null;
   estimatedMinutes: number | null;
   dailySlot: string | null;
+  startTime?: Date | string | null;
+  endTime?: Date | string | null;
   category: { name: string } | null;
   kind: "task" | "routine" | "connected";
   done: boolean;
@@ -108,12 +111,22 @@ export default function DashboardTaskList({
                     <Stamp tone="neutral">Personal</Stamp>
                   )}
                 </div>
-                <p className="mt-0.5 truncate font-mono text-[0.7rem] text-graphite-faint">
-                  {row.dailySlot?.replaceAll("_", " ") ??
-                    row.category?.name ??
-                    "Scheduled"}{" "}
-                  · {row.plannedMinutes ?? row.estimatedMinutes ?? 60}m
-                </p>
+                {row.description && (
+                  <p className="mt-1 truncate text-sm text-graphite-muted line-clamp-2">
+                    {row.description}
+                  </p>
+                )}
+                <div className="mt-0.5 flex items-center gap-3 flex-wrap">
+                  <p className="truncate font-mono text-[0.7rem] text-graphite-faint">
+                    {row.dailySlot?.replaceAll("_", " ") ??
+                      row.category?.name ??
+                      "Scheduled"}{" "}
+                    · {row.plannedMinutes ?? row.estimatedMinutes ?? 60}m
+                  </p>
+                  {(row.startTime || row.endTime) && (
+                    <CountdownTimer targetTime={row.startTime || row.endTime} />
+                  )}
+                </div>
               </div>
               <Stamp tone={urgent ? "stamp" : "neutral"} className="text-[0.7rem]">
                 {row.priority}

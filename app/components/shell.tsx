@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useState } from "react";
 import LogoutButton from "@/app/logout-button";
 import { cn } from "@/lib/utils";
-import { Bell, Menu, X, User, Settings as SettingsIcon } from "lucide-react";
+import { Bell, Menu, X, User } from "lucide-react";
+import { ThemeToggle } from "@/app/components/ui";
 
 const PRIMARY_NAV = [
   { key: "overview", label: "Overview", href: "/", number: "01" },
@@ -129,6 +130,7 @@ export default function AppShell({ active, children, user }: AppShellProps) {
           <BrandMark />
         </div>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors" aria-label="Notifications">
             <Bell className="h-5 w-5" />
           </button>
@@ -198,17 +200,18 @@ export default function AppShell({ active, children, user }: AppShellProps) {
             <div className="border-t border-border p-4 mt-auto">
               <StreakCard />
               <div className="mt-4 rounded-lg bg-muted/50 p-3">
-                <p className="truncate text-sm font-medium text-foreground">
-                  {user.name ?? "Signed in"}
-                </p>
-                <p className="truncate font-mono text-xs text-graphite-faint mt-0.5">
-                  {user.email}
-                </p>
-                <div className="mt-3 flex items-center gap-2">
-                  <button className="btn btn-tertiary text-xs flex-1">
-                    <SettingsIcon className="h-3.5 w-3.5 mr-1" />
-                    Settings
-                  </button>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="truncate text-sm font-medium text-foreground">
+                      {user.name ?? "Signed in"}
+                    </p>
+                    <p className="truncate font-mono text-xs text-graphite-faint mt-0.5">
+                      {user.email}
+                    </p>
+                  </div>
+                  <ThemeToggle />
+                </div>
+                <div className="mt-3 flex items-center justify-end">
                   <LogoutButton />
                 </div>
               </div>

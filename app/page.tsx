@@ -104,11 +104,14 @@ export default async function HomePage() {
     task: {
       id: string;
       title: string;
+      description?: string | null;
       status: string;
       priority: string;
       plannedMinutes: number | null;
       estimatedMinutes: number | null;
       dailySlot: string | null;
+      startTime?: Date | string | null;
+      endTime?: Date | string | null;
       category: { name: string } | null;
     },
     kind: "task" | "routine" | "connected",
@@ -116,10 +119,13 @@ export default async function HomePage() {
   ) => ({
     id: task.id,
     title: task.title,
+    description: task.description ?? undefined,
     priority: task.priority,
     plannedMinutes: task.plannedMinutes,
     estimatedMinutes: task.estimatedMinutes,
     dailySlot: task.dailySlot,
+    startTime: task.startTime instanceof Date ? task.startTime.toISOString() : task.startTime ?? undefined,
+    endTime: task.endTime instanceof Date ? task.endTime.toISOString() : task.endTime ?? undefined,
     category: task.category,
     kind,
     done: extra.done ?? task.status === "COMPLETED",

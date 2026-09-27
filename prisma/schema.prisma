@@ -99,6 +99,8 @@ model Task {
   priority         TaskPriority @default(MEDIUM)
   estimatedMinutes Int?
   dueDate          DateTime?
+  startTime        DateTime?
+  endTime          DateTime?
   status           TaskStatus   @default(TODO)
   completedAt      DateTime?
   taskType         String?
