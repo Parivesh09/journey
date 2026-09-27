@@ -708,3 +708,85 @@ export function CountdownTimer({ targetTime }: { targetTime: Date | string | nul
     </div>
   );
 }
+
+export function TaskTimer({
+  durationMinutes,
+  isRunning,
+  onStart,
+  onComplete,
+  onCancel,
+}: {
+  durationMinutes: number;
+  isRunning: boolean;
+  onStart: () => void;
+  onComplete: () => void;
+  onCancel: () => void;
+}) {
+  const [timeLeft, setTimeLeft] = useState<{ minutes: number; seconds: number } | null>(null);
+  const [hasCompleted, setHasCompleted] = useState(false);
+
+  useEffect(() => {
+    if (!isRunning) {
+      setTimeLeft(null);
+      setHasCompleted(false);
+      return;
+    }
+
+    if (!timeLeft) {
+      setTimeLeft({ minutes: durationMinutes, seconds: 0 });
+    }
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (!prev) return null;
+        if (prev.minutes === 0 && prev.seconds === 0) {
+          clearInterval(interval);
+          setHasCompleted(true);
+          onComplete();
+          return { minutes: 0, seconds: 0 };
+        }
+        if (prev.seconds === 0) {
+          return { minutes: prev.minutes - 1, seconds: 59 };
+        }
+        return { minutes: prev.minutes, seconds: prev.seconds - 1 };
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [isRunning, durationMinutes, timeLeft, onComplete]);
+
+  if (!isRunning && !timeLeft) {
+    return (
+      <button
+        onClick={onStart}
+        className="btn btn-primary text-xs px-3 py-1.5"
+        disabled={hasCompleted}
+      >
+        {hasCompleted ? "Completed" : "Start Task"}
+      </button>
+    );
+  }
+
+  if (hasCompleted) {
+    return (
+      <span className="text-xs font-mono text-success px-2 py-1 rounded bg-success/10">
+        ✓ Done
+      </span>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="font-mono text-xs px-2 py-1 rounded bg-destructive/10 text-destructive">
+        {String(timeLeft?.minutes ?? 0).padStart(2, "0")}:{String(timeLeft?.seconds ?? 0).padStart(2, "0")}
+      </span>
+      <button
+        onClick={onCancel}
+        className="btn btn-tertiary text-xs px-2 py-1"
+        title="Cancel timer"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}

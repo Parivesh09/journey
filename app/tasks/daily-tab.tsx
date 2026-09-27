@@ -14,6 +14,7 @@ import {
   Input,
   Caption,
   CountdownTimer,
+  TaskTimer,
 } from "@/app/components/ui";
 import {
   useGetDailyTasksQuery,
@@ -76,12 +77,22 @@ function RoutineRow({
   onToggle,
   onEdit,
   onDelete,
+  isTimerRunning,
+  isTimerCompleted,
+  onTimerStart,
+  onTimerComplete,
+  onTimerCancel,
 }: {
   routine: Routine;
   updating: boolean;
   onToggle: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  isTimerRunning: boolean;
+  isTimerCompleted: boolean;
+  onTimerStart: () => void;
+  onTimerComplete: () => void;
+  onTimerCancel: () => void;
 }) {
   const minutes = routine.plannedMinutes ?? routine.estimatedMinutes ?? 60;
 
@@ -92,6 +103,7 @@ function RoutineRow({
         busy={updating}
         label={routine.doneToday ? "Mark not done" : "Mark done"}
         onClick={onToggle}
+        disabled={!!routine.plannedMinutes && !isTimerCompleted}
       />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -113,6 +125,15 @@ function RoutineRow({
           </p>
           {(routine.startTime ?? routine.endTime) && (
             <CountdownTimer targetTime={routine.startTime ?? routine.endTime} />
+          )}
+          {routine.plannedMinutes && routine.plannedMinutes > 0 && (
+            <TaskTimer
+              durationMinutes={routine.plannedMinutes}
+              isRunning={isTimerRunning}
+              onStart={onTimerStart}
+              onComplete={onTimerComplete}
+              onCancel={onTimerCancel}
+            />
           )}
         </div>
       </div>
@@ -204,6 +225,8 @@ export default function DailyTab() {
   const [editStartTime, setEditStartTime] = useState("");
   const [editEndTime, setEditEndTime] = useState("");
   const [deletingRoutine, setDeletingRoutine] = useState<Routine | null>(null);
+  const [runningTimers, setRunningTimers] = useState<Set<string>>(new Set());
+  const [completedTimers, setCompletedTimers] = useState<Set<string>>(new Set());
 
   const linkedRoadmapIds = useMemo(
     () => new Set(linkedRoadmaps.map((item) => item.roadmapId)),
@@ -299,6 +322,32 @@ export default function DailyTab() {
     } catch {
       setError("Unable to delete routine. Please try again.");
     }
+  }
+
+  function handleTimerStart(id: string) {
+    setRunningTimers((prev) => new Set(prev).add(id));
+  }
+
+  function handleTimerComplete(id: string) {
+    setRunningTimers((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setCompletedTimers((prev) => new Set(prev).add(id));
+  }
+
+  function handleTimerCancel(id: string) {
+    setRunningTimers((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setCompletedTimers((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
   }
 
   async function handleLinkRoadmap(roadmapId: string) {
@@ -418,6 +467,11 @@ export default function DailyTab() {
                   setEditEndTime(routine.endTime ? new Date(routine.endTime).toISOString().slice(0, 16) : "");
                 }}
                 onDelete={() => setDeletingRoutine(routine)}
+                isTimerRunning={runningTimers.has(routine.id)}
+                isTimerCompleted={completedTimers.has(routine.id)}
+                onTimerStart={() => handleTimerStart(routine.id)}
+                onTimerComplete={() => handleTimerComplete(routine.id)}
+                onTimerCancel={() => handleTimerCancel(routine.id)}
               />
             ))}
           </div>

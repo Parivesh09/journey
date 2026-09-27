@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Bubble, Stamp, EmptyState, CountdownTimer } from "@/app/components/ui";
+import { Bubble, Stamp, EmptyState, CountdownTimer, TaskTimer } from "@/app/components/ui";
 import {
   useToggleTaskCompleteTodayMutation,
   useUpdateTaskMutation,
@@ -30,10 +30,18 @@ export default function DashboardTaskList({
   const [items, setItems] = useState(initialItems);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState("");
+  const [runningTimers, setRunningTimers] = useState<Set<string>>(new Set());
+  const [completedTimers, setCompletedTimers] = useState<Set<string>>(new Set());
   const [toggleTaskCompleteToday] = useToggleTaskCompleteTodayMutation();
   const [updateTask] = useUpdateTaskMutation();
 
   async function toggleTask(row: DashboardTaskRow) {
+    // For routines, allow toggle anytime
+    // For other tasks, require timer to be completed first
+    if (row.kind !== "routine" && row.plannedMinutes && !completedTimers.has(row.id)) {
+      setError("Start the task timer first, then mark as complete.");
+      return;
+    }
     setUpdatingId(row.id);
     setError("");
     try {
@@ -61,6 +69,32 @@ export default function DashboardTaskList({
     }
   }
 
+  function handleTimerStart(id: string) {
+    setRunningTimers((prev) => new Set(prev).add(id));
+  }
+
+  function handleTimerComplete(id: string) {
+    setRunningTimers((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setCompletedTimers((prev) => new Set(prev).add(id));
+  }
+
+  function handleTimerCancel(id: string) {
+    setRunningTimers((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setCompletedTimers((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+  }
+
   if (items.length === 0) {
     return (
       <EmptyState
@@ -81,6 +115,9 @@ export default function DashboardTaskList({
         {items.map((row, index) => {
           const busy = updatingId === row.id;
           const urgent = ["HIGH", "CRITICAL"].includes(row.priority);
+          const isTimerRunning = runningTimers.has(row.id);
+          const isTimerCompleted = completedTimers.has(row.id);
+          const showTimer = row.plannedMinutes && row.plannedMinutes > 0;
 
           return (
             <div
@@ -95,6 +132,7 @@ export default function DashboardTaskList({
                 busy={busy}
                 label={row.done ? "Mark incomplete" : "Mark complete"}
                 onClick={() => toggleTask(row)}
+                disabled={row.kind !== "routine" && !!row.plannedMinutes && !isTimerCompleted}
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -125,6 +163,15 @@ export default function DashboardTaskList({
                   </p>
                   {(row.startTime || row.endTime) && (
                     <CountdownTimer targetTime={row.startTime || row.endTime} />
+                  )}
+                  {showTimer && (
+                    <TaskTimer
+                      durationMinutes={row.plannedMinutes!}
+                      isRunning={isTimerRunning}
+                      onStart={() => handleTimerStart(row.id)}
+                      onComplete={() => handleTimerComplete(row.id)}
+                      onCancel={() => handleTimerCancel(row.id)}
+                    />
                   )}
                 </div>
               </div>
