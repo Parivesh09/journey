@@ -1,24 +1,43 @@
-export type MilestoneTask = {
+import type { TaskPriority, TaskStatus } from "./task";
+
+export interface Prerequisite {
   id: string;
   title: string;
-  status: string;
-  priority: string;
+  met: boolean;
+}
+
+export interface MilestoneProgress {
+  completed: number;
+  total: number;
+  percent: number;
+}
+
+export interface MilestoneTask {
+  id: string;
+  title: string;
+  status: TaskStatus;
+  priority: TaskPriority;
   taskType: string | null;
   difficulty: string | null;
   phaseTitle: string | null;
   topicTitle: string | null;
   sequenceOrder: number;
-};
+}
 
-export type MilestoneTopic = { id: string; title: string; tasks: MilestoneTask[] };
-export type MilestonePhase = {
+export interface MilestoneTopic {
+  id: string;
+  title: string;
+  tasks: MilestoneTask[];
+}
+
+export interface MilestonePhase {
   id: string;
   title: string;
   category: string | null;
   topics: MilestoneTopic[];
-};
+}
 
-export type Milestone = {
+export interface Milestone {
   id: string;
   title: string;
   description?: string;
@@ -27,21 +46,33 @@ export type Milestone = {
   manuallyCompleted: boolean;
   prereqMet: boolean;
   needsManualCompletion: boolean;
-  prerequisites: Array<{ id: string; title: string; met: boolean }>;
-  progress: { completed: number; total: number; percent: number };
+  prerequisites: Prerequisite[];
+  progress: MilestoneProgress;
   phases: MilestonePhase[];
   nextUpTaskId: string | null;
-};
+}
 
-export const KNOWN_TEMPLATES = [
-  { roadmapId: "fullstack-v1", title: "Full Stack Web Development" },
-  { roadmapId: "sde-master-roadmap", title: "SDE Master Roadmap" },
-];
+export interface MilestonesData {
+  roadmap: import("./roadmap").RoadmapSummary;
+  nextUpTaskId: string | null;
+  milestones: Milestone[];
+  pinnedTaskIds: string[];
+  phases: MilestonePhase[];
+}
 
-export const RAMP =
-  "linear-gradient(90deg, var(--color-amber-ink), var(--color-amber))";
+export interface MilestonesResponse extends MilestonesData {}
 
-export type Filters = {
+export interface CompleteMilestoneRequest {
+  milestoneId: string;
+  roadmapId: string;
+}
+
+export interface MilestoneStatusPill {
+  label: string;
+  tone: "neutral" | "valid" | "amber";
+}
+
+export interface Filters {
   q: string;
   category: string;
   phaseId: string;
@@ -49,7 +80,7 @@ export type Filters = {
   taskType: string;
   status: string;
   difficulty: string;
-};
+}
 
 export const emptyFilters: Filters = {
   q: "",
@@ -104,3 +135,11 @@ export function statusPill(milestone: Milestone): {
     };
   return { label: "In progress", tone: "amber" };
 }
+
+export const KNOWN_TEMPLATES = [
+  { roadmapId: "fullstack-v1", title: "Full Stack Web Development" },
+  { roadmapId: "sde-master-roadmap", title: "SDE Master Roadmap" },
+] as const;
+
+export const RAMP =
+  "linear-gradient(90deg, var(--color-amber-ink), var(--color-amber))";

@@ -11,6 +11,7 @@ import { getDailyItems } from "@/lib/business/daily-items";
 import { defaultStudyPlan } from "@/lib/data/mock-data";
 import { prisma } from "@/lib/prisma";
 import { formatMinutes, toPercent } from "@/lib/utils";
+import type { RoadmapTemplate } from "@/lib/business/roadmap-templates";
 
 export const dynamic = "force-dynamic";
 
@@ -167,7 +168,7 @@ export default async function HomePage() {
         return null;
       }
     })
-  ).then(results => results.filter((r): r is { roadmap: any } => r !== null));
+  ).then((results): { roadmap: RoadmapTemplate }[] => results.filter((r): r is { roadmap: RoadmapTemplate } => r !== null));
 
   return (
     <AppShell active="overview" user={{ name: user.name, email: user.email }}>

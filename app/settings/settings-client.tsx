@@ -118,10 +118,11 @@ export default function SettingsClient() {
       await saveNotificationSettings(notificationSettings).unwrap();
       setMessage("Notification settings saved.");
       return true;
-    } catch (reason: any) {
+    } catch (reason: unknown) {
+      const error = reason as { data?: { error?: string } } | undefined;
       setError(
-        typeof reason?.data?.error === "string"
-          ? reason.data.error
+        typeof error?.data?.error === "string"
+          ? error.data.error
           : "Failed to save notification settings",
       );
       return false;

@@ -6,10 +6,11 @@ import { ArrowLeft } from "lucide-react";
 import AppShell from "@/app/components/shell";
 import { PageHeader, Sheet, SectionHead, Stamp, Card, CardContent, Num, ProgressBar } from "@/app/components/ui";
 import TemplateAccordion from "../../../roadmaps/template-accordion";
+import type { RoadmapTemplate } from "@/lib/business/roadmap-templates";
 
 interface RoadmapDetailClientProps {
   user: { name: string | null; email: string };
-  template: any;
+  template: RoadmapTemplate;
   activated: boolean;
   overallProgress: number;
   completedMilestones: number;
