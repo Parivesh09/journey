@@ -29,8 +29,8 @@ export interface Task {
   title: string;
   description: string | null;
   categoryId: string | null;
-  priority: TaskPriority;
-  status: TaskStatus;
+  priority: import("./task").TaskPriority;
+  status: import("./task").TaskStatus;
   estimatedMinutes: number;
   plannedHours: number | null;
   plannedMinutes: number | null;
@@ -55,9 +55,6 @@ export interface Task {
   updatedAt: Date;
   category?: TaskCategory | null;
 }
-
-export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-export type TaskStatus = "TODO" | "IN_PROGRESS" | "COMPLETED" | "SKIPPED";
 
 export interface RoutineTask extends Task {
   doneToday: boolean;
@@ -91,7 +88,7 @@ export interface RoadmapSummary {
   description: string | null;
   activated: boolean;
   dailyTaskCount?: number;
-  phases?: RoadmapPhase[];
+  phases?: import("./roadmap").RoadmapPhase[];
 }
 
 export interface RoadmapPhase {
@@ -182,6 +179,8 @@ export interface PinTaskResponse {
   pin: DailyPin;
 }
 
+import type { TaskPriority, TaskStatus } from "./task";
+
 export interface MilestoneTask {
   id: string;
   title: string;
@@ -242,8 +241,7 @@ export interface MilestonesData {
   phases: MilestonePhase[];
 }
 
-export interface MilestonesResponse extends MilestonesData {
-}
+export interface MilestonesResponse extends MilestonesData {}
 
 export interface CompleteMilestoneRequest {
   milestoneId: string;

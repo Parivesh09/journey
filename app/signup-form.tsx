@@ -36,10 +36,11 @@ export default function SignupForm() {
       }).unwrap();
       router.push("/");
       router.refresh();
-    } catch (reason: any) {
+    } catch (reason: unknown) {
+      const error = reason as { data?: { error?: string } } | undefined;
       setError(
-        typeof reason?.data?.error === "string"
-          ? reason.data.error
+        typeof error?.data?.error === "string"
+          ? error.data.error
           : "Unable to create your account.",
       );
     } finally {

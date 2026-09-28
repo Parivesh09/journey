@@ -21,10 +21,11 @@ export default function ActivateButton({ templateId }: Props) {
     try {
       await activateRoadmap(templateId).unwrap();
       setActivated(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const error = err as { data?: { error?: string } } | undefined;
       setError(
-        typeof err?.data?.error === "string"
-          ? err.data.error
+        typeof error?.data?.error === "string"
+          ? error.data.error
           : "Failed to activate roadmap",
       );
     } finally {

@@ -7,8 +7,8 @@ import {
   SectionHead,
   Stamp,
 } from "@/app/components/ui";
-import type { Milestone, Filters, MilestoneTask } from "./roadmap-types";
-import { taskMatches, visiblePhases, statusPill, RAMP } from "./roadmap-types";
+import type { Milestone, Filters, MilestoneTask } from "@/lib/types";
+import { taskMatches, visiblePhases, statusPill, RAMP } from "@/lib/types";
 
 interface MilestoneCardProps {
   milestone: Milestone;

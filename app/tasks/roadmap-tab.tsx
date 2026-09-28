@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useGetMilestonesQuery, useGetDailyPinsQuery, useGetRoadmapsQuery, useUpdateTaskMutation } from "@/lib/api";
-import type { RoadmapSummary, MilestonesData, Filters } from "@/lib/types";
+import type { RoadmapSummary, MilestonesData, Filters, RoadmapPhase, RoadmapTopic, RoadmapTask } from "@/lib/types";
 import { SectionHead, Stamp, Card, CardContent, Num } from "@/app/components/ui";
 import { extractErrorMessage } from "@/lib/utils";
 
@@ -76,7 +76,7 @@ function RoadmapCard({ roadmap }: { roadmap: RoadmapSummary }) {
     }
   }, [milestonesData]);
 
-  async function handleToggleTask(task: any) {
+  async function handleToggleTask(task: { id: string; status: string }) {
     try {
       await updateTask({
         id: task.id,
@@ -97,16 +97,16 @@ function RoadmapCard({ roadmap }: { roadmap: RoadmapSummary }) {
     : 0;
 
   const totalPhases = roadmap.phases?.length ?? 0;
-  const phasesArr = (roadmap.phases ?? []) as any[];
+  const phasesArr: RoadmapPhase[] = roadmap.phases ?? [];
   const totalTopics = phasesArr.reduce(
-    (sum: number, p: any) => sum + (p.topics ?? []).length,
+    (sum: number, p: RoadmapPhase) => sum + (p.topics ?? []).length,
     0,
   ) ?? 0;
   const totalTasks = phasesArr.reduce(
-    (sum: number, p: any) =>
+    (sum: number, p: RoadmapPhase) =>
       sum +
       (p.topics ?? []).reduce(
-        (tSum: number, t: any) => tSum + (t.tasks ?? []).length,
+        (tSum: number, t: RoadmapTopic) => tSum + (t.tasks ?? []).length,
         0,
       ),
     0,

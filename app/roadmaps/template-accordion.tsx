@@ -4,36 +4,10 @@ import { useEffect, useState } from "react";
 import { ArrowRight, ChevronDown, X, Play, Pause, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTaskTimer } from "@/app/components/task-timer-context";
+import type { RoadmapTemplatePhase, RoadmapTemplateTopic, RoadmapTemplateTask, RoadmapTemplateMilestone } from "@/lib/types/roadmap";
 
-type Phase = {
-  id: string;
-  title: string;
-  category?: string;
-  topics?: {
-    id: string;
-    title: string;
-    category?: string;
-    estimated_days?: number;
-    tasks?: {
-      id: string;
-      title: string;
-      type?: string;
-      difficulty?: string;
-      estimatedMinutes?: number;
-      plannedHours?: number;
-      plannedMinutes?: number;
-      plannedSeconds?: number;
-    }[];
-  }[];
-};
-
-type Milestone = {
-  id: string;
-  title: string;
-  description?: string;
-  phases: string[];
-  prerequisites: string[];
-};
+type Phase = RoadmapTemplatePhase;
+type Milestone = RoadmapTemplateMilestone;
 
 interface TemplateAccordionProps {
   milestones: Milestone[];
@@ -55,16 +29,7 @@ function TaskItem({
   topicTitle,
   enableTaskTimer,
 }: {
-  task: {
-    id: string;
-    title: string;
-    type?: string;
-    difficulty?: string;
-    estimatedMinutes?: number;
-    plannedHours?: number;
-    plannedMinutes?: number;
-    plannedSeconds?: number;
-  };
+  task: RoadmapTemplateTask;
   taskIndex: number;
   phaseTitle: string;
   topicTitle: string;
