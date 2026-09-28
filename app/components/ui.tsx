@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import type { ReactNode } from "react";
 import type { InputHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
+import { Play, X } from "lucide-react";
 
 export function Sheet({
   className,
@@ -817,10 +818,12 @@ export function TaskTimer({
     return (
       <button
         onClick={onStart}
-        className="btn btn-primary text-xs px-3 py-1.5"
+        className="p-1.5 rounded hover:bg-primary/10 hover:text-primary transition-colors"
         disabled={hasCompleted}
+        aria-label={hasCompleted ? "Completed" : "Start Task"}
+        title={hasCompleted ? "Completed" : "Start Task"}
       >
-        {hasCompleted ? "Completed" : "Start Task"}
+        <Play className="h-3.5 w-3.5" />
       </button>
     );
   }
@@ -841,10 +844,11 @@ export function TaskTimer({
       </span>
       <button
         onClick={onCancel}
-        className="btn btn-tertiary text-xs px-2 py-1"
+        className="p-1.5 rounded hover:bg-muted transition-colors"
+        aria-label="Cancel timer"
         title="Cancel timer"
       >
-        ✕
+        <X className="h-3.5 w-3.5" />
       </button>
     </div>
   );

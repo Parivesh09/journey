@@ -81,15 +81,16 @@ function TaskItem({
         {task.title}
       </span>
       {showTimer && isActive && (
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="flex items-center gap-1 ml-auto">
           <span className="font-mono text-xs px-2 py-1 rounded bg-destructive/10 text-destructive">
             {formatTime(state.remainingMs)}
           </span>
           {isRunning && (
             <button
               onClick={pauseTask}
-              className="btn btn-tertiary text-xs px-2 py-1"
+              className="p-1.5 rounded hover:bg-muted transition-colors"
               aria-label="Pause timer"
+              title="Pause timer"
             >
               <Pause className="w-3.5 h-3.5" />
             </button>
@@ -97,16 +98,18 @@ function TaskItem({
           {isPaused && (
             <button
               onClick={resumeTask}
-              className="btn btn-primary text-xs px-2 py-1"
+              className="p-1.5 rounded hover:bg-muted transition-colors"
               aria-label="Resume timer"
+              title="Resume timer"
             >
-              <Play className="w-3.5 h-3.5" />
+              <Play className="w-3.5 w-3.5" />
             </button>
           )}
           <button
             onClick={restartTask}
-            className="btn btn-tertiary text-xs px-2 py-1"
+            className="p-1.5 rounded hover:bg-muted transition-colors opacity-50 cursor-not-allowed"
             aria-label="Restart timer"
+            title="Restart timer"
             disabled={!isRunning && !isPaused}
           >
             <RotateCcw className="w-3.5 h-3.5" />
@@ -116,10 +119,11 @@ function TaskItem({
       {showTimer && !isActive && canStartTask(task.id) && (
         <button
           onClick={handleStart}
-          className="btn btn-primary text-xs px-3 py-1.5 ml-auto"
+          className="p-1.5 rounded hover:bg-primary/10 hover:text-primary transition-colors ml-auto"
+          aria-label="Start Task"
+          title="Start Task"
         >
           <Play className="w-3.5 h-3.5" />
-          Start
         </button>
       )}
     </div>

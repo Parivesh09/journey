@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
-import { Plus, Link as LinkIcon, Edit, Trash2, Sun, Moon, Coffee } from "lucide-react";
+import { Plus, Link as LinkIcon, Edit, Trash2, Sun, Moon, Coffee, Play, Pause, RotateCcw } from "lucide-react";
 import {
   SectionHead,
   Stamp,
@@ -145,52 +145,61 @@ function RoutineRow({
             <CountdownTimer targetTime={routine.startTime ?? routine.endTime} />
           )}
           {showTimer && isActive && (
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-xs px-2 py-1 rounded bg-destructive/10 text-destructive">
-                {String(Math.floor(state.remainingMs / 60000)).padStart(2, "0")}:{String(Math.floor((state.remainingMs % 60000) / 1000)).padStart(2, "0")}
-              </span>
-              {isRunning && (
-                <button
-                  onClick={handlePause}
-                  className="btn btn-tertiary text-xs px-2 py-1"
-                  aria-label="Pause timer"
-                >
-                  ❚❚
-                </button>
-              )}
-              {isPaused && (
-                <button
-                  onClick={handleResume}
-                  className="btn btn-primary text-xs px-2 py-1"
-                  aria-label="Resume timer"
-                >
-                  ▶
-                </button>
-              )}
-              <button
-                onClick={handleRestart}
-                className="btn btn-tertiary text-xs px-2 py-1"
-                aria-label="Restart timer"
-                disabled={!isRunning && !isPaused}
-              >
-                ↻
-              </button>
-            </div>
-          )}
-          {showTimer && !isActive && canStartTask(routine.id) && (
-            <button
-              onClick={handleStart}
-              className="btn btn-primary text-xs px-3 py-1.5"
-            >
-              Start Task
-            </button>
+            <span className="font-mono text-xs px-2 py-1 rounded bg-destructive/10 text-destructive">
+              {String(Math.floor(state.remainingMs / 60000)).padStart(2, "0")}:{String(Math.floor((state.remainingMs % 60000) / 1000)).padStart(2, "0")}
+            </span>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2">
-        <Stamp tone="neutral" className="text-xs">
+      <div className="flex items-center gap-1.5">
+        <Stamp tone="neutral" className="text-xs shrink-0">
           {routine.priority}
         </Stamp>
+        {showTimer && isActive && (
+          <div className="flex items-center gap-1">
+            {isRunning && (
+              <button
+                onClick={handlePause}
+                className="p-1.5 rounded hover:bg-muted transition-colors"
+                aria-label="Pause timer"
+                title="Pause timer"
+              >
+                <Pause className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {isPaused && (
+              <button
+                onClick={handleResume}
+                className="p-1.5 rounded hover:bg-muted transition-colors"
+                aria-label="Resume timer"
+                title="Resume timer"
+              >
+                <Play className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {(!isRunning && !isPaused) && (
+              <button
+                onClick={handleRestart}
+                className="p-1.5 rounded hover:bg-muted transition-colors opacity-50 cursor-not-allowed"
+                aria-label="Restart timer"
+                title="Restart timer"
+                disabled
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        )}
+        {showTimer && !isActive && canStartTask(routine.id) && (
+          <button
+            onClick={handleStart}
+            className="p-1.5 rounded hover:bg-primary/10 hover:text-primary transition-colors"
+            aria-label="Start Task"
+            title="Start Task"
+          >
+            <Play className="h-3.5 w-3.5" />
+          </button>
+        )}
         {onEdit && (
           <button
             type="button"
@@ -199,8 +208,9 @@ function RoutineRow({
               e.preventDefault();
               onEdit();
             }}
-            className="p-1 hover:text-foreground text-graphite-faint transition-opacity cursor-pointer"
+            className="p-1.5 rounded hover:bg-muted hover:text-foreground transition-colors cursor-pointer"
             style={{ pointerEvents: "auto", zIndex: 10 }}
+            aria-label="Edit routine"
             title="Edit routine"
           >
             <Edit className="h-3.5 w-3.5" />
@@ -214,8 +224,9 @@ function RoutineRow({
               e.preventDefault();
               onDelete();
             }}
-            className="p-1 hover:text-destructive text-graphite-faint cursor-pointer"
+            className="p-1.5 rounded hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
             style={{ pointerEvents: "auto", zIndex: 10 }}
+            aria-label="Delete routine"
             title="Delete routine"
           >
             <Trash2 className="h-3.5 w-3.5" />

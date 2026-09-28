@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Bubble, Stamp, EmptyState, CountdownTimer } from "@/app/components/ui";
+import { Play, Pause, RotateCcw } from "lucide-react";
 import { useTaskTimer } from "@/app/components/task-timer-context";
 import {
   useToggleTaskCompleteTodayMutation,
@@ -158,51 +159,62 @@ export default function DashboardTaskList({
                     <CountdownTimer targetTime={row.startTime || row.endTime} />
                   )}
                   {showTimer && isActive && (
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs px-2 py-1 rounded bg-destructive/10 text-destructive">
-                        {String(Math.floor(state.remainingMs / 60000)).padStart(2, "0")}:{String(Math.floor((state.remainingMs % 60000) / 1000)).padStart(2, "0")}
-                      </span>
-                      {isRunning && (
-                        <button
-                          onClick={handlePause}
-                          className="btn btn-tertiary text-xs px-2 py-1"
-                          aria-label="Pause timer"
-                        >
-                          ❚❚
-                        </button>
-                      )}
-                      {isPaused && (
-                        <button
-                          onClick={handleResume}
-                          className="btn btn-primary text-xs px-2 py-1"
-                          aria-label="Resume timer"
-                        >
-                          ▶
-                        </button>
-                      )}
-                      <button
-                        onClick={handleRestart}
-                        className="btn btn-tertiary text-xs px-2 py-1"
-                        aria-label="Restart timer"
-                        disabled={!isRunning && !isPaused}
-                      >
-                        ↻
-                      </button>
-                    </div>
-                  )}
-                  {showTimer && !isActive && canStartTask(row.id) && (
-                    <button
-                      onClick={handleStart}
-                      className="btn btn-primary text-xs px-3 py-1.5"
-                    >
-                      Start Task
-                    </button>
+                    <span className="font-mono text-xs px-2 py-1 rounded bg-destructive/10 text-destructive">
+                      {String(Math.floor(state.remainingMs / 60000)).padStart(2, "0")}:{String(Math.floor((state.remainingMs % 60000) / 1000)).padStart(2, "0")}
+                    </span>
                   )}
                 </div>
               </div>
-              <Stamp tone={urgent ? "stamp" : "neutral"} className="text-[0.7rem]">
-                {row.priority}
-              </Stamp>
+              <div className="flex items-center gap-1.5">
+                <Stamp tone={urgent ? "stamp" : "neutral"} className="text-[0.7rem] shrink-0">
+                  {row.priority}
+                </Stamp>
+                {showTimer && isActive && (
+                  <div className="flex items-center gap-1">
+                    {isRunning && (
+                      <button
+                        onClick={handlePause}
+                        className="p-1.5 rounded hover:bg-muted transition-colors"
+                        aria-label="Pause timer"
+                        title="Pause timer"
+                      >
+                        <Pause className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    {isPaused && (
+                      <button
+                        onClick={handleResume}
+                        className="p-1.5 rounded hover:bg-muted transition-colors"
+                        aria-label="Resume timer"
+                        title="Resume timer"
+                      >
+                        <Play className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                    {(!isRunning && !isPaused) && (
+                      <button
+                        onClick={handleRestart}
+                        className="p-1.5 rounded hover:bg-muted transition-colors opacity-50 cursor-not-allowed"
+                        aria-label="Restart timer"
+                        title="Restart timer"
+                        disabled
+                      >
+                        <RotateCcw className="h-3.5 w-3.5" />
+                      </button>
+                    )}
+                  </div>
+                )}
+                {showTimer && !isActive && canStartTask(row.id) && (
+                  <button
+                    onClick={handleStart}
+                    className="p-1.5 rounded hover:bg-primary/10 hover:text-primary transition-colors"
+                    aria-label="Start Task"
+                    title="Start Task"
+                  >
+                    <Play className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
