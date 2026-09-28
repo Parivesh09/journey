@@ -114,8 +114,8 @@ function RoutineRow({
   const handleResume = () => resumeTask();
   const handleRestart = () => restartTask();
 
-  return (
-    <div className="task-row py-3 group">
+    return (
+    <div className="task-row py-3 group transition-colors duration-fast hover:bg-muted/30">
       <Bubble
         filled={routine.doneToday}
         busy={updating}
@@ -126,7 +126,11 @@ function RoutineRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p
-            className={`truncate text-sm ${routine.doneToday ? "text-graphite-faint line-through" : "text-foreground font-medium"}`}
+            className={`truncate text-sm transition-all duration-fast ${
+              routine.doneToday 
+                ? "text-graphite-faint line-through opacity-60" 
+                : "text-foreground font-medium"
+            }`}
           >
             {routine.title}
           </p>

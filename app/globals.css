@@ -63,9 +63,23 @@
   --max-width: 1280px;
   --sidebar-width: 280px;
 
-  /* Motion */
+  /* Motion - Enhanced System */
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in: cubic-bezier(0.32, 0, 0.67, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  
+  /* Motion Durations */
+  --duration-micro: 100ms;
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-moderate: 250ms;
+  --duration-slow: 300ms;
+  --duration-page: 350ms;
+  
+  /* Motion Timing Functions */
+  --ease-enter: var(--ease-out);
+  --ease-exit: var(--ease-in);
+  --ease-state: var(--ease-in-out);
 
   /* Radii - Organic */
   --card-radius: 16px;
@@ -390,11 +404,20 @@ p {
   border-radius: var(--card-radius);
   box-shadow: var(--card-elevation);
   border: 1px solid var(--border);
-  transition: box-shadow 250ms var(--ease-out);
+  transition: box-shadow var(--duration-moderate) var(--ease-state), 
+              border-color var(--duration-fast) var(--ease-state),
+              transform var(--duration-fast) var(--ease-state);
 }
 
 .card:hover {
   box-shadow: var(--card-elevation-hover);
+  border-color: color-mix(in srgb, var(--border) 70%, var(--primary));
+  transform: translateY(-1px);
+}
+
+.card:active {
+  transform: translateY(0);
+  box-shadow: var(--card-elevation);
 }
 
 .card-padding {
@@ -422,20 +445,52 @@ p {
   font-family: var(--font-body);
   font-weight: 500;
   font-size: var(--text-base);
-  transition: all 150ms var(--ease-out);
+  transition: all var(--duration-fast) var(--ease-state);
   cursor: pointer;
   user-select: none;
   border: 1px solid transparent;
   min-height: 44px;
+  position: relative;
+  overflow: hidden;
 }
 
-.btn:active {
+.btn:active:not(:disabled) {
   transform: scale(0.98);
 }
 
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Focus states - accessible and smooth */
+.btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+/* Icon transition in buttons */
+.btn svg {
+  transition: transform var(--duration-fast) var(--ease-state);
+}
+
+/* Subtle ripple effect on press */
+.btn::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0;
+  transform: scale(0);
+  border-radius: inherit;
+  transition: opacity var(--duration-fast), transform 0.1s;
+  pointer-events: none;
+}
+
+.btn:active:not(:disabled)::after {
+  opacity: 0.08;
+  transform: scale(2.5);
+  transition: 0s;
 }
 
 .btn-primary {
@@ -486,6 +541,17 @@ p {
   background: color-mix(in srgb, var(--destructive) 90%, black);
 }
 
+/* Line/outline button variant */
+.btn-line {
+  background: transparent;
+  border-color: currentColor;
+  color: currentColor;
+}
+
+.btn-line:hover:not(:disabled) {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
 /* Inputs */
 .input {
   width: 100%;
@@ -496,12 +562,13 @@ p {
   color: var(--foreground);
   font-family: var(--font-body);
   font-size: var(--text-base);
-  transition: all 150ms var(--ease-out);
+  transition: all var(--duration-fast) var(--ease-state);
   min-height: 44px;
 }
 
 .input::placeholder {
   color: var(--color-graphite-faint);
+  transition: color var(--duration-fast) var(--ease-state);
 }
 
 .input:hover {
@@ -512,6 +579,10 @@ p {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.input:focus::placeholder {
+  color: var(--color-graphite-muted);
 }
 
 /* Field (backwards compatibility) */
@@ -607,7 +678,7 @@ p {
 .progress-bar-fill {
   height: 100%;
   background-color: var(--primary);
-  transition: width 500ms var(--ease-out);
+  transition: width var(--duration-moderate) var(--ease-enter);
   border-radius: 9999px;
 }
 
@@ -637,17 +708,19 @@ p {
   border: 2px solid var(--border);
   background: var(--surface);
   cursor: pointer;
-  transition: all 200ms var(--ease-out);
+  transition: all var(--duration-fast) var(--ease-state);
   flex-shrink: 0;
   display: grid;
   place-items: center;
   font-family: var(--font-mono);
   font-size: 0.85rem;
   color: var(--color-graphite-faint);
+  user-select: none;
 }
 
 .bubble::before {
   content: "";
+  transition: transform var(--duration-fast) var(--ease-enter);
 }
 
 .bubble[data-filled="true"] {
@@ -658,11 +731,16 @@ p {
 
 .bubble[data-filled="true"]::before {
   content: "✓";
+  animation: scaleIn var(--duration-normal) var(--ease-enter);
 }
 
 .bubble:hover:not(:disabled) {
   border-color: var(--primary);
-  transform: scale(1.05);
+  transform: scale(1.08);
+}
+
+.bubble:active:not(:disabled) {
+  transform: scale(0.95);
 }
 
 /* Task Row */
@@ -688,7 +766,189 @@ p {
   color: var(--color-graphite-faint);
 }
 
-/* Motion */
+/* ============================================
+   MOTION SYSTEM
+   ============================================ */
+
+/* Base Motion Utilities */
+@layer utilities {
+  /* Transition utilities */
+  .transition-micro {
+    transition-duration: var(--duration-micro);
+    transition-timing-function: var(--ease-state);
+  }
+  
+  .transition-fast {
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-state);
+  }
+  
+  .transition-normal {
+    transition-duration: var(--duration-normal);
+    transition-timing-function: var(--ease-state);
+  }
+  
+  .transition-moderate {
+    transition-duration: var(--duration-moderate);
+    transition-timing-function: var(--ease-state);
+  }
+  
+  .transition-slow {
+    transition-duration: var(--duration-slow);
+    transition-timing-function: var(--ease-state);
+  }
+  
+  /* Enter animations */
+  .animate-fade-in {
+    animation: fadeIn var(--duration-normal) var(--ease-enter) both;
+  }
+  
+  .animate-slide-in-up {
+    animation: slideInUp var(--duration-normal) var(--ease-enter) both;
+  }
+  
+  .animate-slide-in-right {
+    animation: slideInRight var(--duration-moderate) var(--ease-enter) both;
+  }
+  
+  .animate-slide-in-left {
+    animation: slideInLeft var(--duration-moderate) var(--ease-enter) both;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn var(--duration-normal) var(--ease-enter) both;
+  }
+  
+  /* Exit animations */
+  .animate-fade-out {
+    animation: fadeOut var(--duration-normal) var(--ease-exit) both;
+  }
+  
+  .animate-slide-out-down {
+    animation: slideOutDown var(--duration-normal) var(--ease-exit) both;
+  }
+  
+  /* State transitions */
+  .transition-state {
+    transition: all var(--duration-fast) var(--ease-state);
+  }
+  
+  /* GPU-accelerated properties */
+  .gpu-transition {
+    transition-property: transform, opacity;
+    transition-duration: var(--duration-normal);
+    transition-timing-function: var(--ease-state);
+    will-change: transform, opacity;
+  }
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideOutDown {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Skeleton loading animation */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 25%,
+    var(--border) 50%,
+    var(--muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ============================================
+   REDUCED MOTION SUPPORT
+   ============================================ */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -696,6 +956,14 @@ p {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  /* Preserve essential transitions for accessibility */
+  .btn:focus-visible,
+  .input:focus-visible,
+  .nav-item:focus-visible {
+    transition-duration: 0.1s;
   }
 }
 

@@ -204,9 +204,9 @@ export function TaskTimerProvider({ children }: { children: ReactNode }) {
     if (state.status !== "running") return;
     const interval = setInterval(() => {
       dispatch({ type: "TICK", now: Date.now() });
-    }, 200);
+    }, 250);
     return () => clearInterval(interval);
-  }, [state.status]);
+  }, [state.status, state.activeTask?.id]);
 
   const startTask = useCallback((task: ActiveTask) => {
     dispatch({ type: "START", task });

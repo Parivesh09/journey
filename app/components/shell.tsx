@@ -70,15 +70,20 @@ function NavItem({ item, isActive, isSecondary = false }: {
       href={item.href}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "flex items-center gap-3 px-3 py-2.5 text-sm transition-colors rounded-lg",
+        "flex items-center gap-3 px-3 py-2.5 text-sm rounded-lg relative",
+        "transition-all duration-fast",
+        "hover:translate-x-0.5",
         isActive
           ? "bg-primary/5 text-primary border-l-4 border-primary"
           : "text-graphite-muted hover:text-foreground hover:bg-muted/50",
         isSecondary && "text-graphite-muted"
       )}
     >
+      {isActive && (
+        <span className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary animate-slide-in-left" />
+      )}
       <span className={cn(
-        "font-mono text-xs w-5 tabular-nums",
+        "font-mono text-xs w-5 tabular-nums transition-colors duration-fast",
         isActive ? "text-primary" : "text-graphite-faint"
       )}>
         {item.number}
@@ -224,7 +229,8 @@ export default function AppShell({ active, children, user }: AppShellProps) {
 
         {/* Desktop Sidebar */}
         <aside className={cn(
-          "fixed inset-y-0 left-0 z-50 hidden w-[280px] bg-surface border-r border-border md:flex md:flex-col transition-transform duration-300 ease-out",
+          "fixed inset-y-0 left-0 z-50 hidden w-[280px] bg-surface border-r border-border md:flex md:flex-col",
+          "transition-transform duration-moderate ease-out will-change-transform",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}>
           {/* Mobile overlay */}

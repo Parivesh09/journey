@@ -52,6 +52,7 @@ export default function RoadmapTab({
 
 function RoadmapCard({ roadmap }: { roadmap: RoadmapSummary }) {
   const router = useRouter();
+  const [isHovered, setIsHovered] = useState(false);
   const { data: milestonesData, isLoading, isFetching, isError } = useGetMilestonesQuery(roadmap.id);
   const { data: pinsData } = useGetDailyPinsQuery(undefined);
   const [updateTask] = useUpdateTaskMutation();
@@ -116,8 +117,11 @@ function RoadmapCard({ roadmap }: { roadmap: RoadmapSummary }) {
     <div
       onClick={handleNavigate}
       className="group block h-full cursor-pointer"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <Card className="h-full">
+      <Card className={`h-full transition-all duration-normal ${isHovered ? 'transform -translate-y-0.5' : ''}`}>
+
         <CardContent className="p-5">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">

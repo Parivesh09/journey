@@ -88,7 +88,7 @@ export function GlobalTaskTimer() {
     return (
       <div
         className={cn(
-          "fixed bottom-4 right-4 z-50 card transition-all duration-300",
+          "fixed bottom-4 right-4 z-50 card gpu-transition",
           "md:bottom-6 md:right-6",
           "animate-slide-in-up",
         )}
@@ -216,7 +216,8 @@ export function GlobalTaskTimer() {
           <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
             <div
               className={cn(
-                "h-full rounded-full transition-all duration-1000 ease-out",
+                "h-full rounded-full gpu-transition",
+                "duration-2000 ease-linear",
                 isRunning && "bg-primary",
                 isPaused && "bg-amber",
                 isCompleted && "bg-destructive",

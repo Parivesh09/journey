@@ -35,23 +35,26 @@ export default function TasksWorkspace({
           subtitle="Your daily routines and roadmap progress in one view"
         />
 
-        <div className="border-b border-border mb-8">
+        <div className="border-b border-border mb-8 relative">
           <div className="flex items-center gap-8">
             {tabs.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => setTab(item.id)}
-                className={`pb-3 border-b-2 transition-colors font-medium ${
+                className={`pb-3 border-b-2 font-medium relative transition-all duration-fast ${
                   tab === item.id
-                    ? "border-primary text-foreground"
+                    ? "text-foreground"
                     : "border-transparent text-graphite-muted hover:text-foreground"
                 }`}
               >
                 {item.label}
+                {tab === item.id && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary animate-slide-in-left" />
+                )}
               </button>
             ))}
-            <div className="ml-auto text-sm text-graphite-faint hidden sm:block">
+            <div className="ml-auto text-sm text-graphite-faint hidden sm:block transition-opacity duration-normal">
               {tabs.find((item) => item.id === tab)?.description}
             </div>
           </div>

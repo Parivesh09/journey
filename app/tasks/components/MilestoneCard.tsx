@@ -175,15 +175,15 @@ export function MilestoneCard({
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
                                   <p
-                                    className={
+                                    className={`truncate text-sm leading-6 transition-all duration-fast ${
                                       isDone
-                                        ? "truncate text-sm leading-6 text-graphite-muted line-through decoration-foreground/50"
-                                        : "truncate text-sm leading-6 text-foreground"
-                                    }
+                                        ? "text-graphite-muted line-through decoration-foreground/50 opacity-70"
+                                        : "text-foreground"
+                                    }`}
                                   >
                                     {task.title}
                                   </p>
-                                  <span className="badge badge-accent">
+                                  <span className="badge badge-accent transition-all duration-fast">
                                     Roadmap
                                   </span>
                                 </div>

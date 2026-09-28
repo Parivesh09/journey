@@ -143,11 +143,11 @@ export function Bubble({
       disabled={disabled || busy}
       onClick={onClick}
       data-filled={filled}
-      className="bubble"
+      className="bubble transition-all duration-fast"
     >
       {busy ? (
-        <span className="absolute inset-0 grid place-items-center">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-primary" />
+        <span className="absolute inset-0 grid place-items-center animate-pulse-subtle">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
         </span>
       ) : null}
     </button>
@@ -230,7 +230,7 @@ export function Dialog({
   return (
     <>
       <div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 dialog-overlay"
+        className="fixed inset-0 z-50 flex items-center justify-center p-4 dialog-overlay animate-fade-in"
         onClick={onClose}
         role="dialog"
         aria-modal="true"
@@ -238,7 +238,7 @@ export function Dialog({
         aria-describedby={description ? "dialog-description" : undefined}
       >
         <div
-          className="dialog w-full max-w-lg max-h-[90vh] overflow-hidden"
+          className="dialog w-full max-w-lg max-h-[90vh] overflow-hidden animate-scale-in"
           onClick={(e) => e.stopPropagation()}
         >
           {(title || description) && (
@@ -520,7 +520,7 @@ export function Drawer({
   return (
     <>
       <div
-        className={`fixed inset-0 z-50 flex justify-end sm:items-center p-0 sm:p-4 transition-opacity duration-200 ease-out ${
+        className={`fixed inset-0 z-50 flex justify-end sm:items-center p-0 sm:p-4 gpu-transition ${
           open ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
         onClick={onClose}
@@ -532,7 +532,7 @@ export function Drawer({
           onClick={onClose}
         />
         <aside
-          className={`relative w-full sm:w-[480px] h-full sm:max-h-[90vh] bg-surface card flex flex-col transition-transform duration-250 ease-out ${
+          className={`relative w-full sm:w-[480px] h-full sm:max-h-[90vh] bg-surface card flex flex-col gpu-transition ${
             open ? "translate-x-0" : "translate-x-full"
           }`}
           onClick={(e) => e.stopPropagation()}
@@ -596,7 +596,8 @@ export function IconButton({
       type="button"
       onClick={onClick}
       className={cn(
-        "p-2 rounded-lg transition-colors",
+        "p-2 rounded-lg transition-all duration-fast",
+        "hover:scale-[1.02] active:scale-[0.98]",
         variantClass,
         className,
       )}
@@ -686,7 +687,9 @@ export function ThemeToggle({ className }: { className?: string }) {
     <button
       onClick={toggleTheme}
       className={cn(
-        "p-2 rounded-lg transition-colors hover:bg-muted/50 cursor-pointer",
+        "p-2 rounded-lg transition-all duration-fast",
+        "hover:bg-muted/50 hover:scale-[1.02] active:scale-[0.98]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         className,
       )}
       aria-label={
@@ -694,7 +697,9 @@ export function ThemeToggle({ className }: { className?: string }) {
       }
       title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
     >
-      {theme === "light" ? <MoonIcon /> : <SunIcon />}
+      <span className="block transition-transform duration-200 ease-out">
+        {theme === "light" ? <MoonIcon /> : <SunIcon />}
+      </span>
     </button>
   );
 }
