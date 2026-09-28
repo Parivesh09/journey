@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowRight, ChevronDown, X } from "lucide-react";
-import { Stamp } from "@/app/components/ui";
+import { ArrowRight, ChevronDown, X, Play, Pause, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTaskTimer } from "@/app/components/task-timer-context";
 
 type Phase = {
   id: string;
@@ -19,6 +19,10 @@ type Phase = {
       title: string;
       type?: string;
       difficulty?: string;
+      estimatedMinutes?: number;
+      plannedHours?: number;
+      plannedMinutes?: number;
+      plannedSeconds?: number;
     }[];
   }[];
 };
@@ -34,11 +38,133 @@ type Milestone = {
 interface TemplateAccordionProps {
   milestones: Milestone[];
   phases: Phase[];
+  enableTaskTimer?: boolean;
+}
+
+function formatTime(ms: number): string {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function TaskItem({
+  task,
+  taskIndex,
+  phaseTitle,
+  topicTitle,
+  enableTaskTimer,
+}: {
+  task: {
+    id: string;
+    title: string;
+    type?: string;
+    difficulty?: string;
+    estimatedMinutes?: number;
+    plannedHours?: number;
+    plannedMinutes?: number;
+    plannedSeconds?: number;
+  };
+  taskIndex: number;
+  phaseTitle: string;
+  topicTitle: string;
+  enableTaskTimer: boolean;
+}) {
+  const { state, startTask, pauseTask, resumeTask, restartTask, isTaskActive, canStartTask } = useTaskTimer();
+  const totalSeconds = (task.plannedHours ?? 0) * 3600 + (task.plannedMinutes ?? 0) * 60 + (task.plannedSeconds ?? 0);
+
+  if (!enableTaskTimer) {
+    return (
+      <div className="flex gap-2.5 py-1.5">
+        <span className="font-mono text-[0.65rem] text-graphite-faint w-5">
+          {String(taskIndex + 1).padStart(2, "0")}
+        </span>
+        <span className="text-[0.85rem] text-graphite-muted">
+          {task.title}
+        </span>
+      </div>
+    );
+  }
+
+  const isActive = isTaskActive(task.id);
+  const isRunning = isActive && state.status === "running";
+  const isPaused = isActive && state.status === "paused";
+  const showTimer = true;
+
+  const handleStart = () => {
+    if (!canStartTask(task.id)) return;
+    startTask({
+      id: task.id,
+      title: task.title,
+      plannedSeconds: totalSeconds,
+      kind: "roadmap",
+      isDailyTask: false,
+      phaseTitle,
+      topicTitle,
+    });
+  };
+
+  const handleRestart = () => restartTask();
+
+  // Need to get taskIndex from context - we'll handle this in the parent
+  return (
+    <div className="flex items-center gap-2 py-1.5">
+      <span className="font-mono text-[0.65rem] text-graphite-faint w-5">
+        {String(taskIndex + 1).padStart(2, "0")}
+      </span>
+      <span className="text-[0.85rem] text-graphite-muted truncate flex-1">
+        {task.title}
+      </span>
+      {showTimer && isActive && (
+        <div className="flex items-center gap-2 ml-auto">
+          <span className="font-mono text-xs px-2 py-1 rounded bg-destructive/10 text-destructive">
+            {formatTime(state.remainingMs)}
+          </span>
+          {isRunning && (
+            <button
+              onClick={pauseTask}
+              className="btn btn-tertiary text-xs px-2 py-1"
+              aria-label="Pause timer"
+            >
+              <Pause className="w-3.5 h-3.5" />
+            </button>
+          )}
+          {isPaused && (
+            <button
+              onClick={resumeTask}
+              className="btn btn-primary text-xs px-2 py-1"
+              aria-label="Resume timer"
+            >
+              <Play className="w-3.5 h-3.5" />
+            </button>
+          )}
+          <button
+            onClick={restartTask}
+            className="btn btn-tertiary text-xs px-2 py-1"
+            aria-label="Restart timer"
+            disabled={!isRunning && !isPaused}
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+      {showTimer && !isActive && canStartTask(task.id) && (
+        <button
+          onClick={handleStart}
+          className="btn btn-primary text-xs px-3 py-1.5 ml-auto"
+        >
+          <Play className="w-3.5 h-3.5" />
+          Start
+        </button>
+      )}
+    </div>
+  );
 }
 
 export default function TemplateAccordion({
   milestones,
   phases,
+  enableTaskTimer = false,
 }: TemplateAccordionProps) {
   const [openId, setOpenId] = useState<string | null>(null);
   const [selectedPhase, setSelectedPhase] = useState<Phase | null>(null);
@@ -87,15 +213,15 @@ export default function TemplateAccordion({
 
           return (
             <div key={milestone.id} className="border border-border rounded">
-<button
-                    type="button"
-                    onClick={() =>
-                      setOpenId((current) =>
-                        current === milestone.id ? null : milestone.id,
-                      )
-                    }
-                    className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-muted/50 transition-colors"
-                  >
+              <button
+                type="button"
+                onClick={() =>
+                  setOpenId((current) =>
+                    current === milestone.id ? null : milestone.id,
+                  )
+                }
+                className="w-full flex items-center justify-between gap-4 px-5 py-4 text-left hover:bg-muted/50 transition-colors"
+              >
                 <div className="flex items-center gap-4">
                   <div className="font-mono text-[0.8rem] text-primary font-semibold tabular-nums w-8">
                     {String(index + 1).padStart(2, "0")}
@@ -166,20 +292,20 @@ export default function TemplateAccordion({
         })}
       </div>
 
-<div className={cn(
-          "fixed inset-0 z-50 flex items-end sm:items-center justify-end p-0 sm:p-4 transition-opacity",
-          isDrawerOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        )}>
-          <div
-            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-            onClick={handleDrawerClose}
-          />
+      <div className={cn(
+        "fixed inset-0 z-50 flex items-end sm:items-center justify-end p-0 sm:p-4 transition-opacity",
+        isDrawerOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+      )}>
+        <div
+          className="absolute inset-0 bg-background/80 backdrop-blur-sm"
+          onClick={handleDrawerClose}
+        />
         
-<aside className={cn(
-            "relative w-full sm:w-[420px] h-full sm:h-auto sm:max-h-[85vh] bg-surface shadow-xl border-l sm:border border-border",
-            "transition-transform duration-200",
-            isDrawerOpen ? "translate-x-0" : "translate-x-full"
-          )}>
+        <aside className={cn(
+          "relative w-full sm:w-[420px] h-full sm:h-auto sm:max-h-[85vh] bg-surface shadow-xl border-l sm:border border-border",
+          "transition-transform duration-200",
+          isDrawerOpen ? "translate-x-0" : "translate-x-full"
+        )}>
           {selectedPhase && (
             <>
               <div className="border-b border-border p-5">
@@ -197,34 +323,34 @@ export default function TemplateAccordion({
                       </p>
                     )}
                   </div>
-<button
-                      onClick={handleDrawerClose}
-                      className="p-1 hover:bg-muted rounded"
-                    >
+                  <button
+                    onClick={handleDrawerClose}
+                    className="p-1 hover:bg-muted rounded"
+                  >
                     <X className="h-4 w-4 text-graphite-muted" />
                   </button>
                 </div>
 
-<div className="flex gap-3 mt-4">
-                <div className="border border-border rounded px-3 py-2 text-center">
-                  <div className="font-mono text-[1.1rem] font-semibold text-foreground">
-                    {selectedPhase.topics?.length ?? 0}
-                  </div>
-                  <div className="font-mono text-[0.6rem] uppercase tracking-wide text-graphite-faint">
-                    Topics
-                  </div>
-                </div>
-                <div className="border border-border rounded px-3 py-2 text-center">
-                  <div className="font-mono text-[1.1rem] font-semibold text-foreground">
-                      {selectedPhase.topics?.reduce(
-                        (sum, topic) => sum + (topic.tasks?.length ?? 0),
-                        0,
-                      ) ?? 0}
+                <div className="flex gap-3 mt-4">
+                  <div className="border border-border rounded px-3 py-2 text-center">
+                    <div className="font-mono text-[1.1rem] font-semibold text-foreground">
+                      {selectedPhase.topics?.length ?? 0}
                     </div>
                     <div className="font-mono text-[0.6rem] uppercase tracking-wide text-graphite-faint">
-                      Tasks
+                      Topics
                     </div>
                   </div>
+                  <div className="border border-border rounded px-3 py-2 text-center">
+                    <div className="font-mono text-[1.1rem] font-semibold text-foreground">
+                        {selectedPhase.topics?.reduce(
+                          (sum, topic) => sum + (topic.tasks?.length ?? 0),
+                          0,
+                        ) ?? 0}
+                      </div>
+                      <div className="font-mono text-[0.6rem] uppercase tracking-wide text-graphite-faint">
+                        Tasks
+                      </div>
+                    </div>
                 </div>
               </div>
 
@@ -252,14 +378,14 @@ export default function TemplateAccordion({
                     <div className="px-4 py-3 space-y-2">
                       {topic.tasks?.length ? (
                         topic.tasks.map((task, taskIndex) => (
-                          <div key={task.id} className="flex gap-2.5 py-1.5">
-                            <span className="font-mono text-[0.65rem] text-graphite-faint w-5">
-                              {String(taskIndex + 1).padStart(2, "0")}
-                            </span>
-                            <span className="text-[0.85rem] text-graphite-muted">
-                              {task.title}
-                            </span>
-                          </div>
+                          <TaskItem
+                            key={task.id}
+                            task={task}
+                            taskIndex={taskIndex}
+                            phaseTitle={selectedPhase.title}
+                            topicTitle={topic.title}
+                            enableTaskTimer={enableTaskTimer}
+                          />
                         ))
                       ) : (
                         <p className="font-mono text-[0.7rem] text-graphite-faint py-2">

@@ -7,6 +7,12 @@ import LogoutButton from "@/app/logout-button";
 import { cn } from "@/lib/utils";
 import { Bell, Menu, X, User } from "lucide-react";
 import { ThemeToggle } from "@/app/components/ui";
+import { TaskTimerProvider } from "@/app/components/task-timer-context";
+import { GlobalTaskTimer } from "@/app/components/global-task-timer";
+import { TaskCompletionDialog, KeepTaskWarningDialog } from "@/app/components/task-completion-dialog";
+import { useTaskTimer } from "@/app/components/task-timer-context";
+import { useUpdateTaskMutation, useToggleTaskCompleteTodayMutation } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 const PRIMARY_NAV = [
   { key: "overview", label: "Overview", href: "/", number: "01" },
@@ -112,137 +118,202 @@ interface AppShellProps {
   } | null;
 }
 
+function TimerDialogs() {
+  const { state, completeTask, clearTask, restartTask } = useTaskTimer();
+  const [showKeepWarning, setShowKeepWarning] = useState(false);
+  const [updateTask] = useUpdateTaskMutation();
+  const [toggleTaskCompleteToday] = useToggleTaskCompleteTodayMutation();
+  const router = useRouter();
+
+  const activeTask = state.activeTask;
+  if (state.status !== "completed_pending" || !activeTask) return null;
+
+  const handleMarkDone = async () => {
+    try {
+      if (activeTask.isDailyTask || activeTask.kind === "routine") {
+        await toggleTaskCompleteToday(activeTask.id).unwrap();
+      } else {
+        await updateTask({ id: activeTask.id, status: "COMPLETED" }).unwrap();
+      }
+      router.refresh();
+      completeTask();
+      setTimeout(() => clearTask(), 500);
+    } catch {
+      // Error handled by mutation
+    }
+  };
+
+  const handleKeepTask = () => {
+    setShowKeepWarning(true);
+  };
+
+  const handleResetTask = () => {
+    restartTask();
+    setShowKeepWarning(false);
+  };
+
+  return (
+    <>
+      <TaskCompletionDialog
+        open
+        onClose={() => clearTask()}
+        onConfirm={handleMarkDone}
+        onKeepTask={handleKeepTask}
+        task={{
+          title: activeTask.title,
+          description: activeTask.description,
+          plannedSeconds: activeTask.plannedSeconds,
+        }}
+      />
+      <KeepTaskWarningDialog
+        open={showKeepWarning}
+        onClose={() => setShowKeepWarning(false)}
+        onReset={handleResetTask}
+        taskTitle={activeTask.title}
+      />
+    </>
+  );
+}
+
 export default function AppShell({ active, children, user }: AppShellProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Mobile Top Bar */}
-      <header className="sticky top-0 z-50 flex items-center justify-between h-16 px-4 border-b border-border bg-background/80 backdrop-blur md:hidden">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
-            aria-label="Open menu"
-          >
-            <Menu className="h-5 w-5" />
-          </button>
-          <BrandMark />
-        </div>
-        <div className="flex items-center gap-2">
-          <ThemeToggle />
-          <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors" aria-label="Notifications">
-            <Bell className="h-5 w-5" />
-          </button>
-          <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors" aria-label="Profile">
-            <User className="h-5 w-5" />
-          </button>
-        </div>
-      </header>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around h-16 border-t border-border bg-background/95 backdrop-blur md:hidden">
-        {[
-          { key: "overview", label: "Overview", href: "/", icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
-          { key: "today", label: "Today", href: "/today", icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
-          { key: "roadmap", label: "Roadmap", href: "/roadmaps", icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg> },
-          { key: "calendar", label: "Calendar", href: "/calendar", icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg> },
-        ].map((item) => (
-          <Link
-            key={item.key}
-            href={item.href}
-            onClick={() => setIsMobileMenuOpen(false)}
-          >
-            <MobileNavButton item={item} isActive={active === item.key} onClick={() => setIsMobileMenuOpen(false)} />
-          </Link>
-        ))}
-      </nav>
-
-      {/* Desktop Sidebar */}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 hidden w-[280px] bg-surface border-r border-border md:flex md:flex-col transition-transform duration-300 ease-out",
-        isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
-      )}>
-        {/* Mobile overlay */}
-        <div 
-          className={cn(
-            "fixed inset-0 z-40 md:hidden transition-opacity",
-            isMobileMenuOpen ? "opacity-100 bg-black/50" : "opacity-0 pointer-events-none"
-          )}
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-
-        <div className="flex flex-col h-full">
-          {/* Brand Header */}
-          <div className="flex h-20 items-center gap-4 px-6 border-b border-border">
+    <TaskTimerProvider>
+      <div className="min-h-screen bg-background text-foreground">
+        {/* Mobile Top Bar */}
+        <header className="sticky top-0 z-50 flex items-center justify-between h-16 px-4 border-b border-border bg-background/80 backdrop-blur md:hidden">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="p-2 rounded-lg hover:bg-muted/50 transition-colors"
+              aria-label="Open menu"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
             <BrandMark />
           </div>
-
-          {/* Primary Navigation */}
-          <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-            {PRIMARY_NAV.map((item) => (
-              <NavItem key={item.key} item={item} isActive={active === item.key} />
-            ))}
-          </nav>
-
-          {/* Divider */}
-          <div className="border-t border-border px-3 my-2" />
-
-          {/* Secondary Navigation */}
-          <nav className="px-3 space-y-1 pb-4">
-            {SECONDARY_NAV.map((item) => (
-              <NavItem key={item.key} item={item} isActive={active === item.key} isSecondary />
-            ))}
-          </nav>
-
-          {/* User Section with Streak */}
-          {user && (
-            <div className="border-t border-border p-4 mt-auto">
-              <StreakCard />
-              <div className="mt-4 rounded-lg bg-muted/50 p-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {user.name ?? "Signed in"}
-                    </p>
-                    <p className="truncate font-mono text-xs text-graphite-faint mt-0.5">
-                      {user.email}
-                    </p>
-                  </div>
-                  <ThemeToggle />
-                </div>
-                <div className="mt-3 flex items-center justify-end">
-                  <LogoutButton />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Mobile-only close button */}
-          <div className="md:hidden p-4 border-t border-border">
-            <button
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="btn btn-secondary w-full justify-center"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Close Menu
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors" aria-label="Notifications">
+              <Bell className="h-5 w-5" />
+            </button>
+            <button className="p-2 rounded-lg hover:bg-muted/50 transition-colors" aria-label="Profile">
+              <User className="h-5 w-5" />
             </button>
           </div>
+        </header>
+
+        {/* Mobile Bottom Navigation */}
+        <nav className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around h-16 border-t border-border bg-background/95 backdrop-blur md:hidden">
+          {[
+            { key: "overview", label: "Overview", href: "/", icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg> },
+            { key: "today", label: "Today", href: "/today", icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 002-2v12a2 2 0 002 2z" /></svg> },
+            { key: "roadmap", label: "Roadmap", href: "/roadmaps", icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" /></svg> },
+            { key: "calendar", label: "Calendar", href: "/calendar", icon: <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z" /></svg> },
+          ].map((item) => (
+            <Link
+              key={item.key}
+              href={item.href}
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              <MobileNavButton item={item} isActive={active === item.key} onClick={() => setIsMobileMenuOpen(false)} />
+            </Link>
+          ))}
+        </nav>
+
+        {/* Desktop Sidebar */}
+        <aside className={cn(
+          "fixed inset-y-0 left-0 z-50 hidden w-[280px] bg-surface border-r border-border md:flex md:flex-col transition-transform duration-300 ease-out",
+          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        )}>
+          {/* Mobile overlay */}
+          <div 
+            className={cn(
+              "fixed inset-0 z-40 md:hidden transition-opacity",
+              isMobileMenuOpen ? "opacity-100 bg-black/50" : "opacity-0 pointer-events-none"
+            )}
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+
+          <div className="flex flex-col h-full">
+            {/* Brand Header */}
+            <div className="flex h-20 items-center gap-4 px-6 border-b border-border">
+              <BrandMark />
+            </div>
+
+            {/* Primary Navigation */}
+            <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+              {PRIMARY_NAV.map((item) => (
+                <NavItem key={item.key} item={item} isActive={active === item.key} />
+              ))}
+            </nav>
+
+            {/* Divider */}
+            <div className="border-t border-border px-3 my-2" />
+
+            {/* Secondary Navigation */}
+            <nav className="px-3 space-y-1 pb-4">
+              {SECONDARY_NAV.map((item) => (
+                <NavItem key={item.key} item={item} isActive={active === item.key} isSecondary />
+              ))}
+            </nav>
+
+            {/* User Section with Streak */}
+            {user && (
+              <div className="border-t border-border p-4 mt-auto">
+                <StreakCard />
+                <div className="mt-4 rounded-lg bg-muted/50 p-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {user.name ?? "Signed in"}
+                      </p>
+                      <p className="truncate font-mono text-xs text-graphite-faint mt-0.5">
+                        {user.email}
+                      </p>
+                    </div>
+                    <ThemeToggle />
+                  </div>
+                  <div className="mt-3 flex items-center justify-end">
+                    <LogoutButton />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mobile-only close button */}
+            <div className="md:hidden p-4 border-t border-border">
+              <button
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="btn btn-secondary w-full justify-center"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Close Menu
+              </button>
+            </div>
+          </div>
+        </aside>
+
+        {/* Mobile drawer overlay when open */}
+        {isMobileMenuOpen && (
+          <div 
+            className="fixed inset-0 z-40 md:hidden bg-black/50"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+        )}
+
+        {/* Global Task Timer */}
+        <GlobalTaskTimer />
+
+        {/* Timer Completion Dialogs */}
+        <TimerDialogs />
+
+        {/* Main Content Area */}
+        <div className="md:pl-[280px] min-h-screen">
+          <main className="min-h-[calc(100vh-4rem)]">{children}</main>
         </div>
-      </aside>
-
-      {/* Mobile drawer overlay when open */}
-      {isMobileMenuOpen && (
-        <div 
-          className="fixed inset-0 z-40 md:hidden bg-black/50"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Main Content Area */}
-      <div className="md:pl-[280px] min-h-screen">
-        <main className="min-h-[calc(100vh-4rem)]">{children}</main>
       </div>
-    </div>
+    </TaskTimerProvider>
   );
 }

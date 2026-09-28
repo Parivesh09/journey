@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Bubble, Stamp, EmptyState, CountdownTimer, TaskTimer } from "@/app/components/ui";
+import { Bubble, Stamp, EmptyState, CountdownTimer } from "@/app/components/ui";
+import { useTaskTimer } from "@/app/components/task-timer-context";
 import {
   useToggleTaskCompleteTodayMutation,
   useUpdateTaskMutation,
@@ -12,7 +13,9 @@ export type DashboardTaskRow = {
   title: string;
   description?: string;
   priority: string;
+  plannedHours: number | null;
   plannedMinutes: number | null;
+  plannedSeconds: number | null;
   estimatedMinutes: number | null;
   dailySlot: string | null;
   startTime?: Date | string | null;
@@ -30,15 +33,12 @@ export default function DashboardTaskList({
   const [items, setItems] = useState(initialItems);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [runningTimers, setRunningTimers] = useState<Set<string>>(new Set());
-  const [completedTimers, setCompletedTimers] = useState<Set<string>>(new Set());
+  const { state, startTask, pauseTask, resumeTask, restartTask, isTaskActive, canStartTask } = useTaskTimer();
   const [toggleTaskCompleteToday] = useToggleTaskCompleteTodayMutation();
   const [updateTask] = useUpdateTaskMutation();
 
   async function toggleTask(row: DashboardTaskRow) {
-    // For routines, allow toggle anytime
-    // For other tasks, require timer to be completed first
-    if (row.kind !== "routine" && row.plannedMinutes && !completedTimers.has(row.id)) {
+    if (row.kind !== "routine" && row.plannedMinutes && !isTaskActive(row.id) && state.activeTask?.id !== row.id) {
       setError("Start the task timer first, then mark as complete.");
       return;
     }
@@ -69,32 +69,6 @@ export default function DashboardTaskList({
     }
   }
 
-  function handleTimerStart(id: string) {
-    setRunningTimers((prev) => new Set(prev).add(id));
-  }
-
-  function handleTimerComplete(id: string) {
-    setRunningTimers((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
-    setCompletedTimers((prev) => new Set(prev).add(id));
-  }
-
-  function handleTimerCancel(id: string) {
-    setRunningTimers((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
-    setCompletedTimers((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
-  }
-
   if (items.length === 0) {
     return (
       <EmptyState
@@ -115,9 +89,28 @@ export default function DashboardTaskList({
         {items.map((row, index) => {
           const busy = updatingId === row.id;
           const urgent = ["HIGH", "CRITICAL"].includes(row.priority);
-          const isTimerRunning = runningTimers.has(row.id);
-          const isTimerCompleted = completedTimers.has(row.id);
-          const showTimer = row.plannedMinutes && row.plannedMinutes > 0;
+          const isActive = isTaskActive(row.id);
+          const isRunning = isActive && state.status === "running";
+          const isPaused = isActive && state.status === "paused";
+          const isCompleted = isActive && state.status === "completed_pending";
+          const totalSeconds = (row.plannedHours ?? 0) * 3600 + (row.plannedMinutes ?? 0) * 60 + (row.plannedSeconds ?? 0);
+          const showTimer = totalSeconds > 0;
+
+          const handleStart = () => {
+            if (!canStartTask(row.id)) return;
+            startTask({
+              id: row.id,
+              title: row.title,
+              description: row.description,
+              plannedSeconds: totalSeconds,
+              kind: row.kind,
+              isDailyTask: row.kind === "routine",
+            });
+          };
+
+          const handlePause = () => pauseTask();
+          const handleResume = () => resumeTask();
+          const handleRestart = () => restartTask();
 
           return (
             <div
@@ -132,7 +125,7 @@ export default function DashboardTaskList({
                 busy={busy}
                 label={row.done ? "Mark incomplete" : "Mark complete"}
                 onClick={() => toggleTask(row)}
-                disabled={row.kind !== "routine" && !!row.plannedMinutes && !isTimerCompleted}
+                disabled={row.kind !== "routine" && !!row.plannedMinutes && !isCompleted}
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -159,19 +152,51 @@ export default function DashboardTaskList({
                     {row.dailySlot?.replaceAll("_", " ") ??
                       row.category?.name ??
                       "Scheduled"}{" "}
-                    · {row.plannedMinutes ?? row.estimatedMinutes ?? 60}m
+                    · {Math.floor(totalSeconds / 60)}m {totalSeconds % 60}s
                   </p>
                   {(row.startTime || row.endTime) && (
                     <CountdownTimer targetTime={row.startTime || row.endTime} />
                   )}
-                  {showTimer && (
-                    <TaskTimer
-                      durationMinutes={row.plannedMinutes!}
-                      isRunning={isTimerRunning}
-                      onStart={() => handleTimerStart(row.id)}
-                      onComplete={() => handleTimerComplete(row.id)}
-                      onCancel={() => handleTimerCancel(row.id)}
-                    />
+                  {showTimer && isActive && (
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs px-2 py-1 rounded bg-destructive/10 text-destructive">
+                        {String(Math.floor(state.remainingMs / 60000)).padStart(2, "0")}:{String(Math.floor((state.remainingMs % 60000) / 1000)).padStart(2, "0")}
+                      </span>
+                      {isRunning && (
+                        <button
+                          onClick={handlePause}
+                          className="btn btn-tertiary text-xs px-2 py-1"
+                          aria-label="Pause timer"
+                        >
+                          ❚❚
+                        </button>
+                      )}
+                      {isPaused && (
+                        <button
+                          onClick={handleResume}
+                          className="btn btn-primary text-xs px-2 py-1"
+                          aria-label="Resume timer"
+                        >
+                          ▶
+                        </button>
+                      )}
+                      <button
+                        onClick={handleRestart}
+                        className="btn btn-tertiary text-xs px-2 py-1"
+                        aria-label="Restart timer"
+                        disabled={!isRunning && !isPaused}
+                      >
+                        ↻
+                      </button>
+                    </div>
+                  )}
+                  {showTimer && !isActive && canStartTask(row.id) && (
+                    <button
+                      onClick={handleStart}
+                      className="btn btn-primary text-xs px-3 py-1.5"
+                    >
+                      Start Task
+                    </button>
                   )}
                 </div>
               </div>

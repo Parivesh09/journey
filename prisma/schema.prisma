@@ -115,7 +115,9 @@ model Task {
   milestoneTitle   String?
   sequenceOrder    Int          @default(0)
   dailySlot        String?
+  plannedHours     Int?
   plannedMinutes   Int?
+  plannedSeconds   Int?
   isDailyTask      Boolean      @default(false)
   isPersonalDaily  Boolean      @default(false)
   createdAt        DateTime     @default(now())

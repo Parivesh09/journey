@@ -13,7 +13,9 @@ export function Sheet({
   children: ReactNode;
 }) {
   return (
-    <div className={cn("sheet m-auto my-6 max-w-[1280px] px-8 py-8", className)}>
+    <div
+      className={cn("sheet m-auto my-6 max-w-[1280px] px-8 py-8", className)}
+    >
       {children}
     </div>
   );
@@ -101,11 +103,7 @@ export function Stamp({
     ink: "text-graphite-faint",
   }[tone];
 
-  return (
-    <span className={cn("badge", toneClass, className)}>
-      {children}
-    </span>
-  );
+  return <span className={cn("badge", toneClass, className)}>{children}</span>;
 }
 
 export function Num({
@@ -172,7 +170,7 @@ export function TaskRow({
         "task-row",
         completed && "completed",
         onClick && "cursor-pointer",
-        className
+        className,
       )}
       onClick={onClick}
     >
@@ -192,7 +190,12 @@ export function ProgressBar({
 }) {
   return (
     <div className="w-full">
-      <div className={cn("progress-bar", variant === "accent" && "progress-bar-accent")}>
+      <div
+        className={cn(
+          "progress-bar",
+          variant === "accent" && "progress-bar-accent",
+        )}
+      >
         <div
           className="progress-bar-fill"
           style={{ width: `${Math.min(100, Math.max(0, value))}%` }}
@@ -233,11 +236,17 @@ export function Dialog({
         aria-labelledby={title ? "dialog-title" : undefined}
         aria-describedby={description ? "dialog-description" : undefined}
       >
-        <div className="dialog w-full max-w-lg max-h-[90vh] overflow-hidden">
+        <div
+          className="dialog w-full max-w-lg max-h-[90vh] overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
           {(title || description) && (
             <div className="px-6 py-4 border-b border-border">
               {title && (
-                <h2 id="dialog-title" className="text-xl font-semibold text-foreground font-display">
+                <h2
+                  id="dialog-title"
+                  className="text-xl font-semibold text-foreground font-display"
+                >
                   {title}
                 </h2>
               )}
@@ -274,11 +283,7 @@ export function EmptyState({
       <p className="mt-2 text-[1rem] text-graphite-muted max-w-[40ch] mx-auto leading-relaxed">
         {description}
       </p>
-      {action && (
-        <div className="mt-6">
-          {action}
-        </div>
-      )}
+      {action && <div className="mt-6">{action}</div>}
     </div>
   );
 }
@@ -318,9 +323,7 @@ export function FormGroup({
       <label className="label">{label}</label>
       {children}
       {hint && <p className="caption">{hint}</p>}
-      {error && (
-        <p className="text-sm text-destructive font-medium">{error}</p>
-      )}
+      {error && <p className="text-sm text-destructive font-medium">{error}</p>}
     </div>
   );
 }
@@ -423,15 +426,18 @@ export function Input({
   className,
   ...props
 }: InputHTMLAttributes<HTMLInputElement>) {
-  return (
-    <input
-      className={cn("input", className)}
-      {...props}
-    />
-  );
+  return <input className={cn("input", className)} {...props} />;
 }
 
-export function Label({ children, className, htmlFor }: { children: ReactNode; className?: string; htmlFor?: string }) {
+export function Label({
+  children,
+  className,
+  htmlFor,
+}: {
+  children: ReactNode;
+  className?: string;
+  htmlFor?: string;
+}) {
   return (
     <label className={cn("label", className)} htmlFor={htmlFor}>
       {children}
@@ -439,12 +445,14 @@ export function Label({ children, className, htmlFor }: { children: ReactNode; c
   );
 }
 
-export function Caption({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <p className={cn("caption", className)}>
-      {children}
-    </p>
-  );
+export function Caption({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <p className={cn("caption", className)}>{children}</p>;
 }
 
 export function Card({
@@ -454,14 +462,16 @@ export function Card({
   children: ReactNode;
   className?: string;
 }) {
-  return (
-    <div className={cn("card", className)}>
-      {children}
-    </div>
-  );
+  return <div className={cn("card", className)}>{children}</div>;
 }
 
-export function CardHeader({ children, className }: { children: ReactNode; className?: string }) {
+export function CardHeader({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
     <div className={cn("px-6 py-4 border-b border-border", className)}>
       {children}
@@ -469,17 +479,27 @@ export function CardHeader({ children, className }: { children: ReactNode; class
   );
 }
 
-export function CardContent({ children, className }: { children: ReactNode; className?: string }) {
-  return (
-    <div className={cn("p-6", className)}>
-      {children}
-    </div>
-  );
+export function CardContent({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return <div className={cn("p-6", className)}>{children}</div>;
 }
 
-export function CardFooter({ children, className }: { children: ReactNode; className?: string }) {
+export function CardFooter({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
   return (
-    <div className={cn("px-6 py-4 border-t border-border bg-muted/30", className)}>
+    <div
+      className={cn("px-6 py-4 border-t border-border bg-muted/30", className)}
+    >
       {children}
     </div>
   );
@@ -516,25 +536,35 @@ export function Drawer({
           }`}
           onClick={(e) => e.stopPropagation()}
         >
-            {title && (
-              <div className="flex items-center justify-between border-b border-border px-6 py-5">
-                <h3 className="text-[1.5rem] font-semibold text-foreground font-display">{title}</h3>
-                <button
-                  onClick={onClose}
-                  className="p-2 rounded hover:bg-muted transition-colors"
-                  aria-label="Close drawer"
+          {title && (
+            <div className="flex items-center justify-between border-b border-border px-6 py-5">
+              <h3 className="text-[1.5rem] font-semibold text-foreground font-display">
+                {title}
+              </h3>
+              <button
+                onClick={onClose}
+                className="p-2 rounded hover:bg-muted transition-colors"
+                aria-label="Close drawer"
+              >
+                <svg
+                  className="h-5 w-5 text-graphite-muted"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <svg className="h-5 w-5 text-graphite-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            )}
-            <div className="flex-1 overflow-y-auto p-6">
-              {children}
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
             </div>
-          </aside>
-        </div>
+          )}
+          <div className="flex-1 overflow-y-auto p-6">{children}</div>
+        </aside>
+      </div>
     </>
   );
 }
@@ -554,15 +584,21 @@ export function IconButton({
 }) {
   const variantClass = {
     primary: "bg-primary text-white hover:bg-primary/90 border-transparent",
-    secondary: "bg-secondary text-foreground hover:bg-secondary/80 border-border",
-    tertiary: "text-graphite-muted hover:text-foreground hover:bg-muted border-transparent",
+    secondary:
+      "bg-secondary text-foreground hover:bg-secondary/80 border-border",
+    tertiary:
+      "text-graphite-muted hover:text-foreground hover:bg-muted border-transparent",
   }[variant];
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={cn("p-2 rounded-lg transition-colors", variantClass, className)}
+      className={cn(
+        "p-2 rounded-lg transition-colors",
+        variantClass,
+        className,
+      )}
       aria-label={ariaLabel}
     >
       {children}
@@ -648,8 +684,13 @@ export function ThemeToggle({ className }: { className?: string }) {
   return (
     <button
       onClick={toggleTheme}
-      className={cn("p-2 rounded-lg transition-colors hover:bg-muted/50", className)}
-      aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
+      className={cn(
+        "p-2 rounded-lg transition-colors hover:bg-muted/50 cursor-pointer",
+        className,
+      )}
+      aria-label={
+        theme === "light" ? "Switch to dark mode" : "Switch to light mode"
+      }
       title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
     >
       {theme === "light" ? <MoonIcon /> : <SunIcon />}
@@ -657,8 +698,16 @@ export function ThemeToggle({ className }: { className?: string }) {
   );
 }
 
-export function CountdownTimer({ targetTime }: { targetTime: Date | string | null | undefined }) {
-  const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
+export function CountdownTimer({
+  targetTime,
+}: {
+  targetTime: Date | string | null | undefined;
+}) {
+  const [timeLeft, setTimeLeft] = useState<{
+    hours: number;
+    minutes: number;
+    seconds: number;
+  } | null>(null);
   const [isPast, setIsPast] = useState(false);
 
   useEffect(() => {
@@ -693,15 +742,21 @@ export function CountdownTimer({ targetTime }: { targetTime: Date | string | nul
 
   return (
     <div className="flex items-center gap-1.5 font-mono text-xs">
-      <span className={`px-2 py-0.5 rounded bg-primary/10 text-primary ${isPast ? "opacity-50" : ""}`}>
+      <span
+        className={`px-2 py-0.5 rounded bg-primary/10 text-primary ${isPast ? "opacity-50" : ""}`}
+      >
         {String(timeLeft.hours).padStart(2, "0")}
       </span>
       <span className="text-graphite-muted">:</span>
-      <span className={`px-2 py-0.5 rounded bg-primary/10 text-primary ${isPast ? "opacity-50" : ""}`}>
+      <span
+        className={`px-2 py-0.5 rounded bg-primary/10 text-primary ${isPast ? "opacity-50" : ""}`}
+      >
         {String(timeLeft.minutes).padStart(2, "0")}
       </span>
       <span className="text-graphite-muted">:</span>
-      <span className={`px-2 py-0.5 rounded bg-primary/10 text-primary ${isPast ? "opacity-50" : ""}`}>
+      <span
+        className={`px-2 py-0.5 rounded bg-primary/10 text-primary ${isPast ? "opacity-50" : ""}`}
+      >
         {String(timeLeft.seconds).padStart(2, "0")}
       </span>
       {isPast && <span className="text-xs text-destructive ml-1">Overdue</span>}
@@ -722,7 +777,10 @@ export function TaskTimer({
   onComplete: () => void;
   onCancel: () => void;
 }) {
-  const [timeLeft, setTimeLeft] = useState<{ minutes: number; seconds: number } | null>(null);
+  const [timeLeft, setTimeLeft] = useState<{
+    minutes: number;
+    seconds: number;
+  } | null>(null);
   const [hasCompleted, setHasCompleted] = useState(false);
 
   useEffect(() => {
@@ -778,7 +836,8 @@ export function TaskTimer({
   return (
     <div className="flex items-center gap-2">
       <span className="font-mono text-xs px-2 py-1 rounded bg-destructive/10 text-destructive">
-        {String(timeLeft?.minutes ?? 0).padStart(2, "0")}:{String(timeLeft?.seconds ?? 0).padStart(2, "0")}
+        {String(timeLeft?.minutes ?? 0).padStart(2, "0")}:
+        {String(timeLeft?.seconds ?? 0).padStart(2, "0")}
       </span>
       <button
         onClick={onCancel}

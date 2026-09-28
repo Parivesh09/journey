@@ -107,7 +107,9 @@ export default async function HomePage() {
       description?: string | null;
       status: string;
       priority: string;
+      plannedHours: number | null;
       plannedMinutes: number | null;
+      plannedSeconds: number | null;
       estimatedMinutes: number | null;
       dailySlot: string | null;
       startTime?: Date | string | null;
@@ -121,7 +123,9 @@ export default async function HomePage() {
     title: task.title,
     description: task.description ?? undefined,
     priority: task.priority,
+    plannedHours: task.plannedHours,
     plannedMinutes: task.plannedMinutes,
+    plannedSeconds: task.plannedSeconds,
     estimatedMinutes: task.estimatedMinutes,
     dailySlot: task.dailySlot,
     startTime: task.startTime instanceof Date ? task.startTime.toISOString() : task.startTime ?? undefined,

@@ -32,7 +32,9 @@ export interface Task {
   priority: TaskPriority;
   status: TaskStatus;
   estimatedMinutes: number;
+  plannedHours: number | null;
   plannedMinutes: number | null;
+  plannedSeconds: number | null;
   dueDate: Date | null;
   taskType: string;
   difficulty: string | null;
@@ -71,6 +73,9 @@ export interface ConnectedTask {
     phaseTitle: string | null;
     topicTitle: string | null;
     milestoneTitle: string | null;
+    plannedHours: number | null;
+    plannedMinutes: number | null;
+    plannedSeconds: number | null;
   };
 }
 

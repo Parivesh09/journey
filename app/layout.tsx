@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
+import Script from "next/script";
 import { getCurrentUser } from "@/lib/auth";
 import BrowserReminderListener from "@/app/notifications/browser-listener";
 import { ReduxProvider } from "./ReduxProvider";
@@ -34,7 +35,8 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       suppressHydrationWarning
     >
       <head>
-        <script
+        <Script
+          id="theme-init"
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
