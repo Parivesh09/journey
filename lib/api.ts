@@ -45,7 +45,7 @@ export const apiSlice = createApi({
       providesTags: ["Tasks"],
     }),
 
-    createTask: builder.mutation<{ task: Task }, { title: string; priority?: string; isPersonalDaily?: boolean; description?: string; categoryId?: string; estimatedMinutes?: number; plannedMinutes?: number; dueDate?: string; dailySlot?: string; startTime?: string; endTime?: string; taskType?: string }>({
+    createTask: builder.mutation<{ task: Task }, { title: string; priority?: string; isPersonalDaily?: boolean; description?: string; categoryId?: string; estimatedMinutes?: number; plannedHours?: number; plannedMinutes?: number; plannedSeconds?: number; dueDate?: string; dailySlot?: string; startTime?: string; endTime?: string; taskType?: string }>({
       query: (body) => ({
         url: "tasks",
         method: "POST",
@@ -69,7 +69,9 @@ export const apiSlice = createApi({
         priority?: string;
         categoryId?: string;
         estimatedMinutes?: number;
+        plannedHours?: number;
         plannedMinutes?: number;
+        plannedSeconds?: number;
         dueDate?: string;
         dailySlot?: string;
         startTime?: string;

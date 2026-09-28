@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { ArrowRight } from "lucide-react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useGetMilestonesQuery, useGetDailyPinsQuery, useGetRoadmapsQuery, useUpdateTaskMutation } from "@/lib/api";
 import type { RoadmapSummary, MilestonesData, Filters } from "@/lib/types";
-import { MilestoneCard } from "./components/MilestoneCard";
-import { SkeletonRows, SectionHead, Stamp, Card, CardContent, Num } from "@/app/components/ui";
+import { SectionHead, Stamp, Card, CardContent, Num } from "@/app/components/ui";
 import { extractErrorMessage } from "@/lib/utils";
-import { taskMatches, visiblePhases } from "./components/roadmap-types";
 
 export default function RoadmapTab({
   title,
@@ -52,6 +51,7 @@ export default function RoadmapTab({
 }
 
 function RoadmapCard({ roadmap }: { roadmap: RoadmapSummary }) {
+  const router = useRouter();
   const { data: milestonesData, isLoading, isFetching, isError } = useGetMilestonesQuery(roadmap.id);
   const { data: pinsData } = useGetDailyPinsQuery(undefined);
   const [updateTask] = useUpdateTaskMutation();
@@ -71,6 +71,7 @@ function RoadmapCard({ roadmap }: { roadmap: RoadmapSummary }) {
 
   useEffect(() => {
     if (milestonesData) {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
       setData(milestonesData as MilestonesData);
     }
   }, [milestonesData]);
@@ -85,6 +86,10 @@ function RoadmapCard({ roadmap }: { roadmap: RoadmapSummary }) {
       console.error(extractErrorMessage(reason));
     }
   }
+
+  const handleNavigate = () => {
+    router.push(`/tasks/roadmap/${roadmap.id}?enableTaskTimer=true`);
+  };
 
   const progress = data
     ? data.milestones.reduce((acc: number, m) => acc + m.progress.completed, 0) /
@@ -108,9 +113,9 @@ function RoadmapCard({ roadmap }: { roadmap: RoadmapSummary }) {
   ) ?? 0;
 
   return (
-    <Link
-      href={`/tasks/roadmap/${roadmap.id}`}
-      className="group block h-full"
+    <div
+      onClick={handleNavigate}
+      className="group block h-full cursor-pointer"
     >
       <Card className="h-full">
         <CardContent className="p-5">
@@ -170,7 +175,7 @@ function RoadmapCard({ roadmap }: { roadmap: RoadmapSummary }) {
           </div>
         </CardContent>
       </Card>
-    </Link>
+    </div>
   );
 }
 

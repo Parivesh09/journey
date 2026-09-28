@@ -68,8 +68,14 @@ export async function PATCH(
       ...(typeof body.estimatedMinutes === "number"
         ? { estimatedMinutes: Math.max(1, Math.round(body.estimatedMinutes)) }
         : {}),
+      ...(typeof body.plannedHours === "number"
+        ? { plannedHours: Math.max(0, Math.round(body.plannedHours)) }
+        : {}),
       ...(typeof body.plannedMinutes === "number"
-        ? { plannedMinutes: Math.max(1, Math.round(body.plannedMinutes)) }
+        ? { plannedMinutes: Math.max(0, Math.round(body.plannedMinutes)) }
+        : {}),
+      ...(typeof body.plannedSeconds === "number"
+        ? { plannedSeconds: Math.max(0, Math.round(body.plannedSeconds)) }
         : {}),
       ...(typeof body.dueDate === "string" && body.dueDate
         ? { dueDate: new Date(`${body.dueDate}T00:00:00.000Z`) }

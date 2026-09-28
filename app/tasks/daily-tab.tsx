@@ -14,8 +14,8 @@ import {
   Input,
   Caption,
   CountdownTimer,
-  TaskTimer,
 } from "@/app/components/ui";
+import { useTaskTimer } from "@/app/components/task-timer-context";
 import {
   useGetDailyTasksQuery,
   useCreateTaskMutation,
@@ -34,7 +34,9 @@ type Routine = {
   title: string;
   description?: string | null;
   priority: string;
+  plannedHours: number | null;
   plannedMinutes: number | null;
+  plannedSeconds: number | null;
   estimatedMinutes: number | null;
   dailySlot: string | null;
   startTime?: Date | string | null;
@@ -56,6 +58,9 @@ type Connected = {
     milestoneTitle: string | null;
     startTime?: Date | string | null;
     endTime?: Date | string | null;
+    plannedHours: number | null;
+    plannedMinutes: number | null;
+    plannedSeconds: number | null;
   };
 };
 
@@ -77,24 +82,37 @@ function RoutineRow({
   onToggle,
   onEdit,
   onDelete,
-  isTimerRunning,
-  isTimerCompleted,
-  onTimerStart,
-  onTimerComplete,
-  onTimerCancel,
 }: {
   routine: Routine;
   updating: boolean;
   onToggle: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
-  isTimerRunning: boolean;
-  isTimerCompleted: boolean;
-  onTimerStart: () => void;
-  onTimerComplete: () => void;
-  onTimerCancel: () => void;
 }) {
-  const minutes = routine.plannedMinutes ?? routine.estimatedMinutes ?? 60;
+  const totalSeconds = (routine.plannedHours ?? 0) * 3600 + (routine.plannedMinutes ?? 0) * 60 + (routine.plannedSeconds ?? 0);
+  const showTimer = totalSeconds > 0;
+  const { state, startTask, pauseTask, resumeTask, restartTask, isTaskActive, canStartTask } = useTaskTimer();
+
+  const isActive = isTaskActive(routine.id);
+  const isRunning = isActive && state.status === "running";
+  const isPaused = isActive && state.status === "paused";
+  const isCompleted = isActive && state.status === "completed_pending";
+
+  const handleStart = () => {
+    if (!canStartTask(routine.id)) return;
+    startTask({
+      id: routine.id,
+      title: routine.title,
+      description: routine.description,
+      plannedSeconds: totalSeconds,
+      kind: "routine",
+      isDailyTask: true,
+    });
+  };
+
+  const handlePause = () => pauseTask();
+  const handleResume = () => resumeTask();
+  const handleRestart = () => restartTask();
 
   return (
     <div className="task-row py-3 group">
@@ -103,7 +121,7 @@ function RoutineRow({
         busy={updating}
         label={routine.doneToday ? "Mark not done" : "Mark done"}
         onClick={onToggle}
-        disabled={!!routine.plannedMinutes && !isTimerCompleted}
+        disabled={showTimer && !isCompleted}
       />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -121,19 +139,51 @@ function RoutineRow({
         )}
         <div className="mt-0.5 flex items-center gap-3 flex-wrap">
           <p className="font-mono text-xs text-graphite-faint">
-            Every day · {minutes}m {routine.doneToday && "· done today"}
+            Every day · {Math.floor(totalSeconds / 60)}m {totalSeconds % 60}s {routine.doneToday && "· done today"}
           </p>
           {(routine.startTime ?? routine.endTime) && (
             <CountdownTimer targetTime={routine.startTime ?? routine.endTime} />
           )}
-          {routine.plannedMinutes && routine.plannedMinutes > 0 && (
-            <TaskTimer
-              durationMinutes={routine.plannedMinutes}
-              isRunning={isTimerRunning}
-              onStart={onTimerStart}
-              onComplete={onTimerComplete}
-              onCancel={onTimerCancel}
-            />
+          {showTimer && isActive && (
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-xs px-2 py-1 rounded bg-destructive/10 text-destructive">
+                {String(Math.floor(state.remainingMs / 60000)).padStart(2, "0")}:{String(Math.floor((state.remainingMs % 60000) / 1000)).padStart(2, "0")}
+              </span>
+              {isRunning && (
+                <button
+                  onClick={handlePause}
+                  className="btn btn-tertiary text-xs px-2 py-1"
+                  aria-label="Pause timer"
+                >
+                  ❚❚
+                </button>
+              )}
+              {isPaused && (
+                <button
+                  onClick={handleResume}
+                  className="btn btn-primary text-xs px-2 py-1"
+                  aria-label="Resume timer"
+                >
+                  ▶
+                </button>
+              )}
+              <button
+                onClick={handleRestart}
+                className="btn btn-tertiary text-xs px-2 py-1"
+                aria-label="Restart timer"
+                disabled={!isRunning && !isPaused}
+              >
+                ↻
+              </button>
+            </div>
+          )}
+          {showTimer && !isActive && canStartTask(routine.id) && (
+            <button
+              onClick={handleStart}
+              className="btn btn-primary text-xs px-3 py-1.5"
+            >
+              Start Task
+            </button>
           )}
         </div>
       </div>
@@ -207,7 +257,9 @@ export default function DailyTab() {
   const [newTitle, setNewTitle] = useState("");
   const [newDescription, setNewDescription] = useState("");
   const [newDailySlot, setNewDailySlot] = useState("");
+  const [newPlannedHours, setNewPlannedHours] = useState<number | "">(0);
   const [newPlannedMinutes, setNewPlannedMinutes] = useState<number | "">(60);
+  const [newPlannedSeconds, setNewPlannedSeconds] = useState<number | "">(0);
   const [newStartTime, setNewStartTime] = useState("");
   const [newEndTime, setNewEndTime] = useState("");
   const [updating, setUpdating] = useState<string | null>(null);
@@ -221,12 +273,12 @@ export default function DailyTab() {
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editDailySlot, setEditDailySlot] = useState("");
+  const [editPlannedHours, setEditPlannedHours] = useState<number | "">(0);
   const [editPlannedMinutes, setEditPlannedMinutes] = useState<number | "">(60);
+  const [editPlannedSeconds, setEditPlannedSeconds] = useState<number | "">(0);
   const [editStartTime, setEditStartTime] = useState("");
   const [editEndTime, setEditEndTime] = useState("");
   const [deletingRoutine, setDeletingRoutine] = useState<Routine | null>(null);
-  const [runningTimers, setRunningTimers] = useState<Set<string>>(new Set());
-  const [completedTimers, setCompletedTimers] = useState<Set<string>>(new Set());
 
   const linkedRoadmapIds = useMemo(
     () => new Set(linkedRoadmaps.map((item) => item.roadmapId)),
@@ -245,14 +297,18 @@ export default function DailyTab() {
         priority: "MEDIUM",
         isPersonalDaily: true,
         dailySlot: newDailySlot || undefined,
-        plannedMinutes: newPlannedMinutes ? Number(newPlannedMinutes) : undefined,
+        plannedHours: newPlannedHours !== "" && newPlannedHours !== undefined ? Number(newPlannedHours) : undefined,
+        plannedMinutes: newPlannedMinutes !== "" && newPlannedMinutes !== undefined ? Number(newPlannedMinutes) : undefined,
+        plannedSeconds: newPlannedSeconds !== "" && newPlannedSeconds !== undefined ? Number(newPlannedSeconds) : undefined,
         startTime: newStartTime || undefined,
         endTime: newEndTime || undefined,
       }).unwrap();
       setNewTitle("");
       setNewDescription("");
       setNewDailySlot("");
+      setNewPlannedHours(0);
       setNewPlannedMinutes(60);
+      setNewPlannedSeconds(0);
       setNewStartTime("");
       setNewEndTime("");
       setAddModalOpen(false);
@@ -293,7 +349,9 @@ export default function DailyTab() {
         title: editTitle.trim(),
         description: editDescription.trim() || undefined,
         dailySlot: editDailySlot || undefined,
-        plannedMinutes: editPlannedMinutes ? Number(editPlannedMinutes) : undefined,
+        plannedHours: editPlannedHours !== "" && editPlannedHours !== undefined ? Number(editPlannedHours) : undefined,
+        plannedMinutes: editPlannedMinutes !== "" && editPlannedMinutes !== undefined ? Number(editPlannedMinutes) : undefined,
+        plannedSeconds: editPlannedSeconds !== "" && editPlannedSeconds !== undefined ? Number(editPlannedSeconds) : undefined,
         startTime: editStartTime || undefined,
         endTime: editEndTime || undefined,
       }).unwrap();
@@ -301,7 +359,9 @@ export default function DailyTab() {
       setEditTitle("");
       setEditDescription("");
       setEditDailySlot("");
+      setEditPlannedHours(0);
       setEditPlannedMinutes(60);
+      setEditPlannedSeconds(0);
       setEditStartTime("");
       setEditEndTime("");
       setSuccess("Routine updated successfully.");
@@ -322,34 +382,7 @@ export default function DailyTab() {
     } catch {
       setError("Unable to delete routine. Please try again.");
     }
-  }
-
-  function handleTimerStart(id: string) {
-    setRunningTimers((prev) => new Set(prev).add(id));
-  }
-
-  function handleTimerComplete(id: string) {
-    setRunningTimers((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
-    setCompletedTimers((prev) => new Set(prev).add(id));
-  }
-
-  function handleTimerCancel(id: string) {
-    setRunningTimers((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
-    setCompletedTimers((prev) => {
-      const next = new Set(prev);
-      next.delete(id);
-      return next;
-    });
-  }
-
+}
   async function handleLinkRoadmap(roadmapId: string) {
     setLinkingRoadmap(roadmapId);
     setError("");
@@ -467,11 +500,6 @@ export default function DailyTab() {
                   setEditEndTime(routine.endTime ? new Date(routine.endTime).toISOString().slice(0, 16) : "");
                 }}
                 onDelete={() => setDeletingRoutine(routine)}
-                isTimerRunning={runningTimers.has(routine.id)}
-                isTimerCompleted={completedTimers.has(routine.id)}
-                onTimerStart={() => handleTimerStart(routine.id)}
-                onTimerComplete={() => handleTimerComplete(routine.id)}
-                onTimerCancel={() => handleTimerCancel(routine.id)}
               />
             ))}
           </div>
@@ -616,15 +644,45 @@ export default function DailyTab() {
                       <option value="evening">Evening</option>
                     </select>
                   </FormGroup>
-                  <FormGroup label="Planned Minutes">
-                    <input
-                      type="number"
-                      min="1"
-                      max="480"
-                      value={newPlannedMinutes}
-                      onChange={(event) => setNewPlannedMinutes(event.target.valueAsNumber || "")}
-                      className="input"
-                    />
+                  <FormGroup label="Planned Time">
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="label text-xs">Hours</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="23"
+                          value={newPlannedHours ?? ""}
+                          onChange={(event) => setNewPlannedHours(event.target.valueAsNumber || 0)}
+                          className="input"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="label text-xs">Minutes</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          value={newPlannedMinutes ?? ""}
+                          onChange={(event) => setNewPlannedMinutes(event.target.valueAsNumber || 0)}
+                          className="input"
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="label text-xs">Seconds</label>
+                        <input
+                          type="number"
+                          min="0"
+                          max="59"
+                          value={newPlannedSeconds ?? ""}
+                          onChange={(event) => setNewPlannedSeconds(event.target.valueAsNumber || 0)}
+                          className="input"
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
                   </FormGroup>
                   <div className="grid grid-cols-2 gap-4">
                     <FormGroup label="Start Time (optional)">
@@ -763,7 +821,9 @@ export default function DailyTab() {
           setEditTitle(""); 
           setEditDescription("");
           setEditDailySlot("");
+          setEditPlannedHours(0);
           setEditPlannedMinutes(60);
+          setEditPlannedSeconds(0);
           setEditStartTime("");
           setEditEndTime("");
         }}
@@ -799,15 +859,45 @@ export default function DailyTab() {
               <option value="evening">Evening</option>
             </select>
           </FormGroup>
-          <FormGroup label="Planned Minutes">
-            <input
-              type="number"
-              min="1"
-              max="480"
-              value={editPlannedMinutes}
-              onChange={(e) => setEditPlannedMinutes(e.target.valueAsNumber || "")}
-              className="input"
-            />
+          <FormGroup label="Planned Time">
+            <div className="grid grid-cols-3 gap-2">
+              <div>
+                <label className="label text-xs">Hours</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="23"
+                  value={editPlannedHours ?? ""}
+                  onChange={(event) => setEditPlannedHours(event.target.valueAsNumber || 0)}
+                  className="input"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="label text-xs">Minutes</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={editPlannedMinutes ?? ""}
+                  onChange={(event) => setEditPlannedMinutes(event.target.valueAsNumber || 0)}
+                  className="input"
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <label className="label text-xs">Seconds</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="59"
+                  value={editPlannedSeconds ?? ""}
+                  onChange={(event) => setEditPlannedSeconds(event.target.valueAsNumber || 0)}
+                  className="input"
+                  placeholder="0"
+                />
+              </div>
+            </div>
           </FormGroup>
           <div className="grid grid-cols-2 gap-4">
             <FormGroup label="Start Time (optional)">

@@ -157,10 +157,18 @@ export async function POST(request: Request) {
         typeof body.estimatedMinutes === "number"
           ? Math.max(1, Math.round(body.estimatedMinutes))
           : 60,
+      plannedHours:
+        typeof body.plannedHours === "number"
+          ? Math.max(0, Math.round(body.plannedHours))
+          : undefined,
       plannedMinutes:
         typeof body.plannedMinutes === "number"
-          ? Math.max(1, Math.round(body.plannedMinutes))
-          : 60,
+          ? Math.max(0, Math.round(body.plannedMinutes))
+          : undefined,
+      plannedSeconds:
+        typeof body.plannedSeconds === "number"
+          ? Math.max(0, Math.round(body.plannedSeconds))
+          : undefined,
       dueDate,
       taskType: typeof body.taskType === "string" ? body.taskType : "custom",
       dailySlot:
