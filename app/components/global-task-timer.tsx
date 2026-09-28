@@ -136,7 +136,7 @@ export function GlobalTaskTimer() {
     <div
       className={cn(
         "fixed bottom-4 right-4 z-50 w-[320px] card transition-all duration-300",
-        "md:right-6 md:bottom-6",
+        "md:right-6 md:bottom-5",
         "animate-slide-in-right",
       )}
       role="status"
