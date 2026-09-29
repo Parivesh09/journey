@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useTransition, useEffect } from "react";
+import { useState, useTransition, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, Plus, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Check, MousePointer2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Sheet, PageHeader, SectionHead, Stamp, Card, CardContent, Loader, Dialog, Input, FormGroup, PrimaryButton, SecondaryButton, EmptyState } from "@/app/components/ui";
+import { Sheet, PageHeader, SectionHead, Stamp, Card, CardContent, Loader, Dialog, Input, FormGroup, PrimaryButton, SecondaryButton, EmptyState, DailyTasksModal } from "@/app/components/ui";
 import { formatMonthYear, formatWeekRange, formatDay, addMonths, addWeeks, addDays, getDaysInMonth, getWeekDays, isSameDay, isToday, startOfWeek, endOfWeek, getTimeSlots } from "@/lib/utils";
 import { useGetDailyTasksQuery, useCreateTaskMutation, useCreateStudySessionMutation, useToggleTaskCompleteTodayMutation } from "@/lib/api";
+import { useTaskTimer } from "@/app/components/task-timer-context";
 
 export default function CalendarClient({
   initialView,
@@ -17,6 +18,7 @@ export default function CalendarClient({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const { startTask } = useTaskTimer();
 
   const [view, setView] = useState(initialView);
   const [currentDate, setCurrentDate] = useState(new Date(initialDate));
@@ -28,15 +30,47 @@ export default function CalendarClient({
   const [isStudyModalOpen, setIsStudyModalOpen] = useState(false);
   const [studyMinutes, setStudyMinutes] = useState("");
 
-  const { data: dailyData, isLoading } = useGetDailyTasksQuery("daily");
+  // Daily tasks modal state
+  const [isDailyTasksModalOpen, setIsDailyTasksModalOpen] = useState(false);
+  const [dailyTasksDate, setDailyTasksDate] = useState<Date | null>(null);
+
+  // Fetch daily tasks for today (for day view sidebar)
+  const { data: dailyData, isLoading } = useGetDailyTasksQuery({ tab: "daily" });
+
+  // Fetch daily tasks for selected date (for modal)
+  const { data: selectedDateData } = useGetDailyTasksQuery(
+    dailyTasksDate ? { tab: "daily", date: dailyTasksDate.toISOString().split("T")[0] } : { tab: "daily", date: "" },
+    { skip: !dailyTasksDate }
+  );
+
   const [createTask] = useCreateTaskMutation();
   const [createStudySession] = useCreateStudySessionMutation();
   const [toggleTaskCompleteToday] = useToggleTaskCompleteTodayMutation();
 
-  const routines = dailyData?.routines ?? [];
-  const connected = dailyData?.connected ?? [];
+  // Handle double-click to open daily tasks modal
+  const handleOpenDailyTasksModal = useCallback((date: Date) => {
+    setDailyTasksDate(date);
+    setIsDailyTasksModalOpen(true);
+  }, []);
 
-  const activeDate = selectedDate;
+  const handleStartTaskFromModal = useCallback((taskData: {
+    id: string;
+    title: string;
+    description?: string | null;
+    plannedSeconds: number;
+    kind: "routine" | "task";
+    isDailyTask: boolean;
+  }) => {
+    startTask({
+      id: taskData.id,
+      title: taskData.title,
+      description: taskData.description,
+      plannedSeconds: taskData.plannedSeconds,
+      kind: taskData.kind,
+      isDailyTask: taskData.isDailyTask,
+    });
+    setIsDailyTasksModalOpen(false);
+  }, [startTask]);
 
   const handlePrev = () => {
     setCurrentDate((current) => {
@@ -160,12 +194,17 @@ export default function CalendarClient({
           <div
             key={idx}
             onClick={() => handleSelectDate(day)}
+            onDoubleClick={() => handleOpenDailyTasksModal(day)}
             className={cn(
               "bg-surface min-h-[110px] p-3 flex flex-col justify-between transition-all cursor-pointer relative",
+              "hover:bg-muted/30 hover:shadow-md",
+              "active:scale-[0.98]",
               !isCurrentMonth && "opacity-40 bg-muted/10",
               isTodayDate && "ring-2 ring-primary ring-inset",
-              isSelected && "bg-primary/5"
+              isSelected && "bg-primary/5",
+              "animate-fade-in"
             )}
+            style={{ animationDelay: `${idx * 10}ms` }}
           >
             <div className="flex justify-between items-center mb-2">
               <span className={cn(
@@ -196,6 +235,9 @@ export default function CalendarClient({
                   </span>
                 </div>
               )}
+              <div className="absolute bottom-1 right-1 opacity-0 hover:opacity-100 transition-opacity">
+                <MousePointer2 className="h-3 w-3 text-graphite-faint" />
+              </div>
             </div>
           </div>
         );
@@ -208,7 +250,11 @@ export default function CalendarClient({
       <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border bg-muted/30">
         <div className="px-2 py-2 label text-center">Time</div>
         {calendarDays.map((day, idx) => (
-          <div key={idx} className="px-2 py-2 text-center border-l border-border">
+          <div 
+            key={idx} 
+            onDoubleClick={() => handleOpenDailyTasksModal(day)}
+            className="px-2 py-2 text-center border-l border-border cursor-pointer hover:bg-muted/50 transition-colors"
+          >
             <div className="label">{day.toLocaleDateString("en-US", { weekday: "short" })}</div>
             <div className={cn(
               "font-mono text-lg font-semibold tabular-nums mt-1",
@@ -226,7 +272,11 @@ export default function CalendarClient({
               {slot.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
             </div>
             {calendarDays.map((day, dayIdx) => (
-              <div key={dayIdx} className="border-l border-border min-h-[80px] relative">
+              <div 
+                key={dayIdx} 
+                onDoubleClick={() => handleOpenDailyTasksModal(day)}
+                className="border-l border-border min-h-[80px] relative cursor-pointer hover:bg-muted/20 transition-colors"
+              >
                 {isToday(day) && isSameDay(slot, new Date()) && (
                   <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
                 )}
@@ -237,6 +287,9 @@ export default function CalendarClient({
       </div>
     </div>
   );
+
+  const routines = selectedDateData?.routines ?? [];
+  const connected = selectedDateData?.connected ?? [];
 
   const renderDayView = () => (
     <div className="space-y-6">
@@ -416,11 +469,11 @@ export default function CalendarClient({
                 <SectionHead
                   index="01"
                   title="Day Agenda"
-                  instruction={formatDay(activeDate)}
+                  instruction={formatDay(selectedDate)}
                 />
                 
                 <div className="space-y-4 mt-6">
-                  {isToday(activeDate) ? (
+                  {isToday(selectedDate) ? (
                     <>
                       <div className="border-l-4 border-success pl-3 py-1">
                         <span className="label block text-[0.68rem]">Habit routines</span>
@@ -543,6 +596,23 @@ export default function CalendarClient({
             </div>
           </form>
         </Dialog>
+
+        {/* Daily Tasks Modal for double-clicked date */}
+        {dailyTasksDate && (
+          <DailyTasksModal
+            open={isDailyTasksModalOpen}
+            onClose={() => {
+              setIsDailyTasksModalOpen(false);
+              setDailyTasksDate(null);
+            }}
+            date={dailyTasksDate}
+            tasks={{
+              routines: selectedDateData?.routines ?? [],
+              connected: selectedDateData?.connected ?? [],
+            }}
+            onStartTask={handleStartTaskFromModal}
+          />
+        )}
       </Sheet>
     </main>
   );

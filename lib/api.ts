@@ -40,8 +40,8 @@ export const apiSlice = createApi({
   ],
   endpoints: (builder) => ({
     // Tasks API
-    getDailyTasks: builder.query<DailyFeed, string>({
-      query: (tab) => `tasks?tab=${tab}`,
+    getDailyTasks: builder.query<DailyFeed, { tab: string; date?: string }>({
+      query: ({ tab, date }) => `tasks?tab=${tab}${date ? `&date=${date}` : ""}`,
       providesTags: ["Tasks"],
     }),
 

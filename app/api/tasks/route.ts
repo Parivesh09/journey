@@ -22,10 +22,15 @@ export async function GET(request: Request) {
   if (!user) return unauthorized();
   const url = new URL(request.url);
   const tab = url.searchParams.get("tab");
+  const date = url.searchParams.get("date");
 
   if (tab === "daily") {
-    const { routines, connected } = await getDailyItems(user.id);
-    return NextResponse.json({ tab: "daily", routines, connected });
+    const targetDate = date ? new Date(`${date}T00:00:00.000Z`) : new Date();
+    if (Number.isNaN(targetDate.getTime())) {
+      return NextResponse.json({ error: "Invalid date" }, { status: 400 });
+    }
+    const { routines, connected } = await getDailyItems(user.id, targetDate);
+    return NextResponse.json({ tab: "daily", routines, connected, date: targetDate.toISOString() });
   }
 
   const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
