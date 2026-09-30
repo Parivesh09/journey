@@ -168,7 +168,99 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
   </style>
   <style>
 /* ARCHIFY:VIEWER_CSS */
+    :root {
+      --panel: #0f172a;
+      --panel-border: #1e293b;
+      --toolbar-menu-bg: #0f172a;
+      --toolbar-border: #1e293b;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --text-faint: #475569;
+      --canvas-dot: #1e293b;
+      --grid: #1e293b;
+      --mask: #0f172a;
+      --lane-fill: #1e293b;
+      --lane-stroke: #334155;
+      --arrow: #94a3b8;
+      --arrow-emphasis: #e2e8f0;
+      --frontend-fill: #1e3a5f;
+      --frontend-stroke: #3b82f6;
+      --backend-fill: #1e3a5f;
+      --backend-stroke: #22c55e;
+      --database-fill: #1e3a5f;
+      --database-stroke: #f59e0b;
+      --cloud-fill: #1e3a5f;
+      --cloud-stroke: #8b5cf6;
+      --security-fill: #1e3a5f;
+      --security-stroke: #ef4444;
+      --messagebus-fill: #1e3a5f;
+      --messagebus-stroke: #ec4899;
+      --external-fill: #1e3a5f;
+      --external-stroke: #64748b;
+    }
+    html[data-theme="light"] {
+      --panel: #ffffff;
+      --panel-border: #e2e8f0;
+      --toolbar-menu-bg: #ffffff;
+      --toolbar-border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      --text-faint: #cbd5e1;
+      --canvas-dot: #e2e8f0;
+      --grid: #e2e8f0;
+      --mask: #ffffff;
+      --lane-fill: #f8fafc;
+      --lane-stroke: #cbd5e1;
+      --arrow: #475569;
+      --arrow-emphasis: #0f172a;
+      --frontend-fill: #eff6ff;
+      --frontend-stroke: #2563eb;
+      --backend-fill: #f0fdf4;
+      --backend-stroke: #16a34a;
+      --database-fill: #fffbeb;
+      --database-stroke: #d97706;
+      --cloud-fill: #faf5ff;
+      --cloud-stroke: #7c3aed;
+      --security-fill: #fef2f2;
+      --security-stroke: #dc2626;
+      --messagebus-fill: #fdf2f8;
+      --messagebus-stroke: #db2777;
+      --external-fill: #f8fafc;
+      --external-stroke: #94a3b8;
+    }
+    .c-grid       { stroke: var(--grid); fill: none; }
+    .c-mask       { fill: var(--mask); stroke: none; }
+    .c-lane-rule  { stroke: var(--lane-stroke); fill: none; opacity: 0.7; }
+    .c-lane-wash  { fill: var(--lane-fill); stroke: none; }
+    .c-frontend   { fill: var(--frontend-fill);   stroke: var(--frontend-stroke); }
+    .c-backend    { fill: var(--backend-fill);    stroke: var(--backend-stroke); }
+    .c-database   { fill: var(--database-fill);   stroke: var(--database-stroke); }
+    .c-cloud      { fill: var(--cloud-fill);      stroke: var(--cloud-stroke); }
+    .c-security   { fill: var(--security-fill);   stroke: var(--security-stroke); }
+    .c-messagebus { fill: var(--messagebus-fill); stroke: var(--messagebus-stroke); }
+    .c-external   { fill: var(--external-fill);   stroke: var(--external-stroke); }
+    .t-primary { fill: var(--text); }
+    .t-muted   { fill: var(--text-muted); }
+    .t-dim     { fill: var(--text-dim); }
+    .t-frontend   { fill: var(--frontend-stroke); }
+    .t-backend    { fill: var(--backend-stroke); }
+    .t-database   { fill: var(--database-stroke); }
+    .t-cloud      { fill: var(--cloud-stroke); }
+    .t-security   { fill: var(--security-stroke); }
+    .t-messagebus { fill: var(--messagebus-stroke); }
+    .t-external   { fill: var(--external-stroke); }
+    .t-edge-default  { fill: var(--arrow); }
+    .t-edge-emphasis { fill: var(--arrow-emphasis); }
+    .t-edge-security { fill: var(--security-stroke); }
+    .t-edge-dashed   { fill: var(--database-stroke); }
+    .a-default   { stroke: var(--arrow); fill: none; }
+    .a-emphasis  { stroke: var(--arrow-emphasis); fill: none; }
+    .a-security  { stroke: var(--security-stroke); fill: none; stroke-dasharray: 5,5; }
+    .a-dashed    { stroke: var(--database-stroke); fill: none; stroke-dasharray: 4,4; }
   </style>
+  <script id="archify-data" type="application/json">{};</script>
 </head>
 <body>
   <!-- Toolbar: theme, live visual style, trace motion, presentation stage, and export.
