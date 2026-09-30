@@ -68,13 +68,22 @@ export default function RoadmapDetailClient({
                 )}
               </div>
               <div className="flex-shrink-0">
-                {activated ? (
-                  <Stamp tone="valid" className="text-sm">Enrolled &middot; Active</Stamp>
-                ) : (
-                  <button type="button" className="btn btn-primary px-6 py-3 text-sm font-medium">
-                    Activate Roadmap
-                  </button>
-                )}
+{activated ? (
+                   <>
+                     <Stamp tone="valid" className="text-sm">Enrolled &middot; Active</Stamp>
+                     {/* Visualization Button */}
+                     <a
+                       href={`/tasks/roadmap/${template.id}/visualize`}
+                       className="btn btn-secondary px-4 py-2 text-sm font-medium ml-3"
+                     >
+                       ✦ Visualize
+                     </a>
+                   </>
+                 ) : (
+                   <button type="button" className="btn btn-primary px-6 py-3 text-sm font-medium">
+                     Activate Roadmap
+                   </button>
+                 )}
               </div>
             </div>
 

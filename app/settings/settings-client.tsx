@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { SectionHead, PrimaryButton, FormGroup, Loader, Card, CardContent, Input, Label, Caption } from "@/app/components/ui";
+import { SectionHead, PrimaryButton, FormGroup, Loader, Card, CardContent, Input, Label, Caption, Sheet, PageHeader } from "@/app/components/ui";
 import { useGetSettingsQuery, useSaveSettingsMutation, useSaveNotificationSettingsMutation } from "@/lib/api";
 import type { ApiError } from "@/lib/types";
 
@@ -164,22 +164,44 @@ export default function SettingsClient() {
   }
 
   return (
-    <div className="space-y-10">
+    <Sheet>
+      <PageHeader
+        title="Settings"
+        subtitle="Manage your account, preferences, and notifications"
+      />
+
       {/* Tab Navigation */}
-      <div className="flex border-b border-border">
-        {(["account", "appearance", "notifications"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors -mb-px ${
-              activeTab === tab
-                ? "border-primary text-foreground"
-                : "border-transparent text-graphite-muted hover:text-foreground hover:bg-muted/50"
-            }`}
-          >
-            {tab.charAt(0).toUpperCase() + tab.slice(1)}
-          </button>
-        ))}
+      <div className="border-b border-border mb-8 relative">
+        <div className="flex items-center gap-8">
+          {[
+            { id: "account", label: "Account", description: "Your identity, email, and password" },
+            { id: "appearance", label: "Appearance", description: "Theme and display preferences" },
+            { id: "notifications", label: "Notifications", description: "Reminders and alert channels" },
+          ].map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setActiveTab(item.id as any)}
+              className={`pb-3 border-b-2 font-medium relative transition-all duration-fast ${
+                activeTab === item.id
+                  ? "text-foreground border-primary"
+                  : "border-transparent text-graphite-muted hover:text-foreground"
+              }`}
+            >
+              {item.label}
+              {activeTab === item.id && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary animate-slide-in-left" />
+              )}
+            </button>
+          ))}
+          <div className="ml-auto text-sm text-graphite-faint hidden sm:block transition-opacity duration-normal">
+            {[
+              { id: "account", description: "Your identity, email, and password" },
+              { id: "appearance", description: "Theme and display preferences" },
+              { id: "notifications", description: "Reminders and alert channels" },
+            ].find(item => item.id === activeTab)?.description}
+          </div>
+        </div>
       </div>
 
       {activeTab === "account" && (
@@ -536,6 +558,6 @@ export default function SettingsClient() {
           </div>
         </form>
       )}
-    </div>
+    </Sheet>
   );
 }

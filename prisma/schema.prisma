@@ -321,3 +321,43 @@ model UserIntegration {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+model RoadmapVisualizationConfig {
+  id                  String    @id @default(cuid())
+  roadmapId           String    @unique
+  archifyEnabled      Boolean   @default(false)
+  defaultDiagramType  String    @default("architecture")
+  allowedDiagramTypes String[]  @default(["architecture"])
+  aiGenerationEnabled Boolean   @default(false)
+  generationStrategy  String?
+  regenerationPolicy  String?
+  maxNodes            Int?
+  promptVersion       String    @default("1")
+  generationVersion   String    @default("1")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  diagrams ArchifyDiagram[]
+}
+
+model ArchifyDiagram {
+  id              String    @id @default(cuid())
+  roadmapId       String
+  diagramType     String
+  sourceJson      Json
+  sourceHash      String
+  roadmapVersion  String
+  generationVersion String
+  promptVersion   String
+  status          String    @default("ready")
+  errorMetadata   Json?
+  renderedHtml    String?
+  generatedAt     DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  config RoadmapVisualizationConfig @relation(fields: [roadmapId], references: [roadmapId], onDelete: Cascade)
+
+  @@index([roadmapId, diagramType])
+  @@index([roadmapId, status])
+  @@unique([roadmapId, diagramType, roadmapVersion])
+}

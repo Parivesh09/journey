@@ -15,6 +15,12 @@ const config = {
         "postgresql://postgres:postgres@localhost:5433/sde_command_center?schema=public",
       AUTH_SECRET: "test-secret",
     },
+    coverage: {
+      enabled: true,
+      provider: "v8",
+      reporter: ["text", "json", "html"],
+    },
+    setupFiles: ["dotenv/config"],
   },
 };
 
