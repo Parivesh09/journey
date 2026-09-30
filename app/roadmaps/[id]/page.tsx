@@ -7,6 +7,7 @@ import { readRoadmap } from "@/lib/business/roadmap-templates";
 import AppShell from "@/app/components/shell";
 import { PageHeader, Sheet, SectionHead, Stamp, Card, CardContent, Num, ProgressBar } from "@/app/components/ui";
 import TemplateAccordion from "../template-accordion";
+import { activateRoadmap } from "./activate-action";
 
 export const metadata: Metadata = {
   title: "Roadmap Details",
@@ -102,15 +103,29 @@ export default async function RoadmapDetailsPage({
                   </p>
                 )}
               </div>
-              <div className="flex-shrink-0">
-                {activated ? (
-                  <Stamp tone="valid" className="text-sm">Enrolled · Active</Stamp>
-                ) : (
-                  <button type="button" className="btn btn-primary px-6 py-3 text-sm font-medium">
-                    Activate Roadmap
-                  </button>
-                )}
-              </div>
+<div className="flex-shrink-0">
+                  {activated ? (
+                    <>
+                      <Stamp tone="valid" className="text-sm">Enrolled · Active</Stamp>
+                      {/* Visualization Button */}
+                      <a
+                        href={`/roadmaps/${rawId}/visualize`}
+                        className="btn btn-secondary px-4 py-2 text-sm font-medium ml-3"
+                      >
+                        ✦ Visualize
+                      </a>
+                    </>
+                  ) : (
+                    <form
+                      action={activateRoadmap}
+                    >
+                      <button type="submit" className="btn btn-primary px-6 py-3 text-sm font-medium">
+                        Activate Roadmap
+                      </button>
+                      <input type="hidden" name="roadmapId" value={rawId} />
+                    </form>
+                  )}
+                </div>
             </div>
 
             {/* Progress Bar */}

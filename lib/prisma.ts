@@ -7,10 +7,6 @@ if (!connectionString) {
   throw new Error("DATABASE_URL is not set");
 }
 
-const globalForPrisma = globalThis as unknown as {
-  prisma?: PrismaClient;
-};
-
 function getRuntimeConnectionString(value: string) {
   if (!value.includes("supabase.co")) {
     return value;
@@ -26,8 +22,8 @@ const adapter = new PrismaPg({
   connectionString: getRuntimeConnectionString(connectionString),
 });
 
-export const prisma = globalForPrisma.prisma ?? new PrismaClient({ adapter });
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+// Don't cache in development to avoid stale client issues after migrations
+export const prisma =
+  process.env.NODE_ENV === "production"
+    ? new PrismaClient({ adapter })
+    : new PrismaClient({ adapter, log: ["query", "error", "warn"] });

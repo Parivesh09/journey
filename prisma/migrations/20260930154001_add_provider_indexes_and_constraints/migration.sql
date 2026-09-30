@@ -1,0 +1,3 @@
+-- Migration: 20260930154001_add_provider_indexes_and_constraints
+-- Description: Add additional indexes and constraints for AI Provider system
+-- (No additional indexes/constraints needed - all created in previous migration)

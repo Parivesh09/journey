@@ -675,12 +675,15 @@ export function MoonIcon(props: React.SVGProps<SVGSVGElement>) {
 }
 
 export function ThemeToggle({ className }: { className?: string }) {
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    if (typeof window !== "undefined") {
-      return (localStorage.getItem("theme") as "light" | "dark") || "dark";
-    }
-    return "dark";
-  });
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const saved = (localStorage.getItem("theme") as "light" | "dark") || "dark";
+    const current = document.documentElement.getAttribute("data-theme") || saved;
+    setTheme(current === "light" ? "light" : "dark");
+  }, []);
 
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
@@ -691,6 +694,26 @@ export function ThemeToggle({ className }: { className?: string }) {
     } catch {}
   };
 
+  if (!mounted) {
+    return (
+      <button
+        className={cn(
+          "p-2 rounded-lg transition-all duration-fast",
+          "hover:bg-muted/50 hover:scale-[1.02] active:scale-[0.98]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+          className,
+        )}
+        aria-label="Switch theme"
+        title="Switch theme"
+        disabled
+      >
+        <span className="block transition-transform duration-200 ease-out">
+          <SunIcon />
+        </span>
+      </button>
+    );
+  }
+
   return (
     <button
       onClick={toggleTheme}
@@ -700,9 +723,7 @@ export function ThemeToggle({ className }: { className?: string }) {
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
         className,
       )}
-      aria-label={
-        theme === "light" ? "Switch to dark mode" : "Switch to light mode"
-      }
+      aria-label={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
       title={theme === "light" ? "Switch to dark mode" : "Switch to light mode"}
     >
       <span className="block transition-transform duration-200 ease-out">

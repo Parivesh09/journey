@@ -15,7 +15,9 @@ export default async function SettingsPage() {
 
   return (
     <AppShell active="settings" user={{ name: user.name, email: user.email }}>
-      <SettingsClient />
+      <main className="px-6 py-8 sm:px-8 lg:px-12">
+        <SettingsClient />
+      </main>
     </AppShell>
   );
 }

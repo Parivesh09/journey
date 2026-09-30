@@ -47,6 +47,20 @@ export async function provisionRoadmapForUser(
     update: {},
   });
 
+  // Create or update visualization config for this roadmap
+  await prisma.roadmapVisualizationConfig.upsert({
+    where: { roadmapId: roadmap.id },
+    create: {
+      roadmapId: roadmap.id,
+      archifyEnabled: true,
+      aiGenerationEnabled: true,
+    },
+    update: {
+      archifyEnabled: true,
+      aiGenerationEnabled: true,
+    },
+  });
+
   const existingCategories = await prisma.taskCategory.findMany({
     where: { userId },
   });
