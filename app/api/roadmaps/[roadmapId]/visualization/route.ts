@@ -63,8 +63,9 @@ export async function GET(
         isStale: diagram.status === "stale",
       });
     } else {
-      // Get latest diagram for this roadmap and diagram type (default to architecture)
-      const diagramType = "architecture"; // Could be made configurable via query param
+      // Get latest diagram for this roadmap and diagram type (from query param, default to architecture)
+      const { searchParams } = new URL(request.url);
+      const diagramType = searchParams.get("diagramType") || "architecture";
       const diagram = await prisma.archifyDiagram.findFirst({
         where: { roadmapId, diagramType },
         orderBy: { updatedAt: "desc" },

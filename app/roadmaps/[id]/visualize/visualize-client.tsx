@@ -324,15 +324,6 @@ export default function VisualizationClient({
               </h1>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <VisualizationTypeSelector
-              value={selectedType}
-              onChange={setSelectedType}
-              disabled={generationState === "generating"}
-            />
-            <VisualizationGenerationState status={generationState} />
-          </div>
         </div>
 
         {/* Diagram Container */}
