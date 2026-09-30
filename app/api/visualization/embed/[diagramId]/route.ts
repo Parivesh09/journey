@@ -27,6 +27,10 @@ export async function GET(
     const paramsValue = await params;
     const { diagramId } = paramsValue;
 
+    // Get theme from query params
+    const { searchParams } = new URL(request.url);
+    const theme = searchParams.get("theme") || "dark";
+
     const diagram = await prisma.archifyDiagram.findFirst({
       where: { id: diagramId },
     });
@@ -37,7 +41,7 @@ export async function GET(
 
     const storedDiagram = toStoredDiagram(diagram);
 
-// Ensure we have rendered HTML
+    // Ensure we have rendered HTML
     let html = diagram.renderedHtml;
     if (!html) {
       const storedDiagram = toStoredDiagram(diagram);
@@ -50,6 +54,14 @@ export async function GET(
         where: { id: diagramId },
         data: { renderedHtml: html },
       });
+    }
+
+    // Inject theme into HTML by setting data-theme attribute
+    if (theme === "light" || theme === "dark") {
+      html = html.replace(
+        /<html([^>]*)>/,
+        `<html$1 data-theme="${theme}">`
+      );
     }
 
     // Return HTML with proper headers for iframe embedding

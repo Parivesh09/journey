@@ -18,7 +18,7 @@ export function VisualizationButton({
       className={cn(
         "btn btn-secondary",
         className,
-        disabled && "opacity-50 cursor-not-allowed"
+        disabled && "opacity-50 cursor-not-allowed",
       )}
       onClick={async (e) => {
         e.preventDefault();
@@ -60,7 +60,7 @@ export function VisualizationTypeSelector({
         onChange={(e) => onChange(e.target.value)}
         className={cn(
           "w-full px-4 py-2 border border-border rounded-md bg-background text-foreground",
-          disabled && "opacity-50 cursor-not-allowed"
+          disabled && "opacity-50 cursor-not-allowed",
         )}
         disabled={disabled}
       >
@@ -78,7 +78,14 @@ export function VisualizationGenerationState({
   status,
   className,
 }: {
-  status: "idle" | "generating" | "validating" | "rendering" | "ready" | "stale" | "error";
+  status:
+    | "idle"
+    | "generating"
+    | "validating"
+    | "rendering"
+    | "ready"
+    | "stale"
+    | "error";
   className?: string;
 }) {
   const labels: Record<string, string> = {
@@ -121,17 +128,19 @@ export function VisualizationToolbar({
   className?: string;
 }) {
   return (
-    <div className={cn("flex items-center gap-2 p-4 bg-background/50 backdrop-blur", className)}>
+    <div
+      className={cn(
+        "flex items-center gap-2 p-4 bg-background/50 backdrop-blur",
+        className,
+      )}
+    >
       <VisualizationButton
         onClick={onRegenerate}
         className="px-3 py-1.5 text-sm"
       >
         ⟳ Regenerate
       </VisualizationButton>
-      <VisualizationButton
-        onClick={onExport}
-        className="px-3 py-1.5 text-sm"
-      >
+      <VisualizationButton onClick={onExport} className="px-3 py-1.5 text-sm">
         ⬇️ Export
       </VisualizationButton>
       <VisualizationButton

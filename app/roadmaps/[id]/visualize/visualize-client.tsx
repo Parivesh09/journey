@@ -1,8 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import {
+  ArrowLeft,
+  Maximize,
+  Minimize,
+  ExternalLink,
+  Monitor,
+  Sun,
+  Moon,
+} from "lucide-react";
 import AppShell from "@/app/components/shell";
 import { PageHeader, Sheet, Stamp, Card } from "@/app/components/ui";
 import {
@@ -37,6 +45,40 @@ export default function VisualizationClient({
   const [selectedType, setSelectedType] = useState<string>(defaultDiagramType);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeDiagramUrl, setIframeDiagramUrl] = useState<string | null>(null);
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
+
+  // Sync theme with app theme
+  useEffect(() => {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute("data-theme") || "dark";
+    setTheme(currentTheme === "light" ? "light" : "dark");
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.attributeName === "data-theme") {
+          const newTheme = html.getAttribute("data-theme") || "dark";
+          setTheme(newTheme === "light" ? "light" : "dark");
+        }
+      }
+    });
+
+    observer.observe(html, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  // Update iframe theme when theme changes
+  useEffect(() => {
+    if (iframeDiagramUrl) {
+      const newUrl = iframeDiagramUrl.replace(
+        /theme=(light|dark)/,
+        `theme=${theme}`,
+      );
+      setIframeDiagramUrl(newUrl);
+    }
+  }, [theme, iframeDiagramUrl]);
 
   async function fetchDiagram() {
     setGenerationState("idle");
@@ -81,7 +123,9 @@ export default function VisualizationClient({
 
   async function getDiagramUrl(diagramId: string) {
     try {
-      const res = await fetch(`/api/visualization/embed/${diagramId}`);
+      const res = await fetch(
+        `/api/visualization/embed/${diagramId}?theme=${theme}`,
+      );
       if (!res.ok) {
         throw new Error("Failed to get diagram URL");
       }
@@ -100,7 +144,7 @@ export default function VisualizationClient({
         setIframeDiagramUrl(url);
       });
     }
-  }, [diagram]);
+  }, [diagram, theme]);
 
   async function handleRegenerate() {
     setGenerationState("generating");
@@ -165,10 +209,74 @@ export default function VisualizationClient({
     alert("Export functionality coming soon!");
   }
 
-  async function handleFullscreen() {
-    setIsFullscreen(!isFullscreen);
-    // TODO: Implement actual fullscreen API
-  }
+  const handleFullscreen = useCallback(async () => {
+    const container = document.querySelector(
+      ".diagram-frame-container",
+    ) as HTMLElement;
+    if (!container) return;
+
+    if (!isFullscreen) {
+      try {
+        if (container.requestFullscreen) {
+          await container.requestFullscreen();
+        } else if (container.webkitRequestFullscreen) {
+          await container.webkitRequestFullscreen();
+        } else if (container.msRequestFullscreen) {
+          await container.msRequestFullscreen();
+        }
+        setIsFullscreen(true);
+      } catch (err) {
+        console.error("Fullscreen request failed:", err);
+      }
+    } else {
+      try {
+        if (document.exitFullscreen) {
+          await document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          await document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+          await document.msExitFullscreen();
+        }
+        setIsFullscreen(false);
+      } catch (err) {
+        console.error("Exit fullscreen failed:", err);
+      }
+    }
+  }, [isFullscreen]);
+
+  // Listen for fullscreen changes
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      const isFull = !!(
+        document.fullscreenElement ||
+        (document as any).webkitFullscreenElement ||
+        (document as any).msFullscreenElement
+      );
+      setIsFullscreen(isFull);
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    document.addEventListener("msfullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener(
+        "webkitfullscreenchange",
+        handleFullscreenChange,
+      );
+      document.removeEventListener(
+        "msfullscreenchange",
+        handleFullscreenChange,
+      );
+    };
+  }, []);
+
+  const handleOpenInNewTab = useCallback(() => {
+    if (!diagram) return;
+    const url = `/api/visualization/embed/${diagram.id}?theme=${theme}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }, [diagram, theme]);
 
   if (generationState === "error") {
     return (
@@ -209,9 +317,6 @@ export default function VisualizationClient({
         {/* Header */}
         <div className="flex flex-shrink-0 items-center justify-between px-4 py-3 bg-background/50 backdrop-blur-sm border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-              <span className="text-primary text-xl">📊</span>
-            </div>
             <div>
               <p className="label text-primary">Visualization</p>
               <h1 className="text-2xl font-bold text-foreground font-display tracking-tight">
@@ -220,7 +325,7 @@ export default function VisualizationClient({
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-foreground/60">
+          <div className="flex items-center gap-2">
             <VisualizationTypeSelector
               value={selectedType}
               onChange={setSelectedType}
@@ -233,28 +338,56 @@ export default function VisualizationClient({
         {/* Diagram Container */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Toolbar */}
-          {!isFullscreen && (
-            <VisualizationToolbar
-              onRegenerate={handleRegenerate}
-              onExport={handleExport}
-              onFullscreen={handleFullscreen}
-            />
-          )}
+          <div className="flex flex-shrink-0 items-center justify-between px-4 py-2 bg-background/50 backdrop-blur-sm border-b border-border">
+            <div className="flex items-center gap-2">
+              <span className="text-foreground/60 text-sm">
+                {diagram
+                  ? `Generated ${new Date(diagram.generatedAt).toLocaleDateString()}`
+                  : ""}
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <VisualizationButton
+                onClick={handleOpenInNewTab}
+                className="btn btn-secondary"
+                title="Open in new tab"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </VisualizationButton>
+              <VisualizationButton
+                onClick={handleFullscreen}
+                className="btn btn-secondary"
+                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              >
+                {isFullscreen ? (
+                  <Minimize className="h-4 w-4" />
+                ) : (
+                  <Maximize className="h-4 w-4" />
+                )}
+              </VisualizationButton>
+            </div>
+          </div>
 
           {/* Diagram Frame */}
-          <div className="flex-1 relative overflow-hidden bg-background">
+          <div
+            className="diagram-frame-container flex-1 relative overflow-hidden bg-background"
+            ref={(el) => {
+              // Store reference for fullscreen
+            }}
+          >
             {generationState === "idle" && (
               <div className="absolute inset-0 flex items-center justify-center text-graphite-muted">
                 Click "Regenerate" to create your visualization
               </div>
             )}
 
-            {diagram && diagram.viewerUrl && (
+            {diagram && diagram.id && (
               <iframe
-                src={`/api/visualization/embed/${diagram.id}`}
+                src={`/api/visualization/embed/${diagram.id}?theme=${theme}`}
                 className="w-full h-full border-0"
                 title="Roadmap visualization"
                 style={{ minHeight: 0 }}
+                allowFullScreen
               />
             )}
 
@@ -303,33 +436,6 @@ export default function VisualizationClient({
               </div>
             )}
           </div>
-
-          {/* Controls (hidden in fullscreen) */}
-          {!isFullscreen && (
-            <div className="flex items-center justify-between px-4 py-3 bg-background/50 backdrop-blur-sm border-t border-border text-sm">
-              <div className="flex items-center gap-2">
-                <span className="text-foreground/60">
-                  {diagram
-                    ? `Generated ${new Date(diagram.generatedAt).toLocaleDateString()}`
-                    : ""}
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <VisualizationButton
-                  onClick={handleExport}
-                  className="btn btn-secondary"
-                >
-                  ⬇️ Export
-                </VisualizationButton>
-                <VisualizationButton
-                  onClick={handleFullscreen}
-                  className="btn btn-secondary"
-                >
-                  ⛶ Fullscreen
-                </VisualizationButton>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </Sheet>
