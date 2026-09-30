@@ -59,7 +59,7 @@ export async function GET(
         status: diagram.status,
         generatedAt: diagram.generatedAt,
         updatedAt: diagram.updatedAt,
-        viewerUrl: `/roadmaps/${roadmapId}/visualize/${diagram.id}`,
+        viewerUrl: `/roadmaps/${roadmapId}/visualize?diagramType=${diagram.diagramType}&diagramId=${diagram.id}`,
         isStale: diagram.status === "stale",
       });
     } else {
@@ -84,7 +84,7 @@ export async function GET(
         status: diagram.status,
         generatedAt: diagram.generatedAt,
         updatedAt: diagram.updatedAt,
-        viewerUrl: `/roadmaps/${roadmapId}/visualize/${diagram.id}`,
+        viewerUrl: `/roadmaps/${roadmapId}/visualize?diagramType=${diagram.diagramType}&diagramId=${diagram.id}`,
         isStale: diagram.status === "stale",
       });
     }
@@ -138,11 +138,16 @@ export async function POST(
       );
     }
 
-    // Generate diagram (default to architecture type)
+    // Parse request body for options
+    const body = await request.json().catch(() => ({}));
+    const forceRegenerate = body.forceRegenerate === true;
+    const diagramType = body.diagramType || "architecture";
+
+    // Generate diagram
     const result = await generationService.generateDiagram({
       roadmapId,
-      diagramType: "architecture" as const,
-      forceRegenerate: false,
+      diagramType: diagramType as const,
+      forceRegenerate,
     });
 
     return NextResponse.json(result);

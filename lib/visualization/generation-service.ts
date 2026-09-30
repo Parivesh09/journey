@@ -104,7 +104,7 @@ export class GenerationService {
           diagramType: cached.diagramType as DiagramType,
           generatedAt: cached.generatedAt.toISOString(),
           isStale: await this.isStale(cached, roadmap),
-          viewerUrl: `/roadmaps/${roadmapId}/visualize/${cached.id}`,
+          viewerUrl: `/roadmaps/${roadmapId}/visualize?diagramType=${cached.diagramType}&diagramId=${cached.id}`,
         };
       }
     }
@@ -127,6 +127,17 @@ export class GenerationService {
       generationVersion: GENERATION_VERSION,
     };
     const sourceHash = computeSourceHash(sourceHashInput);
+
+    // If forceRegenerate, delete existing diagrams for this roadmap/diagramType/version
+    if (forceRegenerate) {
+      await prisma.archifyDiagram.deleteMany({
+        where: {
+          roadmapId,
+          diagramType,
+          roadmapVersion,
+        },
+      });
+    }
 
     // Try generation with repair loop
     let lastError: Error | undefined;
@@ -166,7 +177,7 @@ export class GenerationService {
       diagramType: diagram.diagramType,
       generatedAt: diagram.generatedAt.toISOString(),
       isStale: await this.isStale(diagram, roadmap),
-      viewerUrl: `/roadmaps/${roadmapId}/visualize/${diagram.id}`,
+      viewerUrl: `/roadmaps/${roadmapId}/visualize?diagramType=${diagram.diagramType}&diagramId=${diagram.id}`,
     };
   }
 

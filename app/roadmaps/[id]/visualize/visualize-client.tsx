@@ -4,12 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import AppShell from "@/app/components/shell";
-import {
-  PageHeader,
-  Sheet,
-  Stamp,
-  Card,
-} from "@/app/components/ui";
+import { PageHeader, Sheet, Stamp, Card } from "@/app/components/ui";
 import {
   VisualizationButton,
   VisualizationTypeSelector,
@@ -30,16 +25,18 @@ export default function VisualizationClient({
 }: VisualizationClientProps) {
   const [diagram, setDiagram] = useState<any>(null);
   const [generationState, setGenerationState] = useState<
-    "idle" | "generating" | "validating" | "rendering" | "ready" | "stale" | "error"
+    | "idle"
+    | "generating"
+    | "validating"
+    | "rendering"
+    | "ready"
+    | "stale"
+    | "error"
   >("idle");
   const [error, setError] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string>(defaultDiagramType);
   const [isFullscreen, setIsFullscreen] = useState(false);
-
-  // Fetch initial diagram
-  useEffect(() => {
-    fetchDiagram();
-  }, [id, selectedType]);
+  const [iframeDiagramUrl, setIframeDiagramUrl] = useState<string | null>(null);
 
   async function fetchDiagram() {
     setGenerationState("idle");
@@ -49,15 +46,19 @@ export default function VisualizationClient({
       const res = await fetch(`/api/roadmaps/${id}/visualization`);
       const data = await res.json();
 
+      console.log("Fetched diagram data:", data);
+
       if (!res.ok) {
         throw new Error(data.error || "Failed to load visualization");
       }
 
       // Get the specific diagram type if we have one
       const diagramRes = await fetch(
-        `/api/roadmaps/${id}/visualization?diagramType=${selectedType}`
+        `/api/roadmaps/${id}/visualization?diagramType=${selectedType}`,
       );
       const diagramData = await diagramRes.json();
+
+      console.log("Fetched diagram data 123:", diagramData);
 
       if (!diagramRes.ok) {
         // Fallback to any diagram
@@ -72,6 +73,34 @@ export default function VisualizationClient({
       setGenerationState("error");
     }
   }
+
+  // Fetch initial diagram
+  useEffect(() => {
+    fetchDiagram();
+  }, [id, selectedType]);
+
+  async function getDiagramUrl(diagramId: string) {
+    try {
+      const res = await fetch(`/api/visualization/embed/${diagramId}`);
+      if (!res.ok) {
+        throw new Error("Failed to get diagram URL");
+      }
+      const data = await res;
+      console.log("Fetched diagram URL:", data);
+      return data.url;
+    } catch (err) {
+      console.error("Error fetching diagram URL:", err);
+      return null;
+    }
+  }
+
+  useEffect(() => {
+    if (diagram && diagram.id) {
+      getDiagramUrl(diagram.id).then((url) => {
+        setIframeDiagramUrl(url);
+      });
+    }
+  }, [diagram]);
 
   async function handleRegenerate() {
     setGenerationState("generating");
@@ -103,7 +132,7 @@ export default function VisualizationClient({
         attempts++;
 
         const statusRes = await fetch(
-          `/api/roadmaps/${id}/visualization/${diagramId}`
+          `/api/roadmaps/${id}/visualization/${diagramId}`,
         );
         const statusData = await statusRes.json();
 
@@ -117,7 +146,7 @@ export default function VisualizationClient({
           return;
         } else if (statusData.status === "error") {
           throw new Error(
-            statusData.error || "Generation failed during processing"
+            statusData.error || "Generation failed during processing",
           );
         }
         // Otherwise still generating/validating/rendering
@@ -154,9 +183,7 @@ export default function VisualizationClient({
 
         <PageHeader title="Visualization Error" />
         <div className="text-graphite-muted text-center py-8">
-          <p className="mb-4">
-            {error || "Failed to generate visualization"}
-          </p>
+          <p className="mb-4">{error || "Failed to generate visualization"}</p>
           <VisualizationButton
             onClick={handleRegenerate}
             className="btn btn-secondary"
@@ -199,9 +226,7 @@ export default function VisualizationClient({
               onChange={setSelectedType}
               disabled={generationState === "generating"}
             />
-            <VisualizationGenerationState
-              status={generationState}
-            />
+            <VisualizationGenerationState status={generationState} />
           </div>
         </div>
 
@@ -226,7 +251,7 @@ export default function VisualizationClient({
 
             {diagram && diagram.viewerUrl && (
               <iframe
-                src={`/visualization/embed/${diagram.id}`}
+                src={`/api/visualization/embed/${diagram.id}`}
                 className="w-full h-full border-0"
                 title="Roadmap visualization"
                 style={{ minHeight: 0 }}
@@ -237,7 +262,9 @@ export default function VisualizationClient({
               <div className="absolute inset-0 flex items-center justify-center bg-background/70 backdrop-blur">
                 <div className="text-center">
                   <div className="animate-spin h-10 w-10 border-4 border-primary/20 border-t-primary"></div>
-                  <p className="mt-4 text-foreground">Generating visualization...</p>
+                  <p className="mt-4 text-foreground">
+                    Generating visualization...
+                  </p>
                 </div>
               </div>
             )}
@@ -282,7 +309,9 @@ export default function VisualizationClient({
             <div className="flex items-center justify-between px-4 py-3 bg-background/50 backdrop-blur-sm border-t border-border text-sm">
               <div className="flex items-center gap-2">
                 <span className="text-foreground/60">
-                  {diagram ? `Generated ${new Date(diagram.generatedAt).toLocaleDateString()}` : ""}
+                  {diagram
+                    ? `Generated ${new Date(diagram.generatedAt).toLocaleDateString()}`
+                    : ""}
                 </span>
               </div>
               <div className="flex items-center gap-2">

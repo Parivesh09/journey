@@ -52,6 +52,93 @@ enum NotificationStatus {
   READ
 }
 
+// ====================
+// AI Provider System
+// ====================
+
+enum AIProviderType {
+  SYSTEM
+  CUSTOM
+}
+
+enum AIProtocol {
+  OPENAI_COMPATIBLE
+  ANTHROPIC_MESSAGES
+  GOOGLE_GEMINI
+  OLLAMA
+  LM_STUDIO
+}
+
+enum AIStatus {
+  ENABLED
+  DISABLED
+}
+
+// Provider definitions (system and built-in provider specifications)
+model AIProviderDefinition {
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  description String?
+  type        AIProviderType
+  protocol    AIProtocol
+  capabilities Json    // AIProviderCapabilities as JSON
+  endpoint     String?
+  apiKeyRequired Boolean @default(true)
+  supportsModelDiscovery Boolean @default(false)
+  documentationUrl String?
+  metadata     Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  providers    AIProvider[]
+}
+
+// User/admin configured AI providers
+model AIProvider {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  type            AIProviderType
+  protocol        AIProtocol
+  status          AIStatus  @default(ENABLED)
+  endpoint        String
+  model           String?
+  capabilities    Json?    // AIProviderCapabilities as JSON
+  configuration    Json?   // Additional configuration metadata
+  metadata        Json?    // Any additional metadata
+  isDefault       Boolean  @default(false)
+  isSystem        Boolean  @default(false)
+  isManagedByEnv  Boolean  @default(false)  // Whether this provider's config comes from environment
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  definition      AIProviderDefinition? @relation(fields: [definitionId], references: [id])
+  definitionId    String?
+  secrets         AIProviderSecret[]
+  diagrams        ArchifyDiagram[]
+}
+
+// Encrypted API key storage
+model AIProviderSecret {
+  id              String   @id @default(cuid())
+  providerId       String
+  encryptedApiKey  String   // Encrypted API key using AES-256-GCM
+  version          Int      @default(1)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  provider         AIProvider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, version])
+  @@index([providerId])
+}
+
 model User {
   id                      String    @id @default(cuid())
   name                    String?
@@ -323,23 +410,24 @@ model UserIntegration {
 }
 
 model RoadmapVisualizationConfig {
-  id                  String    @id @default(cuid())
-  roadmapId           String    @unique
-  archifyEnabled      Boolean   @default(false)
-  defaultDiagramType  String    @default("architecture")
-  allowedDiagramTypes String[]  @default(["architecture"])
-  aiGenerationEnabled Boolean   @default(false)
+  id                  String   @id @default(cuid())
+  roadmapId           String   @unique
+  archifyEnabled      Boolean  @default(false)
+  defaultDiagramType  String   @default("architecture")
+  allowedDiagramTypes String[] @default(["architecture"])
+  aiGenerationEnabled Boolean  @default(false)
   generationStrategy  String?
   regenerationPolicy  String?
   maxNodes            Int?
-  promptVersion       String    @default("1")
-  generationVersion   String    @default("1")
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  promptVersion       String   @default("1")
+  generationVersion   String   @default("1")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   diagrams ArchifyDiagram[]
 }
 
+// Archify diagram with provider reference
 model ArchifyDiagram {
   id              String    @id @default(cuid())
   roadmapId       String
@@ -352,12 +440,20 @@ model ArchifyDiagram {
   status          String    @default("ready")
   errorMetadata   Json?
   renderedHtml    String?
+  
+  // Provider reference
+  providerId      String?
+  modelUsed       String?
+  
   generatedAt     DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  config RoadmapVisualizationConfig @relation(fields: [roadmapId], references: [roadmapId], onDelete: Cascade)
+  // Relations
+  config          RoadmapVisualizationConfig @relation(fields: [roadmapId], references: [roadmapId], onDelete: Cascade)
+  provider        AIProvider?                @relation(fields: [providerId], references: [id])
 
   @@index([roadmapId, diagramType])
   @@index([roadmapId, status])
   @@unique([roadmapId, diagramType, roadmapVersion])
+  @@index([providerId])
 }

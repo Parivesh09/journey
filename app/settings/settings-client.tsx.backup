@@ -2,25 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  SectionHead,
-  PrimaryButton,
-  FormGroup,
-  Loader,
-  Card,
-  CardContent,
-  Input,
-  Label,
-  Caption,
-  Sheet,
-  PageHeader,
-} from "@/app/components/ui";
-import { AIProviderSettings } from "@/app/components/ai-provider-settings";
-import {
-  useGetSettingsQuery,
-  useSaveSettingsMutation,
-  useSaveNotificationSettingsMutation,
-} from "@/lib/api";
+import { SectionHead, PrimaryButton, FormGroup, Loader, Card, CardContent, Input, Label, Caption, Sheet, PageHeader } from "@/app/components/ui";
+import { useGetSettingsQuery, useSaveSettingsMutation, useSaveNotificationSettingsMutation } from "@/lib/api";
 import type { ApiError } from "@/lib/types";
 
 const timezones = (() => {
@@ -82,16 +65,12 @@ export default function SettingsClient() {
   const [saveSettings, { isLoading: saving }] = useSaveSettingsMutation();
   const [saveNotificationSettings] = useSaveNotificationSettingsMutation();
 
-  const [activeTab, setActiveTab] = useState<
-    "account" | "appearance" | "notifications" | "configuration"
-  >("account");
+  const [activeTab, setActiveTab] = useState<"account" | "appearance" | "notifications">("account");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [user, setUser] = useState<UserSettings | null>(null);
   const [password, setPassword] = useState({ current: "", next: "" });
-  const [notificationSettings, setNotificationSettings] = useState(
-    defaultNotificationSettings,
-  );
+  const [notificationSettings, setNotificationSettings] = useState(defaultNotificationSettings);
 
   if (data?.user && !user) {
     setUser(data.user);
@@ -123,10 +102,9 @@ export default function SettingsClient() {
       setMessage("Account settings saved.");
       router.refresh();
     } catch (reason: unknown) {
-      const message =
-        reason && typeof reason === "object" && "data" in reason
-          ? (reason as { data?: ApiError }).data?.error
-          : undefined;
+      const message = reason && typeof reason === "object" && "data" in reason
+        ? (reason as { data?: ApiError }).data?.error
+        : undefined;
       setError(
         typeof message === "string"
           ? message
@@ -153,9 +131,9 @@ export default function SettingsClient() {
 
   const updateNotification = <K extends keyof NotificationSettings>(
     key: K,
-    value: NotificationSettings[K],
+    value: NotificationSettings[K]
   ) => {
-    setNotificationSettings((prev) => ({
+    setNotificationSettings(prev => ({
       ...prev,
       [key]: value,
     }));
@@ -163,12 +141,12 @@ export default function SettingsClient() {
 
   const updateSchedule = (
     index: number,
-    patch: Partial<{ time: string; enabled: boolean }>,
+    patch: Partial<{ time: string; enabled: boolean }>
   ) => {
-    setNotificationSettings((prev) => ({
+    setNotificationSettings(prev => ({
       ...prev,
       reminderSchedule: prev.reminderSchedule.map((entry, i) =>
-        i === index ? { ...entry, ...patch } : entry,
+        i === index ? { ...entry, ...patch } : entry
       ),
     }));
   };
@@ -196,26 +174,9 @@ export default function SettingsClient() {
       <div className="border-b border-border mb-8 relative">
         <div className="flex items-center gap-8">
           {[
-            {
-              id: "account",
-              label: "Account",
-              description: "Your identity, email, and password",
-            },
-            {
-              id: "appearance",
-              label: "Appearance",
-              description: "Theme and display preferences",
-            },
-            {
-              id: "notifications",
-              label: "Notifications",
-              description: "Reminders and alert channels",
-            },
-            {
-              id: "configuration",
-              label: "Configuration",
-              description: "AI providers and configuration",
-            },
+            { id: "account", label: "Account", description: "Your identity, email, and password" },
+            { id: "appearance", label: "Appearance", description: "Theme and display preferences" },
+            { id: "notifications", label: "Notifications", description: "Reminders and alert channels" },
           ].map((item) => (
             <button
               key={item.id}
@@ -234,26 +195,11 @@ export default function SettingsClient() {
             </button>
           ))}
           <div className="ml-auto text-sm text-graphite-faint hidden sm:block transition-opacity duration-normal">
-            {
-              [
-                {
-                  id: "account",
-                  description: "Your identity, email, and password",
-                },
-                {
-                  id: "appearance",
-                  description: "Theme and display preferences",
-                },
-                {
-                  id: "notifications",
-                  description: "Reminders and alert channels",
-                },
-                {
-                  id: "configuration",
-                  description: "AI providers and configuration",
-                },
-              ].find((item) => item.id === activeTab)?.description
-            }
+            {[
+              { id: "account", description: "Your identity, email, and password" },
+              { id: "appearance", description: "Theme and display preferences" },
+              { id: "notifications", description: "Reminders and alert channels" },
+            ].find(item => item.id === activeTab)?.description}
           </div>
         </div>
       </div>
@@ -358,17 +304,13 @@ export default function SettingsClient() {
           />
           <div className="mt-6 space-y-6">
             <div>
-              <label className="text-sm font-medium text-foreground">
-                Theme
-              </label>
+              <label className="text-sm font-medium text-foreground">Theme</label>
               <div className="mt-3 grid grid-cols-2 gap-4">
-                <label
-                  className={`relative cursor-pointer p-4 rounded-xl border-2 transition-colors ${
-                    user?.theme === "dark"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
+                <label className={`relative cursor-pointer p-4 rounded-xl border-2 transition-colors ${
+                  user?.theme === "dark"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                }`}>
                   <input
                     type="radio"
                     name="theme"
@@ -376,9 +318,7 @@ export default function SettingsClient() {
                     checked={user?.theme === "dark"}
                     onChange={(e) => {
                       user && setUser({ ...user, theme: e.target.value });
-                      try {
-                        localStorage.setItem("theme", e.target.value);
-                      } catch (e) {}
+                      try { localStorage.setItem('theme', e.target.value); } catch (e) {}
                     }}
                     className="sr-only"
                   />
@@ -386,24 +326,18 @@ export default function SettingsClient() {
                     <div className="w-full h-20 rounded-lg bg-background border border-border relative overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-primary/5" />
                       <div className="relative flex items-center justify-center h-full">
-                        <span className="text-xs font-medium text-primary">
-                          Dark
-                        </span>
+                        <span className="text-xs font-medium text-primary">Dark</span>
                       </div>
                     </div>
-                    <span className="text-sm font-medium text-foreground">
-                      Dark
-                    </span>
+                    <span className="text-sm font-medium text-foreground">Dark</span>
                     <span className="text-xs text-graphite-muted">Default</span>
                   </div>
                 </label>
-                <label
-                  className={`relative cursor-pointer p-4 rounded-xl border-2 transition-colors ${
-                    user?.theme === "light"
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-primary/50"
-                  }`}
-                >
+                <label className={`relative cursor-pointer p-4 rounded-xl border-2 transition-colors ${
+                  user?.theme === "light"
+                    ? "border-primary bg-primary/5"
+                    : "border-border hover:border-primary/50"
+                }`}>
                   <input
                     type="radio"
                     name="theme"
@@ -411,9 +345,7 @@ export default function SettingsClient() {
                     checked={user?.theme === "light"}
                     onChange={(e) => {
                       user && setUser({ ...user, theme: e.target.value });
-                      try {
-                        localStorage.setItem("theme", e.target.value);
-                      } catch (e) {}
+                      try { localStorage.setItem('theme', e.target.value); } catch (e) {}
                     }}
                     className="sr-only"
                   />
@@ -421,14 +353,10 @@ export default function SettingsClient() {
                     <div className="w-full h-20 rounded-lg bg-background border border-border relative overflow-hidden">
                       <div className="absolute inset-0 bg-gradient-to-br from-accent/10 to-accent/5" />
                       <div className="relative flex items-center justify-center h-full">
-                        <span className="text-xs font-medium text-accent">
-                          Light
-                        </span>
+                        <span className="text-xs font-medium text-accent">Light</span>
                       </div>
                     </div>
-                    <span className="text-sm font-medium text-foreground">
-                      Light
-                    </span>
+                    <span className="text-sm font-medium text-foreground">Light</span>
                   </div>
                 </label>
               </div>
@@ -438,12 +366,7 @@ export default function SettingsClient() {
       )}
 
       {activeTab === "notifications" && (
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            await saveNotificationSettingsHandler();
-          }}
-        >
+        <form onSubmit={async (e) => { e.preventDefault(); await saveNotificationSettingsHandler(); }}>
           {message && (
             <div className="rounded-lg border border-success/30 bg-success/5 px-4 py-3 text-sm text-success">
               {message}
@@ -462,15 +385,11 @@ export default function SettingsClient() {
           />
           <div className="mt-6 space-y-4">
             <label className="flex items-center justify-between py-3 border-b border-border cursor-pointer">
-              <span className="text-sm text-foreground">
-                Browser notifications
-              </span>
+              <span className="text-sm text-foreground">Browser notifications</span>
               <input
                 type="checkbox"
                 checked={notificationSettings.browserEnabled}
-                onChange={(e) =>
-                  updateNotification("browserEnabled", e.target.checked)
-                }
+                onChange={(e) => updateNotification("browserEnabled", e.target.checked)}
                 className="h-4 w-4 accent-primary"
               />
             </label>
@@ -479,9 +398,7 @@ export default function SettingsClient() {
               <input
                 type="checkbox"
                 checked={notificationSettings.emailEnabled}
-                onChange={(e) =>
-                  updateNotification("emailEnabled", e.target.checked)
-                }
+                onChange={(e) => updateNotification("emailEnabled", e.target.checked)}
                 className="h-4 w-4 accent-primary"
               />
             </label>
@@ -490,9 +407,7 @@ export default function SettingsClient() {
               <input
                 type="checkbox"
                 checked={notificationSettings.smsEnabled}
-                onChange={(e) =>
-                  updateNotification("smsEnabled", e.target.checked)
-                }
+                onChange={(e) => updateNotification("smsEnabled", e.target.checked)}
                 className="h-4 w-4 accent-primary"
               />
             </label>
@@ -506,12 +421,12 @@ export default function SettingsClient() {
               <Input
                 type="tel"
                 value={notificationSettings.phoneNumber ?? ""}
-                onChange={(e) =>
-                  updateNotification("phoneNumber", e.target.value)
-                }
+                onChange={(e) => updateNotification("phoneNumber", e.target.value)}
                 placeholder="+91 XXXXX XXXXX"
               />
-              <Caption>Use international format like +91XXXXXXXXXX</Caption>
+              <Caption>
+                Use international format like +91XXXXXXXXXX
+              </Caption>
             </div>
           )}
 
@@ -522,31 +437,20 @@ export default function SettingsClient() {
           />
           <div className="mt-6 space-y-4">
             <label className="flex items-center justify-between py-2 border-b border-border cursor-pointer">
-              <span className="text-sm text-foreground">
-                Daily task reminder
-              </span>
+              <span className="text-sm text-foreground">Daily task reminder</span>
               <input
                 type="checkbox"
                 checked={notificationSettings.dailyReminderEnabled}
-                onChange={(e) =>
-                  updateNotification("dailyReminderEnabled", e.target.checked)
-                }
+                onChange={(e) => updateNotification("dailyReminderEnabled", e.target.checked)}
                 className="h-4 w-4 accent-primary"
               />
             </label>
             <label className="flex items-center justify-between py-2 border-b border-border cursor-pointer">
-              <span className="text-sm text-foreground">
-                Missed-task reminder
-              </span>
+              <span className="text-sm text-foreground">Missed-task reminder</span>
               <input
                 type="checkbox"
                 checked={notificationSettings.missedTaskReminderEnabled}
-                onChange={(e) =>
-                  updateNotification(
-                    "missedTaskReminderEnabled",
-                    e.target.checked,
-                  )
-                }
+                onChange={(e) => updateNotification("missedTaskReminderEnabled", e.target.checked)}
                 className="h-4 w-4 accent-primary"
               />
             </label>
@@ -555,12 +459,7 @@ export default function SettingsClient() {
               <input
                 type="checkbox"
                 checked={notificationSettings.revisionReminderEnabled}
-                onChange={(e) =>
-                  updateNotification(
-                    "revisionReminderEnabled",
-                    e.target.checked,
-                  )
-                }
+                onChange={(e) => updateNotification("revisionReminderEnabled", e.target.checked)}
                 className="h-4 w-4 accent-primary"
               />
             </label>
@@ -569,9 +468,7 @@ export default function SettingsClient() {
               <input
                 type="checkbox"
                 checked={notificationSettings.weeklySummaryEnabled}
-                onChange={(e) =>
-                  updateNotification("weeklySummaryEnabled", e.target.checked)
-                }
+                onChange={(e) => updateNotification("weeklySummaryEnabled", e.target.checked)}
                 className="h-4 w-4 accent-primary"
               />
             </label>
@@ -580,23 +477,10 @@ export default function SettingsClient() {
                 <span className="text-sm text-graphite-muted">Summary day</span>
                 <select
                   value={notificationSettings.weeklySummaryDay}
-                  onChange={(e) =>
-                    updateNotification(
-                      "weeklySummaryDay",
-                      Number(e.target.value),
-                    )
-                  }
+                  onChange={(e) => updateNotification("weeklySummaryDay", Number(e.target.value))}
                   className="input w-32"
                 >
-                  {[
-                    "Sunday",
-                    "Monday",
-                    "Tuesday",
-                    "Wednesday",
-                    "Thursday",
-                    "Friday",
-                    "Saturday",
-                  ].map((day, index) => (
+                  {["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((day, index) => (
                     <option key={day} value={index}>
                       {day}
                     </option>
@@ -607,21 +491,14 @@ export default function SettingsClient() {
           </div>
 
           <div className="space-y-3 border-t border-border pt-4">
-            <Caption className="font-semibold uppercase tracking-wide">
-              Scheduled Times
-            </Caption>
+            <Caption className="font-semibold uppercase tracking-wide">Scheduled Times</Caption>
             {notificationSettings.reminderSchedule?.map((entry, index) => (
-              <div
-                key={entry.key}
-                className="flex items-center justify-between py-2 border-b border-border last:border-b-0"
-              >
+              <div key={entry.key} className="flex items-center justify-between py-2 border-b border-border last:border-b-0">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={entry.enabled}
-                    onChange={(e) =>
-                      updateSchedule(index, { enabled: e.target.checked })
-                    }
+                    onChange={(e) => updateSchedule(index, { enabled: e.target.checked })}
                     className="h-4 w-4 accent-primary"
                   />
                   <span className="text-sm text-foreground">
@@ -631,9 +508,7 @@ export default function SettingsClient() {
                 <Input
                   type="time"
                   value={entry.time}
-                  onChange={(e) =>
-                    updateSchedule(index, { time: e.target.value })
-                  }
+                  onChange={(e) => updateSchedule(index, { time: e.target.value })}
                   className="input w-28 text-center"
                 />
               </div>
@@ -647,9 +522,7 @@ export default function SettingsClient() {
           />
           <div className="mt-6 space-y-4">
             <div className="flex items-center justify-between py-2">
-              <span className="text-sm text-foreground">
-                Max notifications per day
-              </span>
+              <span className="text-sm text-foreground">Max notifications per day</span>
               <Input
                 type="number"
                 min={1}
@@ -658,36 +531,25 @@ export default function SettingsClient() {
                 onChange={(e) =>
                   updateNotification(
                     "maxDailyNotifications",
-                    Math.max(1, Math.min(20, Number(e.target.value) || 1)),
+                    Math.max(1, Math.min(20, Number(e.target.value) || 1))
                   )
                 }
                 className="input w-20 text-center"
               />
             </div>
             <label className="flex items-center justify-between py-2 border-b border-border cursor-pointer">
-              <span className="text-sm text-foreground">
-                Exclude completed tasks
-              </span>
+              <span className="text-sm text-foreground">Exclude completed tasks</span>
               <input
                 type="checkbox"
                 checked={notificationSettings.excludeCompletedTasks}
-                onChange={(e) =>
-                  updateNotification("excludeCompletedTasks", e.target.checked)
-                }
+                onChange={(e) => updateNotification("excludeCompletedTasks", e.target.checked)}
                 className="h-4 w-4 accent-primary"
               />
             </label>
           </div>
 
           <div className="mt-8 pt-6 border-t border-border flex justify-end gap-3">
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => {
-                setMessage("");
-                setError("");
-              }}
-            >
+            <button type="button" className="btn btn-secondary" onClick={() => { setMessage(""); setError(""); }}>
               Cancel
             </button>
             <PrimaryButton type="submit" disabled={saving}>
@@ -696,7 +558,6 @@ export default function SettingsClient() {
           </div>
         </form>
       )}
-      {activeTab === "configuration" && <AIProviderSettings />}
     </Sheet>
   );
 }
