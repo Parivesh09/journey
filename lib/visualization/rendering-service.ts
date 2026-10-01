@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawn } from "node:child_process";
 import { prisma } from "@/lib/prisma";
+import { normalizeComponentSizes } from "@/lib/visualization/component-sizing";
 
 const ARCHIFY_RENDERER_PATH = join(process.env.HOME || "", ".agents", "skills", "archify", "renderers", "architecture", "render-architecture.mjs");
 const ARCHIFY_TEMPLATE_PATH = join(process.env.HOME || "", ".agents", "skills", "archify", "assets", "template.html");
@@ -15,23 +16,15 @@ async function runArchifyRenderer(diagramJson: ArchifyDiagram, diagramType: Diag
   const outputPath = join(tmpDir, "output.html");
 
   // Preprocess diagram: ensure components have adequate size for labels
+  // Also set meta.output to a valid .html path since it's required by the schema
   const processedJson = JSON.parse(JSON.stringify(diagramJson)); // deep copy
-  if (processedJson.components && Array.isArray(processedJson.components)) {
-    // First pass: determine needed widths based on label length
-    let maxWidth = 120;
-    for (const comp of processedJson.components) {
-      const label = comp.label || "";
-      // Estimate label width: ~8px per char for typical font
-      const estimatedWidth = Math.max(120, label.length * 8 + 20);
-      const neededWidth = Math.min(180, Math.max(120, estimatedWidth));
-      comp.size = [neededWidth, 50];
-      if (neededWidth > maxWidth) maxWidth = neededWidth;
-    }
-    // Set layout cellW to accommodate widest component + gap
-    if (processedJson.layout && !processedJson.layout.cellW) {
-      processedJson.layout.cellW = maxWidth + 40; // 40px gap
-    }
+  if (processedJson.meta && typeof processedJson.meta === 'object') {
+    processedJson.meta.output = `${diagramType}.html`;
   }
+
+  // The renderer is the strictest validator in the pipeline; widen components
+  // to fit their own text so it stops rejecting model output.
+  normalizeComponentSizes(processedJson as unknown as Record<string, unknown>);
 
   await writeFile(inputPath, JSON.stringify(processedJson, null, 2));
 

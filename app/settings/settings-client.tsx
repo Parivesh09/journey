@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   SectionHead,
   PrimaryButton,
@@ -82,9 +82,12 @@ export default function SettingsClient() {
   const [saveSettings, { isLoading: saving }] = useSaveSettingsMutation();
   const [saveNotificationSettings] = useSaveNotificationSettingsMutation();
 
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<
     "account" | "appearance" | "notifications" | "configuration"
-  >("account");
+  >(
+    searchParams.get("tab") === "configuration" ? "configuration" : "account"
+  );
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [user, setUser] = useState<UserSettings | null>(null);

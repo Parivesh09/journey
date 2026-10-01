@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@prisma/client";
 import { getAIService } from "@/lib/ai/provider";
 import type { AIError } from "@/lib/ai/types";
+import { AIProviderError } from "@/lib/ai/types";
 
 import {
   buildVisualizationContext,
@@ -31,6 +32,7 @@ import type {
 } from "@/lib/types/archify";
 import type { RoadmapTemplate } from "@/lib/business/roadmap-templates";
 import { validateArchifyJSON } from "@/lib/visualization/validation";
+import { renderingService } from "@/lib/visualization/rendering-service";
 
 /**
  * Convert Prisma RoadmapVisualizationConfig to our custom type
@@ -91,7 +93,10 @@ export class GenerationService {
 
     // Check if AI is configured for archify feature
     if (!this.aiService.isFeatureConfigured(ARCHIFY_FEATURE_ID)) {
-      throw new Error("AI provider not configured for Archify generation. Please configure AI_PROVIDER and credentials.");
+      throw new AIProviderError(
+        "AI provider not configured for Archify generation. Please configure AI_PROVIDER and credentials.",
+        { code: "API_KEY_MISSING" }
+      );
     }
 
     // Check if we can use cached version
@@ -127,17 +132,6 @@ export class GenerationService {
       generationVersion: GENERATION_VERSION,
     };
     const sourceHash = computeSourceHash(sourceHashInput);
-
-    // If forceRegenerate, delete existing diagrams for this roadmap/diagramType/version
-    if (forceRegenerate) {
-      await prisma.archifyDiagram.deleteMany({
-        where: {
-          roadmapId,
-          diagramType,
-          roadmapVersion,
-        },
-      });
-    }
 
     // Try generation with repair loop
     let lastError: Error | undefined;
@@ -217,7 +211,10 @@ export class GenerationService {
 
     // Add repair context if we have a previous error
     if (previousError && attempt > 1) {
-      userPrompt += `\n\nPrevious attempt failed with error: ${previousError.message}\nPlease fix the JSON to be valid and conform to the Archify schema.`;
+      userPrompt += `\n\nPrevious attempt failed with error: ${previousError.message}\n`
+        + `Fix exactly what that error reports. If it names a component, keep that `
+        + `component's id and shorten its label/sublabel or make room for it rather `
+        + `than deleting it. Re-check the whole diagram still renders.`;
     }
 
     // Generate structured output using the appropriate provider
@@ -239,6 +236,26 @@ export class GenerationService {
       throw validationErr;
     }
 
+    // Render before storing. The renderer is the strictest validator we have:
+    // schema validation passes diagrams it will still reject (component text
+    // wider than its box, connections too short). Rendering here feeds those
+    // diagnostics back through the repair loop, and it means a diagram is only
+    // ever marked "ready" once it has actually produced HTML — otherwise the
+    // row would be cached as ready and 500 forever on every view.
+    let renderedHtml: string;
+    try {
+      renderedHtml = await renderingService.renderDiagram({
+        sourceJson: result.data,
+        diagramType,
+      } as StoredArchifyDiagram);
+    } catch (error) {
+      const renderErr = new Error(
+        `Rendering failed: ${(error as Error).message}`
+      ) as AIError;
+      renderErr.recoverable = true;
+      throw renderErr;
+    }
+
     // Store the diagram
     const stored = await this.storeDiagram({
       roadmapId: roadmap.id,
@@ -249,7 +266,7 @@ export class GenerationService {
       generationVersion: GENERATION_VERSION,
       promptVersion: PROMPT_VERSION,
       status: "ready",
-      renderedHtml: "", // Will be filled by renderer
+      renderedHtml,
     });
 
     return stored;
@@ -298,26 +315,39 @@ export class GenerationService {
     errorMetadata?: unknown;
     renderedHtml?: string;
   }): Promise<StoredArchifyDiagram> {
-    const created = await prisma.archifyDiagram.create({
-      data: {
+    // Upsert on the unique key rather than deleteMany + create. The two-step
+    // version races: concurrent requests both delete, both create, and the
+    // loser dies on ArchifyDiagram_roadmapId_diagramType_roadmapVersion_key.
+    // Upserting converges them on one row and makes the explicit delete moot.
+    const uniqueKey = {
+      roadmapId_diagramType_roadmapVersion: {
         roadmapId: data.roadmapId,
         diagramType: data.diagramType,
-        sourceJson: data.sourceJson as any,
-        sourceHash: data.sourceHash,
         roadmapVersion: data.roadmapVersion,
-        generationVersion: data.generationVersion,
-        promptVersion: data.promptVersion,
-        status: data.status,
-        errorMetadata: data.errorMetadata ? JSON.stringify(data.errorMetadata) : Prisma.JsonNull,
-        renderedHtml: data.renderedHtml ?? "",
       },
+    };
+
+    const fields = {
+      sourceJson: data.sourceJson as any,
+      sourceHash: data.sourceHash,
+      generationVersion: data.generationVersion,
+      promptVersion: data.promptVersion,
+      status: data.status,
+      errorMetadata: data.errorMetadata ? JSON.stringify(data.errorMetadata) : Prisma.JsonNull,
+      renderedHtml: data.renderedHtml ?? "",
+    };
+
+    const saved = await prisma.archifyDiagram.upsert({
+      where: uniqueKey,
+      create: { ...uniqueKey.roadmapId_diagramType_roadmapVersion, ...fields },
+      update: fields,
     });
 
     return {
-      ...created,
-      diagramType: created.diagramType as DiagramType,
-      sourceJson: created.sourceJson as unknown as ArchifyDiagram,
-      errorMetadata: created.errorMetadata ? JSON.parse(created.errorMetadata as string) : undefined,
+      ...saved,
+      diagramType: saved.diagramType as DiagramType,
+      sourceJson: saved.sourceJson as unknown as ArchifyDiagram,
+      errorMetadata: saved.errorMetadata ? JSON.parse(saved.errorMetadata as string) : undefined,
     } as StoredArchifyDiagram;
   }
 

@@ -75,44 +75,10 @@ export class AIProviderDB {
     await prisma.aIProvider.delete({ where: { id } });
   }
 
-  static async createSecret(providerId: string, encryptedApiKey: string, version: number): Promise<AIProviderSecret> {
-    const secret = await prisma.aIProviderSecret.create({
-      data: {
-        providerId,
-        encryptedApiKey,
-        version,
-      },
-    });
-    return secret as unknown as AIProviderSecret;
-  }
 
-  static async getLatestSecret(providerId: string): Promise<AIProviderSecret | null> {
-    const secret = await prisma.aIProviderSecret.findFirst({
-      where: { providerId },
-      orderBy: { createdAt: "desc" },
-    });
-    return secret as unknown as AIProviderSecret | null;
-  }
 
-  static async getSecrets(providerId: string): Promise<AIProviderSecret[]> {
-    const secrets = await prisma.aIProviderSecret.findMany({
-      where: { providerId },
-      orderBy: { createdAt: "desc" },
-    });
-    return secrets as unknown as AIProviderSecret[];
-  }
 
-  static async updateSecret(id: string, updates: Partial<Pick<AIProviderSecret, "encryptedApiKey" | "version">>): Promise<AIProviderSecret> {
-    const secret = await prisma.aIProviderSecret.update({
-      where: { id },
-      data: updates,
-    });
-    return secret as unknown as AIProviderSecret;
-  }
 
-  static async deleteSecret(id: string): Promise<void> {
-    await prisma.aIProviderSecret.delete({ where: { id } });
-  }
 
   static async getSystemProviders(): Promise<AIProviderConfig[]> {
     const providers = await prisma.aIProvider.findMany({
@@ -144,26 +110,8 @@ export class AIProviderDB {
     });
   }
 
-  static async hasSecret(providerId: string): Promise<boolean> {
-    const secret = await this.getLatestSecret(providerId);
-    return secret !== null;
-  }
 
-  static async getProviderWithSecrets(id: string): Promise<any> {
-    const provider = await prisma.aIProvider.findUnique({
-      where: { id },
-      include: { secrets: true, definition: true },
-    });
-    return provider;
-  }
 
-  static async getAllProvidersWithSecrets(): Promise<any[]> {
-    const providers = await prisma.aIProvider.findMany({
-      include: { secrets: true, definition: true },
-      orderBy: { createdAt: "desc" },
-    });
-    return providers;
-  }
 
   static async getDiagramsByProvider(providerId: string): Promise<any[]> {
     const diagrams = await prisma.archifyDiagram.findMany({

@@ -5,7 +5,6 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 import { AIProviderRegistry } from "@/lib/ai/registry/provider-registry";
 import { APIKeyEncryption } from "@/lib/ai/encryption/api-key-encryption";
-import { AISecretService } from "@/lib/ai/secrets/ai-secret-service";
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -41,7 +40,7 @@ export async function seedAIProviders() {
   if (!existingOpenAI) {
     console.log("Creating OpenAI provider...");
     
-    const openai = await prisma.aIProvider.create({
+    await prisma.aIProvider.create({
       data: {
         name: openaiDefinition.name,
         slug: openaiDefinition.slug,
@@ -64,27 +63,16 @@ export async function seedAIProviders() {
       },
     });
 
-    // Store OpenAI API key if available
-    if (process.env.OPENAI_API_KEY || process.env.AI_API_KEY) {
-      const apiKeyRef = process.env.AI_CREDENTIAL_REF || "OPENAI_API_KEY";
-      const apiKey = process.env[apiKeyRef] || process.env.OPENAI_API_KEY;
-
-      if (apiKey) {
-        try {
-          await AISecretService.storeProviderSecret(openai.id, apiKey);
-          console.log("OpenAI API key stored successfully");
-        } catch (error) {
-          console.warn("Failed to store OpenAI API key:", error);
-        }
-      }
-    }
+    // Provider secrets are user-owned, so there is nothing to seed here.
+    // Instance-wide env credentials stay in env and are read directly by
+    // createAIServiceFromEnv(); each user adds their own key via /settings.
   }
 
   // Seed FreeLLMAPI provider if it doesn't exist
   if (!existingFreeLLMAPI) {
     console.log("Creating FreeLLMAPI provider...");
     
-    const freellmapi = await prisma.aIProvider.create({
+    await prisma.aIProvider.create({
       data: {
         name: freellmapiDefinition.name,
         slug: freellmapiDefinition.slug,
@@ -106,15 +94,7 @@ export async function seedAIProviders() {
       },
     });
 
-    // Store FreeLLMAPI API key if available
-    if (process.env.FREELLMAPI_API_KEY) {
-      try {
-        await AISecretService.storeProviderSecret(freellmapi.id, process.env.FREELLMAPI_API_KEY);
-        console.log("FreeLLMAPI API key stored successfully");
-      } catch (error) {
-        console.warn("Failed to store FreeLLMAPI API key:", error);
-      }
-    }
+    // See above: env credentials are not user-owned and stay in env.
   }
 
   // Set default provider if not already set

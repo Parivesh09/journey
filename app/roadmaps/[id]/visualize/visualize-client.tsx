@@ -42,6 +42,7 @@ export default function VisualizationClient({
     | "error"
   >("idle");
   const [error, setError] = useState<string | null>(null);
+  const [apiKeyMissing, setApiKeyMissing] = useState(false);
   const [selectedType, setSelectedType] = useState<string>(defaultDiagramType);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeDiagramUrl, setIframeDiagramUrl] = useState<string | null>(null);
@@ -91,6 +92,11 @@ export default function VisualizationClient({
       console.log("Fetched diagram data:", data);
 
       if (!res.ok) {
+        if (data.error === "No visualization found. Generate one first.") {
+          // Auto-generate a new visualization
+          await handleRegenerate();
+          return;
+        }
         throw new Error(data.error || "Failed to load visualization");
       }
 
@@ -149,6 +155,7 @@ export default function VisualizationClient({
   async function handleRegenerate() {
     setGenerationState("generating");
     setError(null);
+    setApiKeyMissing(false);
 
     try {
       const res = await fetch(`/api/roadmaps/${id}/visualization`, {
@@ -163,6 +170,9 @@ export default function VisualizationClient({
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.code === "API_KEY_MISSING") {
+          setApiKeyMissing(true);
+        }
         throw new Error(data.error || "Generation failed");
       }
 
@@ -292,6 +302,18 @@ export default function VisualizationClient({
         <PageHeader title="Visualization Error" />
         <div className="text-graphite-muted text-center py-8">
           <p className="mb-4">{error || "Failed to generate visualization"}</p>
+          {apiKeyMissing ? (
+            <p className="mb-4 text-red-500">
+              No AI provider API key is configured.{" "}
+              <Link
+                href="/settings?tab=configuration"
+                className="underline underline-offset-2"
+              >
+                Open AI provider settings
+              </Link>
+              .
+            </p>
+          ) : null}
           <VisualizationButton
             onClick={handleRegenerate}
             className="btn btn-secondary"

@@ -103,8 +103,6 @@ export class DatabaseAIProvider implements AIProvider {
   readonly isSystem: boolean;
   readonly isDefault: boolean;
 
-  private _adapter?: AIProtocolAdapter;
-
   constructor(private dbProvider: any) {
     this.id = dbProvider.id;
     this.name = dbProvider.name;
@@ -136,15 +134,14 @@ export class DatabaseAIProvider implements AIProvider {
     return new DatabaseAIProvider(dbProvider);
   }
 
-  async getAdapter(): Promise<AIProtocolAdapter> {
-    if (!this._adapter) {
-      this._adapter = await this.createAdapter();
-    }
-    return this._adapter;
+  // Not memoized: the adapter embeds a decrypted per-user credential, so caching it
+  // on this instance would hand one user's key to another. Construction is trivial.
+  async getAdapter(userId: string): Promise<AIProtocolAdapter> {
+    return await this.createAdapter(userId);
   }
 
-  private async createAdapter(): Promise<AIProtocolAdapter> {
-    const secret = await AISecretService.getProviderSecret(this.id);
+  private async createAdapter(userId: string): Promise<AIProtocolAdapter> {
+    const secret = await AISecretService.getProviderSecret(this.id, userId);
 
     if (!secret) {
       throw new AIProviderError("No API key found for provider", {
@@ -152,7 +149,7 @@ export class DatabaseAIProvider implements AIProvider {
       });
     }
 
-    const decryptedKey = await AISecretService.getDecryptedApiKey(this.id);
+    const decryptedKey = await AISecretService.getDecryptedApiKey(this.id, userId);
 
     // Normalize protocol to lowercase for comparison
     const normalizedProtocol = this.protocol.toLowerCase();
@@ -176,6 +173,7 @@ export class DatabaseAIProvider implements AIProvider {
   }
 
   async generateStructuredOutput<T>(
+    userId: string,
     request: AIRequest<T>
   ): Promise<AIResponse<T>> {
     if (!this.enabled) {
@@ -184,7 +182,7 @@ export class DatabaseAIProvider implements AIProvider {
       });
     }
 
-    const adapter = await this.getAdapter();
+    const adapter = await this.getAdapter(userId);
     const startTime = Date.now();
 
     try {
@@ -214,14 +212,14 @@ export class DatabaseAIProvider implements AIProvider {
     }
   }
 
-  async generateText(request: AIRequest<string>): Promise<AIResponse<string>> {
+  async generateText(userId: string, request: AIRequest<string>): Promise<AIResponse<string>> {
     if (!this.enabled) {
       throw new AIProviderError("Provider is disabled", {
         code: "PROVIDER_DISABLED",
       });
     }
 
-    const adapter = await this.getAdapter();
+    const adapter = await this.getAdapter(userId);
     const startTime = Date.now();
 
     try {
@@ -251,14 +249,14 @@ export class DatabaseAIProvider implements AIProvider {
     }
   }
 
-  async *streamText(request: AIRequest<string>): AsyncIterable<AIStreamChunk<string>> {
+  async *streamText(userId: string, request: AIRequest<string>): AsyncIterable<AIStreamChunk<string>> {
     if (!this.enabled) {
       throw new AIProviderError("Provider is disabled", {
         code: "PROVIDER_DISABLED",
       });
     }
 
-    const adapter = await this.getAdapter();
+    const adapter = await this.getAdapter(userId);
 
     try {
       for await (const chunk of adapter.streamText({
@@ -302,10 +300,10 @@ export class DatabaseAIProvider implements AIProvider {
     return err;
   }
 
-  async checkHealth(): Promise<{ available: boolean; latencyMs?: number; lastChecked: Date; error?: string }> {
+  async checkHealth(userId: string): Promise<{ available: boolean; latencyMs?: number; lastChecked: Date; error?: string }> {
     const startTime = Date.now();
     try {
-      const adapter = await this.getAdapter();
+      const adapter = await this.getAdapter(userId);
       
       // Try models endpoint first (lightweight check)
       const modelsResponse = await fetch(`${adapter.getBaseUrl()}models`, {

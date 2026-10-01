@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Parked, unreachable code kept for a future pass. Not part of the build.
+    "backlog/**",
   ]),
 ]);
 

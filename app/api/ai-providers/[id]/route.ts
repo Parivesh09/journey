@@ -19,16 +19,16 @@ export async function GET(
       return NextResponse.json({ error: "Provider not found" }, { status: 404 });
     }
 
-    const hasApiKey = await aiProviderService.getProviderSecret(id);
-    let health = undefined;
-    
-    if (provider.enabled) {
-      health = await aiProviderService.testConnection(id);
-    }
-    
-    return NextResponse.json({ 
-      provider: { ...provider, hasApiKey: !!hasApiKey, health } 
-    });
+     const hasApiKey = await aiProviderService.getProviderSecret(id, user.id);
+     let health = undefined;
+     
+     if (provider.enabled) {
+       health = await aiProviderService.testConnection(id, user.id);
+     }
+     
+     return NextResponse.json({ 
+       provider: { ...provider, hasApiKey: !!hasApiKey, health } 
+     });
   } catch (error) {
     console.error("Error fetching AI provider:", error);
     return NextResponse.json({ error: "Failed to load provider" }, { status: 500 });
@@ -52,7 +52,7 @@ export async function PUT(
     
     // Update API key if provided
     if (body.apiKey) {
-      await aiProviderService.updateProviderSecret(id, body.apiKey);
+      await aiProviderService.updateProviderSecret(id, body.apiKey, user.id);
     }
     
     return NextResponse.json({ provider });

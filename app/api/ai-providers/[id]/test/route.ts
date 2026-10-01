@@ -13,7 +13,7 @@ export async function POST(
     }
 
     const { id } = await params;
-    const health = await aiProviderService.testConnection(id);
+    const health = await aiProviderService.testConnection(id, user.id);
     
     return NextResponse.json({ health });
   } catch (error) {

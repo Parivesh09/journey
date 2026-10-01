@@ -118,13 +118,14 @@ model AIProvider {
   // Relations
   definition      AIProviderDefinition? @relation(fields: [definitionId], references: [id])
   definitionId    String?
-  secrets         AIProviderSecret[]
+  secrets         AIProviderSecret[] @relation("AIProviderSecretProvider")
   diagrams        ArchifyDiagram[]
 }
 
 // Encrypted API key storage
 model AIProviderSecret {
   id              String   @id @default(cuid())
+  userId           String   // User who owns this API key
   providerId       String
   encryptedApiKey  String   // Encrypted API key using AES-256-GCM
   version          Int      @default(1)
@@ -133,10 +134,11 @@ model AIProviderSecret {
   updatedAt       DateTime  @updatedAt
 
   // Relations
-  provider         AIProvider  @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  user             User      @relation("AIProviderSecretUser", fields: [userId], references: [id], onDelete: Cascade)
+  provider         AIProvider  @relation("AIProviderSecretProvider", fields: [providerId], references: [id], onDelete: Cascade)
 
-  @@unique([providerId, version])
-  @@index([providerId])
+  @@unique([userId, providerId, version])
+  @@index([userId, providerId])
 }
 
 model User {
@@ -165,6 +167,7 @@ model User {
   notificationPreferences NotificationPreference?
   integrations            UserIntegration[]
   logs                    NotificationLog[]
+  aiProviderSecrets       AIProviderSecret[] @relation("AIProviderSecretUser")
 }
 
 model TaskCategory {

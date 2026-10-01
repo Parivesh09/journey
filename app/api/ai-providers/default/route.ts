@@ -15,11 +15,11 @@ export async function GET() {
       return NextResponse.json({ error: "No default provider set" }, { status: 404 });
     }
 
-    const hasApiKey = await aiProviderService.getProviderSecret(provider.id);
+    const hasApiKey = await aiProviderService.getProviderSecret(provider.id, user.id);
     let health = undefined;
     
     if (provider.enabled) {
-      health = await aiProviderService.testConnection(provider.id);
+      health = await aiProviderService.testConnection(provider.id, user.id);
     }
     
     return NextResponse.json({ 

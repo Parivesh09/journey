@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { generationService } from "@/lib/visualization/generation-service";
 import { renderingService } from "@/lib/visualization/rendering-service";
 import { getAIService } from "@/lib/ai/provider";
+import { AIProviderError } from "@/lib/ai/types";
 
 export async function GET(
   request: Request,
@@ -77,7 +78,6 @@ export async function GET(
           { status: 404 }
         );
       }
-
       return NextResponse.json({
         id: diagram.id,
         roadmapId: diagram.roadmapId,
@@ -107,7 +107,6 @@ export async function POST(
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
     const paramsValue = await params;
     const { roadmapId } = paramsValue;
 
@@ -155,7 +154,10 @@ export async function POST(
   } catch (error) {
     console.error("Error generating visualization:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Internal server error" },
+      {
+        error: error instanceof Error ? error.message : "Internal server error",
+        code: error instanceof AIProviderError ? error.code : undefined,
+      },
       { status: 500 }
     );
   }

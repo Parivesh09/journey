@@ -12,22 +12,22 @@ export async function GET() {
     // Check if user is admin (for now, allow all authenticated users to view)
     const providers = await aiProviderService.getAllProviders();
     
-    const providerUIs = await Promise.all(
-      providers.map(async (provider) => {
-        const hasApiKey = await aiProviderService.getProviderSecret(provider.id);
-        let health = undefined;
-        
-        if (provider.enabled) {
-          health = await aiProviderService.testConnection(provider.id);
-        }
-        
-        return {
-          ...provider,
-          hasApiKey: !!hasApiKey,
-          health,
-        };
-      })
-    );
+     const providerUIs = await Promise.all(
+       providers.map(async (provider) => {
+         const hasApiKey = await aiProviderService.getProviderSecret(provider.id, user.id);
+         let health = undefined;
+         
+         if (provider.enabled) {
+           health = await aiProviderService.testConnection(provider.id, user.id);
+         }
+         
+         return {
+           ...provider,
+           hasApiKey: !!hasApiKey,
+           health,
+         };
+       })
+     );
     
     return NextResponse.json({ providers: providerUIs });
   } catch (error) {
@@ -64,10 +64,10 @@ export async function POST(request: NextRequest) {
       isManagedByEnv: false,
     });
 
-    // Store API key if provided
-    if (body.apiKey) {
-      await aiProviderService.updateProviderSecret(provider.id, body.apiKey);
-    }
+     // Store API key if provided
+     if (body.apiKey) {
+       await aiProviderService.updateProviderSecret(provider.id, body.apiKey, user.id);
+     }
 
     return NextResponse.json({ provider });
   } catch (error) {

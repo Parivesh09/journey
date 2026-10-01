@@ -96,16 +96,16 @@ export class AIProviderService {
     await AIProviderDB.deleteProvider(id);
   }
 
-  public async updateProviderSecret(providerId: string, apiKey: string): Promise<void> {
-    await AISecretService.updateProviderSecret(providerId, apiKey);
+  public async updateProviderSecret(providerId: string, apiKey: string, userId: string): Promise<void> {
+    await AISecretService.updateProviderSecret(providerId, apiKey, userId);
   }
 
-  public async deleteProviderSecret(providerId: string): Promise<void> {
-    await AISecretService.deleteProviderSecret(providerId);
+  public async deleteProviderSecret(providerId: string, userId: string): Promise<void> {
+    await AISecretService.deleteProviderSecret(providerId, userId);
   }
 
-  public async getProviderSecret(providerId: string): Promise<any | null> {
-    return await AISecretService.getProviderSecret(providerId);
+  public async getProviderSecret(providerId: string, userId: string): Promise<any | null> {
+    return await AISecretService.getProviderSecret(providerId, userId);
   }
 
   public async canDeleteProvider(providerId: string): Promise<boolean> {
@@ -128,13 +128,13 @@ export class AIProviderService {
     return await AIProviderDB.getDiagramsByProvider(providerId);
   }
 
-  public async testConnection(providerId: string): Promise<any> {
+  public async testConnection(providerId: string, userId: string): Promise<any> {
     const provider = await this.getProvider(providerId);
     if (!provider) {
       throw new Error("Provider not found");
     }
-    
-    return await provider.checkHealth();
+
+    return await provider.checkHealth(userId);
   }
 
   public async getProviderDefinitions() {

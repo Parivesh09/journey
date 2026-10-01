@@ -1,0 +1,267 @@
+{
+  "meta": {
+    "title": "Full Stack Web Development Roadmap",
+    "legend": {
+      "mode": "auto",
+      "entries": {
+        "backend": {
+          "label": "Backend services"
+        },
+        "database": {
+          "label": "Data storage"
+        },
+        "external": {
+          "label": "Users / browsers"
+        },
+        "frontend": {
+          "label": "Frontend concepts"
+        },
+        "security": {
+          "label": "Security & auth"
+        }
+      }
+    },
+    "locale": "en",
+    "output": "architecture.html",
+    "subtitle": "From HTML/CSS/JS to a deployed full\u2011stack app with React, Node.js, and PostgreSQL",
+    "animation": "none",
+    "visual_preset": "classic",
+    "quality_profile": "standard"
+  },
+  "cards": [
+    {
+      "dot": "cyan",
+      "items": [
+        "HTML \u2192 CSS \u2192 JavaScript \u2192 React \u2192 State & Hooks \u2192 Client App \u2192 Node.js \u2192 Express \u2192 Auth \u2192 SQL \u2192 PostgreSQL \u2192 Prisma"
+      ],
+      "title": "Main Learning Flow"
+    },
+    {
+      "dot": "emerald",
+      "items": [
+        "HTML, CSS, JavaScript",
+        "React",
+        "Node.js",
+        "Express",
+        "PostgreSQL",
+        "Prisma"
+      ],
+      "title": "Technology Stack"
+    },
+    {
+      "dot": "rose",
+      "items": [
+        "Auth & Security layer",
+        "Session & token handling",
+        "OWASP considerations"
+      ],
+      "title": "Security Highlights"
+    }
+  ],
+  "layout": {
+    "cols": 4,
+    "gapX": 30,
+    "gapY": 30,
+    "mode": "grid"
+  },
+  "boundaries": [
+    {
+      "pad": 18,
+      "kind": "region",
+      "label": "Frontend",
+      "wraps": [
+        "html",
+        "css",
+        "js",
+        "react",
+        "reactState",
+        "clientApp"
+      ]
+    },
+    {
+      "pad": 18,
+      "kind": "region",
+      "label": "Backend",
+      "wraps": [
+        "node",
+        "express",
+        "auth",
+        "prisma"
+      ]
+    },
+    {
+      "pad": 18,
+      "kind": "region",
+      "label": "Data Layer",
+      "wraps": [
+        "sql",
+        "postgres"
+      ]
+    },
+    {
+      "pad": 14,
+      "kind": "security-group",
+      "label": "Auth Boundary",
+      "wraps": [
+        "auth"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "id": "html",
+      "col": 0,
+      "row": 0,
+      "type": "frontend",
+      "label": "HTML Foundations",
+      "sublabel": "Semantic markup & forms"
+    },
+    {
+      "id": "css",
+      "col": 1,
+      "row": 0,
+      "type": "frontend",
+      "label": "CSS Styling",
+      "sublabel": "Layout, box model, motion"
+    },
+    {
+      "id": "js",
+      "col": 2,
+      "row": 0,
+      "type": "frontend",
+      "label": "JavaScript Essentials",
+      "sublabel": "Language fundamentals & async"
+    },
+    {
+      "id": "react",
+      "col": 3,
+      "row": 0,
+      "type": "frontend",
+      "label": "React Fundamentals",
+      "sublabel": "Components, JSX, rendering"
+    },
+    {
+      "id": "reactState",
+      "col": 0,
+      "row": 1,
+      "type": "frontend",
+      "label": "State & Hooks",
+      "sublabel": "useState, useEffect, data fetching"
+    },
+    {
+      "id": "clientApp",
+      "col": 1,
+      "row": 1,
+      "type": "frontend",
+      "label": "Client App",
+      "sublabel": "Routing, CRUD, localStorage"
+    },
+    {
+      "id": "node",
+      "col": 2,
+      "row": 1,
+      "type": "backend",
+      "label": "Node.js Fundamentals",
+      "sublabel": "Modules, HTTP server"
+    },
+    {
+      "id": "express",
+      "col": 3,
+      "row": 1,
+      "type": "backend",
+      "label": "Express APIs",
+      "sublabel": "Routing, middleware, REST"
+    },
+    {
+      "id": "auth",
+      "col": 0,
+      "row": 2,
+      "type": "security",
+      "label": "Auth & Security",
+      "sublabel": "Sessions, tokens, OWASP basics"
+    },
+    {
+      "id": "sql",
+      "col": 1,
+      "row": 2,
+      "type": "database",
+      "label": "SQL Basics",
+      "sublabel": "Queries, schema design"
+    },
+    {
+      "id": "postgres",
+      "col": 2,
+      "row": 2,
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "Migrations, transactions, performance"
+    },
+    {
+      "id": "prisma",
+      "col": 3,
+      "row": 2,
+      "type": "backend",
+      "label": "Prisma ORM",
+      "sublabel": "Models, service layer, transactions"
+    }
+  ],
+  "connections": [
+    {
+      "to": "css",
+      "from": "html",
+      "variant": "emphasis"
+    },
+    {
+      "to": "js",
+      "from": "css",
+      "variant": "emphasis"
+    },
+    {
+      "to": "react",
+      "from": "js",
+      "variant": "emphasis"
+    },
+    {
+      "to": "reactState",
+      "from": "react",
+      "variant": "emphasis"
+    },
+    {
+      "to": "clientApp",
+      "from": "reactState",
+      "variant": "emphasis"
+    },
+    {
+      "to": "node",
+      "from": "clientApp",
+      "variant": "emphasis"
+    },
+    {
+      "to": "express",
+      "from": "node",
+      "variant": "emphasis"
+    },
+    {
+      "to": "auth",
+      "from": "express",
+      "variant": "security"
+    },
+    {
+      "to": "sql",
+      "from": "auth",
+      "variant": "emphasis"
+    },
+    {
+      "to": "postgres",
+      "from": "sql",
+      "variant": "emphasis"
+    },
+    {
+      "to": "prisma",
+      "from": "postgres",
+      "variant": "dashed"
+    }
+  ],
+  "diagram_type": "architecture",
+  "schema_version": 1
+}

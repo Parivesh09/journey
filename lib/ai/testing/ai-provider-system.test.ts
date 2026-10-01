@@ -17,6 +17,8 @@ vi.mock("process.env", () => ({
   AI_DEFAULT_PROVIDER: "openai",
 }));
 
+const userId = "test-user-id";
+
 describe("AI Provider System - Encryption", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -95,15 +97,15 @@ describe("AI Secret Service", () => {
     const providerId = "test-provider-id";
     const apiKey = "test-api-key-12345";
 
-    const stored = await AISecretService.storeProviderSecret(providerId, apiKey);
+    const stored = await AISecretService.storeProviderSecret(providerId, apiKey, userId);
     expect(stored).toBeDefined();
     expect(stored.providerId).toBe(providerId);
 
-    const retrieved = await AISecretService.getProviderSecret(providerId);
+    const retrieved = await AISecretService.getProviderSecret(providerId, userId);
     expect(retrieved).toBeDefined();
     expect(retrieved?.providerId).toBe(providerId);
 
-    const decrypted = await AISecretService.getDecryptedApiKey(providerId);
+    const decrypted = await AISecretService.getDecryptedApiKey(providerId, userId);
     expect(decrypted).toBe(apiKey);
   });
 
@@ -112,26 +114,26 @@ describe("AI Secret Service", () => {
     const originalKey = "original-key-12345";
     const newKey = "new-key-67890";
 
-    await AISecretService.storeProviderSecret(providerId, originalKey);
+    await AISecretService.storeProviderSecret(providerId, originalKey, userId);
     
-    const stored1 = await AISecretService.getProviderSecret(providerId);
+    const stored1 = await AISecretService.getProviderSecret(providerId, userId);
     expect(stored1).toBeDefined();
 
-    await AISecretService.updateProviderSecret(providerId, newKey);
+    await AISecretService.updateProviderSecret(providerId, newKey, userId);
     
-    const retrieved = await AISecretService.getDecryptedApiKey(providerId);
+    const retrieved = await AISecretService.getDecryptedApiKey(providerId, userId);
     expect(retrieved).toBe(newKey);
   });
 
   it("should check if provider has secret", async () => {
     const providerId = "test-provider-id-3";
 
-    const hasSecretBefore = await AISecretService.hasSecret(providerId);
+    const hasSecretBefore = await AISecretService.hasSecret(providerId, userId);
     expect(hasSecretBefore).toBe(false);
 
-    await AISecretService.storeProviderSecret(providerId, "test-key");
+    await AISecretService.storeProviderSecret(providerId, "test-key", userId);
 
-    const hasSecretAfter = await AISecretService.hasSecret(providerId);
+    const hasSecretAfter = await AISecretService.hasSecret(providerId, userId);
     expect(hasSecretAfter).toBe(true);
   });
 });
@@ -331,15 +333,15 @@ vi.describe("Full Integration Test", () => {
     });
 
     // Store API key
-    await service.updateProviderSecret(provider.id, "integration-test-key-12345");
+    await service.updateProviderSecret(provider.id, "integration-test-key-12345", userId);
 
     // Retrieve secret
-    const secret = await service.getProviderSecret(provider.id);
+    const secret = await service.getProviderSecret(provider.id, userId);
     expect(secret).toBeDefined();
     expect(secret?.providerId).toBe(provider.id);
 
     // Test connection
-    const health = await service.testConnection(provider.id);
+    const health = await service.testConnection(provider.id, userId);
     expect(health).toBeDefined();
   });
 });
