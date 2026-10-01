@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { getAIService } from "@/lib/ai/provider";
 import type { AIError } from "@/lib/ai/types";
 import { AIProviderError } from "@/lib/ai/types";
+import { aiProviderService } from "@/lib/ai/ai-provider-service";
 
 import {
   buildVisualizationContext,
@@ -70,6 +71,7 @@ export class GenerationService {
     roadmapId: string;
     diagramType: DiagramType;
     forceRegenerate?: boolean;
+    userId?: string;
   }): Promise<GenerationResponse> {
     const { roadmapId, diagramType, forceRegenerate = false } = request;
 
@@ -91,10 +93,22 @@ export class GenerationService {
       throw new Error("AI generation is not enabled for this roadmap");
     }
 
-    // Check if AI is configured for archify feature
-    if (!this.aiService.isFeatureConfigured(ARCHIFY_FEATURE_ID)) {
+    // Check if AI is configured for archify feature — prefer DB default provider
+    // when available (user-configured), otherwise fall back to env-based config.
+    let dbProvider = null;
+    if (request.userId) {
+      dbProvider = await aiProviderService.getDefaultProvider();
+      if (!dbProvider?.enabled) {
+        dbProvider = null;
+      }
+    }
+
+    const hasEnvProvider = this.aiService.isFeatureConfigured(ARCHIFY_FEATURE_ID);
+    const hasAnyProvider = !!dbProvider || hasEnvProvider;
+
+    if (!hasAnyProvider) {
       throw new AIProviderError(
-        "AI provider not configured for Archify generation. Please configure AI_PROVIDER and credentials.",
+        "AI provider not configured for Archify generation. Please configure an AI provider in Settings.",
         { code: "API_KEY_MISSING" }
       );
     }
@@ -147,7 +161,9 @@ export class GenerationService {
           config,
           roadmapVersion,
           sourceHash,
-          lastError
+          lastError,
+          dbProvider,
+          request.userId
         );
 
         // If we get here, generation succeeded
@@ -183,7 +199,10 @@ export class GenerationService {
     config: RoadmapVisualizationConfig,
     roadmapVersion: string,
     sourceHash: string,
-    previousError?: Error
+    previousError?: Error,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    dbProvider?: { generateStructuredOutput<T>(userId: string, request: any): Promise<any> } | null,
+    userId?: string
   ): Promise<StoredArchifyDiagram> {
     // Build prompt
     let systemPrompt: string;
@@ -218,14 +237,26 @@ export class GenerationService {
     }
 
     // Generate structured output using the appropriate provider
-    const result = await this.aiService.generateStructuredOutput<ArchifyDiagram>(ARCHIFY_FEATURE_ID, {
-      systemPrompt,
-      userPrompt,
-      schema: {}, // We validate after generation
-      temperature: 0.2,
-      maxOutputTokens: 8192,
-      timeoutMs: 120000,
-    });
+    let result: Awaited<ReturnType<typeof this.aiService.generateStructuredOutput<ArchifyDiagram>>>;
+    if (dbProvider && userId) {
+      result = await dbProvider.generateStructuredOutput(userId, {
+        systemPrompt,
+        userPrompt,
+        model: process.env.ARCHIFY_MODEL,
+        temperature: 0.2,
+        maxOutputTokens: 8192,
+        timeoutMs: 120000,
+      });
+    } else {
+      result = await this.aiService.generateStructuredOutput<ArchifyDiagram>(ARCHIFY_FEATURE_ID, {
+        systemPrompt,
+        userPrompt,
+        schema: {}, // We validate after generation
+        temperature: 0.2,
+        maxOutputTokens: 8192,
+        timeoutMs: 120000,
+      });
+    }
 
     // Validate the generated JSON
     const validationError = validateArchifyJSON(result.data, diagramType);

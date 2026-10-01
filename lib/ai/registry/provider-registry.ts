@@ -177,3 +177,8 @@ export class AIProviderRegistry {
     return errors;
   }
 }
+
+// The definitions are static data, so register them at import time. Relying on a
+// caller invoking initialize() first meant every lookup against an uninitialized
+// registry returned undefined ("Unknown protocol: openai_compatible").
+AIProviderRegistry.initialize();

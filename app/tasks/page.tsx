@@ -14,7 +14,7 @@ export default async function TasksPage({
   return (
     <AppShell active="today" user={{ name: user.name, email: user.email }}>
       <TasksWorkspace
-        initialTab={tab === "daily" ? "daily" : "roadmap"}
+        initialTab={tab === "roadmap" ? "roadmap" : "daily"}
         initialFilters={{
           category: category ?? "",
           taskType: taskType ?? "",

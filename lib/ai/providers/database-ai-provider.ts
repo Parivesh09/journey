@@ -116,6 +116,8 @@ export class DatabaseAIProvider implements AIProvider {
     this.secrets = dbProvider.secrets;
     this.isSystem = dbProvider.isSystem;
     this.isDefault = dbProvider.isDefault;
+    this.type = dbProvider.type;
+    this.status = dbProvider.status;
   }
 
   static async createFromSlug(slug: string): Promise<DatabaseAIProvider | null> {
@@ -156,19 +158,23 @@ export class DatabaseAIProvider implements AIProvider {
 
     switch (normalizedProtocol) {
       case "openai_compatible":
-        return await OpenAICompatibleProtocolAdapter.create({
+        return (await OpenAICompatibleProtocolAdapter.create({
           baseUrl: this.endpoint,
           apiKey: decryptedKey,
-        });
+        })) as any;
       case "anthropic_messages":
-        return await AnthropicMessagesProtocolAdapter.create({
+        return (await AnthropicMessagesProtocolAdapter.create({
           baseUrl: this.endpoint,
           apiKey: decryptedKey,
-        });
+        })) as any;
       default:
-        throw new AIProviderError(`Unsupported protocol: ${this.protocol}`, {
-          code: "UNSUPPORTED_PROTOCOL",
-        });
+        // Treat unknown protocols as OpenAI-compatible — most custom endpoints
+        // expose /chat/completions under the same shape, so this is the pragmatic
+        // fallback rather than an abrupt "Unsupported protocol" rejection.
+        return (await OpenAICompatibleProtocolAdapter.create({
+          baseUrl: this.endpoint,
+          apiKey: decryptedKey,
+        })) as any;
     }
   }
 

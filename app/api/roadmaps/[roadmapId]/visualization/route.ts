@@ -148,6 +148,7 @@ export async function POST(
       roadmapId,
       diagramType: diagramType as const,
       forceRegenerate,
+      userId: user.id,
     });
 
     return NextResponse.json(result);

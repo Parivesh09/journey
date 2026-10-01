@@ -351,10 +351,11 @@ export function createAIServiceFromEnv(): AIService {
   }
 
   // Feature-specific configs
+  const defaultProviderId = process.env.AI_DEFAULT_PROVIDER ?? (providers[0]?.id ?? "openai");
   const featureConfigs: Record<string, FeatureAIConfig> = {
     archify_generation: {
       featureId: "archify_generation",
-      providerId: process.env.ARCHIFY_PROVIDER ?? "openai",
+      providerId: process.env.ARCHIFY_PROVIDER ?? defaultProviderId,
       model: process.env.ARCHIFY_MODEL,
       temperature: Number(process.env.ARCHIFY_TEMPERATURE) || 0.2,
       maxOutputTokens: Number(process.env.ARCHIFY_MAX_TOKENS) || 8192,
@@ -363,7 +364,7 @@ export function createAIServiceFromEnv(): AIService {
     },
     roadmap_generation: {
       featureId: "roadmap_generation",
-      providerId: process.env.ROADMAP_PROVIDER ?? "openai",
+      providerId: process.env.ROADMAP_PROVIDER ?? defaultProviderId,
       model: process.env.ROADMAP_MODEL,
       temperature: Number(process.env.ROADMAP_TEMPERATURE) || 0.5,
       maxOutputTokens: Number(process.env.ROADMAP_MAX_TOKENS) || 8192,
@@ -371,14 +372,14 @@ export function createAIServiceFromEnv(): AIService {
     },
     roadmap_summary: {
       featureId: "roadmap_summary",
-      providerId: process.env.SUMMARY_PROVIDER ?? "openai",
+      providerId: process.env.SUMMARY_PROVIDER ?? defaultProviderId,
       model: process.env.SUMMARY_MODEL,
       temperature: Number(process.env.SUMMARY_TEMPERATURE) || 0.3,
       maxOutputTokens: Number(process.env.SUMMARY_MAX_TOKENS) || 2048,
     },
     task_generation: {
       featureId: "task_generation",
-      providerId: process.env.TASK_PROVIDER ?? "openai",
+      providerId: process.env.TASK_PROVIDER ?? defaultProviderId,
       model: process.env.TASK_MODEL,
       temperature: Number(process.env.TASK_TEMPERATURE) || 0.4,
       maxOutputTokens: Number(process.env.TASK_MAX_TOKENS) || 4096,

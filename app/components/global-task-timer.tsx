@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTaskTimer } from "@/app/components/task-timer-context";
+import { useTaskTimer } from "@/lib/store/timer-hooks";
 import { cn } from "@/lib/utils";
 import {
   Play,
   Pause,
   RotateCcw,
-  X,
   AlertCircle,
   Minimize2,
   Maximize2,
@@ -58,7 +57,9 @@ export function GlobalTaskTimer() {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("globalTimerMinimized");
       if (saved !== null) {
-        setMinimized(JSON.parse(saved));
+        Promise.resolve().then(() => {
+          setMinimized(JSON.parse(saved));
+        });
       }
     }
   }, []);
@@ -155,8 +156,8 @@ export function GlobalTaskTimer() {
                     ? "Ⅱ PAUSED"
                     : "✓ COMPLETE"}
               </span>
-              <span className="font-mono text-xs text-graphite-faint">
-                CURRENT TASK
+              <span className="font-mono text-sm font-bold text-foreground tabular-nums flex-1 text-center">
+                {formatTime(state.remainingMs)}
               </span>
             </div>
             <h3 className="text-sm font-medium text-foreground truncate pr-2">
@@ -185,14 +186,6 @@ export function GlobalTaskTimer() {
               </p>
             )}
           </div>
-          {/* <button
-            onClick={clearTask}
-            className="p-1 hover:bg-muted rounded-lg text-graphite-faint transition-colors flex-shrink-0"
-            aria-label="Dismiss timer"
-            title="Dismiss timer"
-          >
-            <X className="w-4 h-4" />
-          </button> */}
           <button
             onClick={() => setMinimized(true)}
             className="p-1 hover:bg-muted rounded-lg text-graphite-faint transition-colors shrink-0 cursor-pointer"

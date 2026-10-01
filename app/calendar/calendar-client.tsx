@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Sheet, PageHeader, SectionHead, Stamp, Card, CardContent, Loader, Dialog, Input, FormGroup, PrimaryButton, SecondaryButton, EmptyState, DailyTasksModal } from "@/app/components/ui";
 import { formatMonthYear, formatWeekRange, formatDay, addMonths, addWeeks, addDays, getDaysInMonth, getWeekDays, isSameDay, isToday, startOfWeek, endOfWeek, getTimeSlots } from "@/lib/utils";
 import { useGetDailyTasksQuery, useCreateTaskMutation, useCreateStudySessionMutation, useToggleTaskCompleteTodayMutation } from "@/lib/api";
-import { useTaskTimer } from "@/app/components/task-timer-context";
+import { useTaskTimer } from "@/lib/store/timer-hooks";
 
 export default function CalendarClient({
   initialView,
@@ -28,97 +28,20 @@ export default function CalendarClient({
   const [newTaskPriority, setNewTaskPriority] = useState("MEDIUM");
 
   const [isStudyModalOpen, setIsStudyModalOpen] = useState(false);
-  const [studyMinutes, setStudyMinutes] = useState("");
+  const [studyMinutes, setStudyMinutes] = useState(60);
+  const [studyTaskId, setStudyTaskId] = useState<string | null>(null);
 
-  // Daily tasks modal state
-  const [isDailyTasksModalOpen, setIsDailyTasksModalOpen] = useState(false);
-  const [dailyTasksDate, setDailyTasksDate] = useState<Date | null>(null);
-
-  // Fetch daily tasks for today (for day view sidebar)
-  const { data: dailyData, isLoading } = useGetDailyTasksQuery({ tab: "daily" });
-
-  // Fetch daily tasks for selected date (for modal)
-  const { data: selectedDateData } = useGetDailyTasksQuery(
-    dailyTasksDate ? { tab: "daily", date: dailyTasksDate.toISOString().split("T")[0] } : { tab: "daily", date: "" },
-    { skip: !dailyTasksDate }
-  );
-
+  const { data: dailyData, isLoading: dailyLoading, error: dailyError } = useGetDailyTasksQuery({ tab: view === "day" ? "daily" : "all" });
   const [createTask] = useCreateTaskMutation();
   const [createStudySession] = useCreateStudySessionMutation();
   const [toggleTaskCompleteToday] = useToggleTaskCompleteTodayMutation();
 
-  // Handle double-click to open daily tasks modal
-  const handleOpenDailyTasksModal = useCallback((date: Date) => {
-    setDailyTasksDate(date);
-    setIsDailyTasksModalOpen(true);
-  }, []);
+  const routines = dailyData?.routines ?? [];
+  const connected = dailyData?.connected ?? [];
 
-  const handleStartTaskFromModal = useCallback((taskData: {
-    id: string;
-    title: string;
-    description?: string | null;
-    plannedSeconds: number;
-    kind: "routine" | "task";
-    isDailyTask: boolean;
-  }) => {
-    startTask({
-      id: taskData.id,
-      title: taskData.title,
-      description: taskData.description,
-      plannedSeconds: taskData.plannedSeconds,
-      kind: taskData.kind,
-      isDailyTask: taskData.isDailyTask,
-    });
-    setIsDailyTasksModalOpen(false);
-  }, [startTask]);
+  const days = getWeekDays(currentDate);
 
-  const handlePrev = () => {
-    setCurrentDate((current) => {
-      if (view === "month") return addMonths(current, -1);
-      if (view === "week") return addWeeks(current, -1);
-      return addDays(current, -1);
-    });
-  };
-
-  const handleNext = () => {
-    setCurrentDate((current) => {
-      if (view === "month") return addMonths(current, 1);
-      if (view === "week") return addWeeks(current, 1);
-      return addDays(current, 1);
-    });
-  };
-
-  const handleToday = () => {
-    const today = new Date();
-    setCurrentDate(today);
-    setSelectedDate(today);
-  };
-
-  const handleViewChange = (newView: "month" | "week" | "day") => {
-    setView(newView);
-    const params = new URLSearchParams(window.location.search);
-    params.set("view", newView);
-    startTransition(() => {
-      router.replace(`/calendar?${params.toString()}`);
-    });
-  };
-
-  const navigate = (date: Date) => {
-    const params = new URLSearchParams(window.location.search);
-    params.set("date", date.toISOString().split("T")[0]);
-    startTransition(() => {
-      router.replace(`/calendar?${params.toString()}`);
-    });
-  };
-
-  const handleSelectDate = (date: Date) => {
-    setSelectedDate(date);
-    if (view === "day") {
-      navigate(date);
-    }
-  };
-
-  const handleAddTask = async (e: React.FormEvent) => {
+  async function addTask(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
     try {
@@ -129,491 +52,373 @@ export default function CalendarClient({
       }).unwrap();
       setNewTaskTitle("");
       setIsTaskModalOpen(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // Error handled by toast
     }
-  };
+  }
 
-  const handleAddStudySession = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const mins = Number(studyMinutes);
-    if (!mins || mins <= 0) return;
+  async function addStudySession() {
+    if (studyMinutes < 1) return;
     try {
-      await createStudySession({ minutes: mins }).unwrap();
-      setStudyMinutes("");
+      await createStudySession({ minutes: studyMinutes }).unwrap();
+      setStudyMinutes(60);
       setIsStudyModalOpen(false);
-    } catch (err) {
-      console.error(err);
+    } catch {
+      // Error handled by toast
     }
-  };
+  }
 
-  // Navigation effect - handles URL updates after date changes
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    params.set("date", currentDate.toISOString().split("T")[0]);
-    router.replace(`/calendar?${params.toString()}`);
-  }, [currentDate, router]);
-
-  // Selected date navigation for day view
-  useEffect(() => {
-    if (view === "day") {
-      const params = new URLSearchParams(window.location.search);
-      params.set("date", selectedDate.toISOString().split("T")[0]);
-      router.replace(`/calendar?${params.toString()}`);
+  async function toggleTaskComplete(taskId: string) {
+    try {
+      await toggleTaskCompleteToday(taskId).unwrap();
+    } catch {
+      // Error handled by toast
     }
-  }, [selectedDate, view, router]);
+  }
 
-  // Build tasks and sessions mapping for selected current view period
-  const calendarDays = view === "month" ? getDaysInMonth(currentDate) : getWeekDays(currentDate);
+  function handleDateChange(newDate: Date) {
+    setCurrentDate(newDate);
+  }
 
-  // Routines and connected tasks are "today" tasks, but we can match them for visualization
-  const getDailySummary = (day: Date) => {
-    const isDayToday = isToday(day);
-    if (!isDayToday) return { routinesCount: 0, completedRoutines: 0, connectedCount: 0 };
-    const routinesCount = routines.length;
-    const completedRoutines = routines.filter((r) => r.doneToday).length;
-    const connectedCount = connected.length;
-    return { routinesCount, completedRoutines, connectedCount };
-  };
+  function handleViewChange(newView: "month" | "week" | "day") {
+    setView(newView);
+  }
 
-  // Render functions for each view
-  const renderMonthView = () => (
-    <div className="grid grid-cols-7 gap-1 border-t border-l border-border bg-border rounded-xl overflow-hidden card">
-      {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
-        <div key={day} className="bg-muted/40 py-3 text-center label">
-          {day}
-        </div>
-      ))}
-      {calendarDays.map((day, idx) => {
-        const isCurrentMonth = day.getMonth() === currentDate.getMonth();
-        const isTodayDate = isToday(day);
-        const isSelected = isSameDay(day, selectedDate);
-        const summary = getDailySummary(day);
-
-        return (
-          <div
-            key={idx}
-            onClick={() => handleSelectDate(day)}
-            onDoubleClick={() => handleOpenDailyTasksModal(day)}
-            className={cn(
-              "bg-surface min-h-[110px] p-3 flex flex-col justify-between transition-all cursor-pointer relative",
-              "hover:bg-muted/30 hover:shadow-md",
-              "active:scale-[0.98]",
-              !isCurrentMonth && "opacity-40 bg-muted/10",
-              isTodayDate && "ring-2 ring-primary ring-inset",
-              isSelected && "bg-primary/5",
-              "animate-fade-in"
-            )}
-            style={{ animationDelay: `${idx * 10}ms` }}
-          >
-            <div className="flex justify-between items-center mb-2">
-              <span className={cn(
-                "font-mono text-sm tabular-nums",
-                isTodayDate ? "text-primary font-bold" : "text-graphite-faint"
-              )}>
-                {day.getDate()}
-              </span>
-              {isTodayDate && (
-                <Stamp tone="amber" className="text-[0.6rem] px-1.5 py-0.5">Today</Stamp>
-              )}
-            </div>
-
-            <div className="space-y-1.5 mt-2">
-              {summary.routinesCount > 0 && (
-                <div className="flex items-center gap-1.5 px-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-success" />
-                  <span className="text-[0.68rem] text-graphite-muted">
-                    {summary.completedRoutines}/{summary.routinesCount}
-                  </span>
-                </div>
-              )}
-              {summary.connectedCount > 0 && (
-                <div className="flex items-center gap-1.5 px-1">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-                  <span className="text-[0.68rem] text-graphite-muted">
-                    {summary.connectedCount}
-                  </span>
-                </div>
-              )}
-              <div className="absolute bottom-1 right-1 opacity-0 hover:opacity-100 transition-opacity">
-                <MousePointer2 className="h-3 w-3 text-graphite-faint" />
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-
-  const renderWeekView = () => (
-    <div className="rounded-xl border border-border bg-surface overflow-hidden">
-      <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-border bg-muted/30">
-        <div className="px-2 py-2 label text-center">Time</div>
-        {calendarDays.map((day, idx) => (
-          <div 
-            key={idx} 
-            onDoubleClick={() => handleOpenDailyTasksModal(day)}
-            className="px-2 py-2 text-center border-l border-border cursor-pointer hover:bg-muted/50 transition-colors"
-          >
-            <div className="label">{day.toLocaleDateString("en-US", { weekday: "short" })}</div>
-            <div className={cn(
-              "font-mono text-lg font-semibold tabular-nums mt-1",
-              isToday(day) ? "text-primary" : "text-foreground"
-            )}>
-              {day.getDate()}
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-[60px_repeat(7,1fr)]">
-        {getTimeSlots(selectedDate, 60).map((slot, slotIdx) => (
-          <div key={slotIdx} className="grid grid-cols-[60px_repeat(7,1fr)] border-t border-border">
-            <div className="px-2 py-1 label text-right pr-2 text-graphite-faint border-r border-border">
-              {slot.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}
-            </div>
-            {calendarDays.map((day, dayIdx) => (
-              <div 
-                key={dayIdx} 
-                onDoubleClick={() => handleOpenDailyTasksModal(day)}
-                className="border-l border-border min-h-[80px] relative cursor-pointer hover:bg-muted/20 transition-colors"
-              >
-                {isToday(day) && isSameDay(slot, new Date()) && (
-                  <div className="absolute inset-0 bg-primary/5 pointer-events-none" />
-                )}
-              </div>
-            ))}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-
-  const routines = selectedDateData?.routines ?? [];
-  const connected = selectedDateData?.connected ?? [];
-
-  const renderDayView = () => (
-    <div className="space-y-6">
-      <Card>
-        <CardContent className="p-6">
-          <SectionHead
-            index="01"
-            title="Daily Habit Routines"
-            instruction="Keep consistency with daily practice sessions"
-          />
-          {routines.length === 0 ? (
-            <EmptyState
-              title="No routines scheduled"
-              description="Routines repeat automatically every single day."
-            />
-          ) : (
-            <div className="space-y-2 mt-4">
-              {routines.map((routine) => (
-                <div
-                  key={routine.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-xl bg-surface hover:bg-muted/10 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <button
-                      onClick={async () => {
-                        try {
-                          await toggleTaskCompleteToday(routine.id).unwrap();
-                        } catch (err) {
-                          console.error(err);
-                        }
-                      }}
-                      className={cn(
-                        "h-6 w-6 rounded-full border border-border flex items-center justify-center transition-colors",
-                        routine.doneToday && "bg-success border-success text-white"
-                      )}
-                    >
-                      {routine.doneToday && <Check className="h-3.5 w-3.5" />}
-                    </button>
-                    <span className={cn("text-sm font-medium", routine.doneToday && "line-through text-graphite-faint")}>
-                      {routine.title}
-                    </span>
-                  </div>
-                  <Stamp tone="valid">Habit</Stamp>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-6">
-          <SectionHead
-            index="02"
-            title="Focus Tasks scheduled"
-            instruction="Active tracks schedules and milestone focus elements"
-          />
-          {connected.length === 0 ? (
-            <EmptyState
-              title="No tasks connected"
-              description="Tasks pulled from your active study roadmap."
-            />
-          ) : (
-            <div className="space-y-2 mt-4">
-              {connected.map((item) => (
-                <div
-                  key={item.pinId}
-                  className="flex items-center justify-between p-4 border border-border rounded-xl bg-surface"
-                >
-                  <span className="text-sm font-medium">{item.task.title}</span>
-                  <Stamp tone="amber">Roadmap</Stamp>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-  );
+  function formatTime(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+  }
 
   return (
-    <main className="px-6 py-8 sm:px-8 lg:px-12 bg-background min-h-screen">
-      <Sheet>
-        <PageHeader
-          title="Plan"
-          subtitle="Your editorial study planner — schedules, milestones, routines, and logged sessions"
-          action={
-            <div className="flex gap-3">
-              <button
-                onClick={() => setIsTaskModalOpen(true)}
-                className="btn btn-primary"
-              >
-                <Plus className="h-4 w-4" />
-                Add Daily Task
-              </button>
-              <button
-                onClick={() => setIsStudyModalOpen(true)}
-                className="btn btn-accent"
-              >
-                <Plus className="h-4 w-4" />
-                Log Focus
-              </button>
-            </div>
-          }
-        />
-
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8 border-b border-border pb-6">
-          <div className="flex items-center gap-3">
-            <h2 className="text-2xl font-bold font-display text-foreground min-w-[200px]">
-              {view === "month" && formatMonthYear(currentDate)}
-              {view === "week" && formatWeekRange(startOfWeek(currentDate), endOfWeek(currentDate))}
-              {view === "day" && formatDay(currentDate)}
-            </h2>
-            <div className="flex items-center border border-border rounded-lg bg-surface">
-              <button
-                onClick={handlePrev}
-                className="p-2 hover:bg-muted/50 transition-colors border-r border-border rounded-l-lg"
-                title="Previous"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                onClick={handleToday}
-                className="px-3 py-2 text-sm font-medium hover:bg-muted/50 transition-colors font-sans"
-              >
-                Today
-              </button>
-              <button
-                onClick={handleNext}
-                className="p-2 hover:bg-muted/50 transition-colors border-l border-border rounded-r-lg"
-                title="Next"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
+    <Sheet>
+      <PageHeader title="Calendar" subtitle="Schedule and track your daily tasks" />
+      <div className="mb-6 flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-2">
+            <PrimaryButton
+              onClick={() => handleDateChange(addWeeks(currentDate, -1))}
+              size="sm"
+              variant="secondary"
+              aria-label="Previous week"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </PrimaryButton>
+            <span className="font-mono text-lg text-foreground w-40 text-center">
+              {formatWeekRange(currentDate)}
+            </span>
+            <PrimaryButton
+              onClick={() => handleDateChange(addWeeks(currentDate, 1))}
+              size="sm"
+              variant="secondary"
+              aria-label="Next week"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </PrimaryButton>
           </div>
-
-          <div className="flex border border-border rounded-lg bg-surface p-1">
-            {(["month", "week", "day"] as const).map((v) => (
-              <button
-                key={v}
-                onClick={() => handleViewChange(v)}
-                className={cn(
-                  "px-4 py-1.5 text-sm font-medium rounded-md transition-colors capitalize font-sans",
-                  view === v
-                    ? "bg-primary text-white"
-                    : "text-graphite-muted hover:text-foreground hover:bg-muted/50"
-                )}
-              >
-                {v}
-              </button>
-            ))}
+          <div className="flex items-center gap-2 border-l border-border pl-4">
+            <button
+              onClick={() => handleViewChange("month")}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                view === "month" ? "bg-primary text-primary-foreground" : "text-graphite-muted hover:bg-muted"
+              }`}
+            >
+              Month
+            </button>
+            <button
+              onClick={() => handleViewChange("week")}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                view === "week" ? "bg-primary text-primary-foreground" : "text-graphite-muted hover:bg-muted"
+              }`}
+            >
+              Week
+            </button>
+            <button
+              onClick={() => handleViewChange("day")}
+              className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
+                view === "day" ? "bg-primary text-primary-foreground" : "text-graphite-muted hover:bg-muted"
+              }`}
+            >
+              Day
+            </button>
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          <PrimaryButton onClick={() => { setIsTaskModalOpen(true); }}>
+            <Plus className="w-4 h-4 mr-2" />
+            Add Task
+          </PrimaryButton>
+          <SecondaryButton onClick={() => { setIsStudyModalOpen(true); }}>
+            <Check className="w-4 h-4 mr-2" />
+            Log Study
+          </SecondaryButton>
+        </div>
+      </div>
 
-        {/* Calendar Workspace Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          <div className="lg:col-span-3">
-            {isLoading ? (
-              <div className="h-[400px] flex items-center justify-center">
-                <Loader label="Preparing planner..." />
-              </div>
-            ) : view === "month" ? (
-              renderMonthView()
-            ) : view === "week" ? (
-              renderWeekView()
-            ) : (
-              renderDayView()
-            )}
-          </div>
-
-          {/* Right hand Planner Sidecar */}
-          <div className="space-y-6">
-            <Card>
-              <CardContent className="p-6">
-                <SectionHead
-                  index="01"
-                  title="Day Agenda"
-                  instruction={formatDay(selectedDate)}
-                />
-                
-                <div className="space-y-4 mt-6">
-                  {isToday(selectedDate) ? (
-                    <>
-                      <div className="border-l-4 border-success pl-3 py-1">
-                        <span className="label block text-[0.68rem]">Habit routines</span>
-                        <span className="text-sm font-semibold text-foreground">
-                          {routines.filter(r => r.doneToday).length} of {routines.length} completed
-                        </span>
-                      </div>
-                      <div className="border-l-4 border-primary pl-3 py-1">
-                        <span className="label block text-[0.68rem]">Roadmap items</span>
-                        <span className="text-sm font-semibold text-foreground">
-                          {connected.length} active scheduled
-                        </span>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="p-4 bg-muted/30 rounded-lg text-center">
-                      <p className="caption">Daily tracking details are loaded dynamically for the current session.</p>
+      {dailyLoading ? (
+        <div className="space-y-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="h-12 bg-muted animate-pulse rounded-lg" />
+          ))}
+        </div>
+      ) : dailyError ? (
+        <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-4 text-sm text-destructive">
+          Unable to load tasks. Please try again.
+        </div>
+      ) : (
+        <>
+          {view === "month" && (
+            <div className="grid grid-cols-7 gap-1">
+              {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                <div key={day} className="p-2 text-center text-xs font-medium text-graphite-muted">
+                  {day}
+                </div>
+              ))}
+              {(() => {
+                const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                const startDay = firstDay.getDay();
+                const daysInMonth = getDaysInMonth(currentDate.getMonth() + 1, currentDate.getFullYear());
+                const cells = [];
+                for (let i = 0; i < startDay; i++) {
+                  cells.push(<div key={`empty-${i}`} className="aspect-square" />);
+                }
+                for (let d = 1; d <= daysInMonth; d++) {
+                  const date = new Date(currentDate.getFullYear(), currentDate.getMonth(), d);
+                  const isTodayDate = isToday(date);
+                  const isSelected = isSameDay(date, selectedDate);
+                  const dayRoutines = routines.filter((r) => {
+                    // Simplified - in real app check if routine is for this day
+                    return true;
+                  });
+                  cells.push(
+                    <div
+                      key={d}
+                      onClick={() => { setSelectedDate(date); handleViewChange("day"); }}
+                      className={`aspect-square p-2 rounded-lg transition-colors relative cursor-pointer ${
+                        isTodayDate ? "bg-primary/10 border border-primary" : "bg-card hover:bg-muted"
+                      } ${isSelected ? "ring-2 ring-primary" : ""}`}
+                    >
+                      <span className={`text-sm font-medium ${isTodayDate ? "text-primary" : "text-foreground"}`}>
+                        {d}
+                      </span>
+                      {dayRoutines.length > 0 && (
+                        <div className="mt-1 space-y-1">
+                          {dayRoutines.slice(0, 3).map((routine) => (
+                            <div
+                              key={routine.id}
+                              className="text-xs bg-primary/10 text-primary px-1 rounded truncate"
+                            >
+                              {routine.title}
+                            </div>
+                          ))}
+                          {dayRoutines.length > 3 && (
+                            <div className="text-xs text-graphite-faint">+{dayRoutines.length - 3} more</div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  )}
+                  );
+                }
+                return cells;
+              })()}
+            </div>
+          )}
+          {view === "week" && (
+            <div className="grid grid-cols-7 gap-1">
+              {days.map((day) => (
+                <div key={day.toISOString()} className="min-h-[200px] p-2 bg-card rounded-lg border border-border">
+                  <div className={`text-sm font-medium ${isSameDay(day, new Date()) ? "text-primary" : "text-foreground"}`}>
+                    {formatDay(day)}
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    {connected
+                      .filter((c) => isSameDay(new Date(c.task.startTime ?? c.task.endTime ?? day), day))
+                      .slice(0, 4)
+                      .map((item) => (
+                        <div
+                          key={item.pinId}
+                          className="text-xs bg-amber/10 text-amber px-1.5 py-0.5 rounded truncate"
+                        >
+                          {item.task.title}
+                        </div>
+                      ))}
+                    {routines
+                      .filter((r) => r.dailySlot)
+                      .slice(0, 4)
+                      .map((routine) => (
+                        <div
+                          key={routine.id}
+                          className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded truncate"
+                        >
+                          {routine.title}
+                        </div>
+                      ))}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
+          )}
+          {view === "day" && (
+            <div className="space-y-4">
+              <SectionHead index="01" title="Tasks for Today" />
+              <div className="space-y-2">
+                {routines.length === 0 && connected.length === 0 ? (
+                  <EmptyState
+                    title="No tasks scheduled"
+                    description="Add a routine or pull a roadmap task to get started"
+                    action={
+                      <PrimaryButton onClick={() => { setIsTaskModalOpen(true); }}>
+                        Add Task
+                      </PrimaryButton>
+                    }
+                  />
+                ) : (
+                  <>
+                    {routines.map((routine) => (
+                      <Card key={routine.id} className="p-4">
+                        <div className="flex items-start gap-4">
+                          <Bubble
+                            filled={routine.doneToday}
+                            busy={false}
+                            label={routine.doneToday ? "Mark not done" : "Mark done"}
+                            onClick={() => toggleTaskComplete(routine.id)}
+                            disabled={false}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-foreground truncate">
+                                {routine.title}
+                              </h3>
+                              <Stamp tone="valid">Routine</Stamp>
+                            </div>
+                            {routine.description && (
+                              <p className="mt-1 text-sm text-graphite-muted line-clamp-2">
+                                {routine.description}
+                              </p>
+                            )}
+                            <div className="mt-2 flex items-center gap-3 text-sm text-graphite-faint">
+                              {routine.dailySlot && (
+                                <span className="flex items-center gap-1">
+                                  <MousePointer2 className="w-3.5 h-3.5" />
+                                  {routine.dailySlot}
+                                </span>
+                              )}
+                              {(routine.plannedHours || routine.plannedMinutes || routine.plannedSeconds) && (
+                                <span className="font-mono">
+                                  {formatTime((routine.plannedHours ?? 0) * 3600 + (routine.plannedMinutes ?? 0) * 60 + (routine.plannedSeconds ?? 0))}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                    {connected.map((item) => (
+                      <Card key={item.pinId} className="p-4">
+                        <div className="flex items-start gap-4">
+                          <Bubble
+                            filled={false}
+                            busy={false}
+                            label={`Complete ${item.task.title}`}
+                            onClick={() => toggleTaskComplete(item.task.id)}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-foreground truncate">
+                                {item.task.title}
+                              </h3>
+                              <Stamp tone="amber">Roadmap</Stamp>
+                            </div>
+                            <p className="mt-1 text-sm text-graphite-muted truncate">
+                              {item.task.milestoneTitle ?? item.task.phaseTitle} / {item.task.topicTitle ?? "General"}
+                            </p>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
-            <Card>
-              <CardContent className="p-6">
-                <SectionHead
-                  index="02"
-                  title="Next Actions"
-                  instruction="Keep track of SDE study goals"
-                />
-                <div className="space-y-3 mt-4">
-                  <button
-                    onClick={() => setIsTaskModalOpen(true)}
-                    className="w-full btn btn-secondary justify-start font-sans"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Add routine Habit
-                  </button>
-                  <button
-                    onClick={() => setIsStudyModalOpen(true)}
-                    className="w-full btn btn-tertiary justify-start font-sans text-primary hover:bg-primary/5"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Log study Session
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
+      {/* Add Task Modal */}
+      <Dialog open={isTaskModalOpen} onClose={() => setIsTaskModalOpen(false)} title="Add Task">
+        <form onSubmit={addTask} className="space-y-4">
+          <FormGroup label="Task Title">
+            <Input
+              autoFocus
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              placeholder="e.g. Review DSA flashcards"
+            />
+          </FormGroup>
+          <FormGroup label="Priority">
+            <select
+              value={newTaskPriority}
+              onChange={(e) => setNewTaskPriority(e.target.value)}
+              className="input"
+            >
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="CRITICAL">Critical</option>
+            </select>
+          </FormGroup>
+          <div className="pt-4 flex justify-end gap-3">
+            <SecondaryButton type="button" onClick={() => setIsTaskModalOpen(false)}>
+              Cancel
+            </SecondaryButton>
+            <PrimaryButton type="submit" disabled={!newTaskTitle.trim()}>
+              Add Task
+            </PrimaryButton>
           </div>
-        </div>
+        </form>
+      </Dialog>
 
-        {/* Task Creation Modal */}
-        <Dialog
-          open={isTaskModalOpen}
-          onClose={() => setIsTaskModalOpen(false)}
-          title="Add routine Habit"
-          description="Create a repeatable task that returns to your agenda daily"
-        >
-          <form onSubmit={handleAddTask} className="space-y-5">
-            <FormGroup label="Title">
-              <Input
-                required
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="e.g. 45 min LeetCode session"
-              />
-            </FormGroup>
-
-            <FormGroup label="Priority">
-              <select
-                value={newTaskPriority}
-                onChange={(e) => setNewTaskPriority(e.target.value)}
-                className="input"
-              >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="CRITICAL">Critical</option>
-              </select>
-            </FormGroup>
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <SecondaryButton onClick={() => setIsTaskModalOpen(false)}>
-                Cancel
-              </SecondaryButton>
-              <PrimaryButton type="submit">
-                Create Habit
-              </PrimaryButton>
-            </div>
-          </form>
-        </Dialog>
-
-        {/* Study Logging Modal */}
-        <Dialog
-          open={isStudyModalOpen}
-          onClose={() => setIsStudyModalOpen(false)}
-          title="Log study Session"
-          description="Directly log the focused SDE practice duration completed"
-        >
-          <form onSubmit={handleAddStudySession} className="space-y-5">
-            <FormGroup label="Duration (minutes)">
-              <Input
-                required
-                type="number"
-                min={1}
-                max={1440}
-                value={studyMinutes}
-                onChange={(e) => setStudyMinutes(e.target.value)}
-                placeholder="60"
-              />
-            </FormGroup>
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <SecondaryButton onClick={() => setIsStudyModalOpen(false)}>
-                Cancel
-              </SecondaryButton>
-              <PrimaryButton type="submit">
-                Log Session
-              </PrimaryButton>
-            </div>
-          </form>
-        </Dialog>
-
-        {/* Daily Tasks Modal for double-clicked date */}
-        {dailyTasksDate && (
-          <DailyTasksModal
-            open={isDailyTasksModalOpen}
-            onClose={() => {
-              setIsDailyTasksModalOpen(false);
-              setDailyTasksDate(null);
-            }}
-            date={dailyTasksDate}
-            tasks={{
-              routines: selectedDateData?.routines ?? [],
-              connected: selectedDateData?.connected ?? [],
-            }}
-            onStartTask={handleStartTaskFromModal}
-          />
-        )}
-      </Sheet>
-    </main>
+      {/* Study Session Modal */}
+      <Dialog open={isStudyModalOpen} onClose={() => setIsStudyModalOpen(false)} title="Log Study Session">
+        <form onSubmit={addStudySession} className="space-y-4">
+          <FormGroup label="Duration (minutes)">
+            <Input
+              type="number"
+              min="1"
+              max="480"
+              value={studyMinutes}
+              onChange={(e) => setStudyMinutes(Number(e.target.value))}
+            />
+          </FormGroup>
+          <FormGroup label="Associated Task (optional)">
+            <select
+              value={studyTaskId ?? ""}
+              onChange={(e) => setStudyTaskId(e.target.value || null)}
+              className="input"
+            >
+              <option value="">None</option>
+              {routines.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.title}
+                </option>
+              ))}
+              {connected.map((c) => (
+                <option key={c.pinId} value={c.task.id}>
+                  {c.task.title} (Roadmap)
+                </option>
+              ))}
+            </select>
+          </FormGroup>
+          <div className="pt-4 flex justify-end gap-3">
+            <SecondaryButton type="button" onClick={() => setIsStudyModalOpen(false)}>
+              Cancel
+            </SecondaryButton>
+            <PrimaryButton type="submit" disabled={studyMinutes < 1}>
+              Log Session
+            </PrimaryButton>
+          </div>
+        </form>
+      </Dialog>
+    </Sheet>
   );
 }

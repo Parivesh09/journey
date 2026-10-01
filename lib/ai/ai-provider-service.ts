@@ -18,10 +18,12 @@ export class AIProviderService {
 
   public async initialize() {
     AIProviderRegistry.initialize();
-    
+
     // Validate encryption key
     if (!APIKeyEncryption.validateEncryptionKey()) {
-      console.warn("AI Provider Encryption key not configured. Using environment variables for default providers.");
+      console.warn(
+        "AI Provider Encryption key not configured. Using environment variables for default providers.",
+      );
     }
   }
 
@@ -33,7 +35,9 @@ export class AIProviderService {
     return new DatabaseAIProvider(dbProvider);
   }
 
-  public async getProviderBySlug(slug: string): Promise<DatabaseAIProvider | null> {
+  public async getProviderBySlug(
+    slug: string,
+  ): Promise<DatabaseAIProvider | null> {
     const dbProvider = await AIProviderDB.getProviderBySlug(slug);
     if (!dbProvider) {
       return null;
@@ -64,9 +68,12 @@ export class AIProviderService {
   }
 
   public async createProvider(config: any): Promise<DatabaseAIProvider> {
-    // Validate provider config
-    const definition = AIProviderRegistry.getDefinition(config.protocol);
-    if (!definition) {
+    // Normalize protocol casing for Prisma enum storage (lowercase from UI → uppercase for DB).
+    // No protocol whitelist — the adapter layer routes unknown protocols to the
+    // OpenAI-compatible path by default, which covers the vast majority of custom endpoints.
+    const protocol = String(config.protocol).toUpperCase();
+
+    if (!protocol) {
       throw new Error(`Unknown protocol: ${config.protocol}`);
     }
 
@@ -75,6 +82,7 @@ export class AIProviderService {
 
     const dbProvider = await AIProviderDB.createProvider({
       ...providerConfig,
+      protocol,
       type: "CUSTOM",
       status: "ENABLED",
       isSystem: false,
@@ -85,9 +93,15 @@ export class AIProviderService {
     return new DatabaseAIProvider(dbProvider);
   }
 
-  public async updateProvider(id: string, updates: any): Promise<DatabaseAIProvider> {
+  public async updateProvider(
+    id: string,
+    updates: any,
+  ): Promise<DatabaseAIProvider> {
     // Strip out apiKey - it should be handled separately via updateProviderSecret
     const { apiKey, ...providerUpdates } = updates;
+    if (providerUpdates.protocol) {
+      providerUpdates.protocol = String(providerUpdates.protocol).toUpperCase();
+    }
     const dbProvider = await AIProviderDB.updateProvider(id, providerUpdates);
     return new DatabaseAIProvider(dbProvider);
   }
@@ -96,15 +110,25 @@ export class AIProviderService {
     await AIProviderDB.deleteProvider(id);
   }
 
-  public async updateProviderSecret(providerId: string, apiKey: string, userId: string): Promise<void> {
+  public async updateProviderSecret(
+    providerId: string,
+    apiKey: string,
+    userId: string,
+  ): Promise<void> {
     await AISecretService.updateProviderSecret(providerId, apiKey, userId);
   }
 
-  public async deleteProviderSecret(providerId: string, userId: string): Promise<void> {
+  public async deleteProviderSecret(
+    providerId: string,
+    userId: string,
+  ): Promise<void> {
     await AISecretService.deleteProviderSecret(providerId, userId);
   }
 
-  public async getProviderSecret(providerId: string, userId: string): Promise<any | null> {
+  public async getProviderSecret(
+    providerId: string,
+    userId: string,
+  ): Promise<any | null> {
     return await AISecretService.getProviderSecret(providerId, userId);
   }
 
@@ -113,12 +137,12 @@ export class AIProviderService {
     if (!provider) {
       return false;
     }
-    
+
     // System providers cannot be deleted
     if (provider.isSystem) {
       return false;
     }
-    
+
     // Check if provider is referenced by any diagrams
     const diagrams = await this.getDiagramsByProvider(providerId);
     return diagrams.length === 0;
@@ -128,7 +152,10 @@ export class AIProviderService {
     return await AIProviderDB.getDiagramsByProvider(providerId);
   }
 
-  public async testConnection(providerId: string, userId: string): Promise<any> {
+  public async testConnection(
+    providerId: string,
+    userId: string,
+  ): Promise<any> {
     const provider = await this.getProvider(providerId);
     if (!provider) {
       throw new Error("Provider not found");
@@ -151,16 +178,19 @@ export class AIProviderService {
 
   public async validateProviderDefinition(definition: any) {
     return AIProviderRegistry.validateDefinition(definition);
-}
+  }
 
   public async createProviderDefinition(definition: any) {
     const errors = await this.validateProviderDefinition(definition);
     if (errors.length > 0) {
-      throw new Error(`Validation failed: ${errors.join(', ')}`);
+      throw new Error(`Validation failed: ${errors.join(", ")}`);
     }
-    
+
     // This would normally save to database, but for now we'll just track it in memory
-    return { success: true, message: 'Provider definition created (in memory)' };
+    return {
+      success: true,
+      message: "Provider definition created (in memory)",
+    };
   }
 
   public async getEncryptionKeyStatus(): boolean {
