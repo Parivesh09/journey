@@ -41,36 +41,72 @@ export type RoadmapTemplate = {
 
 export const DEFAULT_ROADMAP_ID = "fullstack-v1";
 
-/** Public template IDs (what the API expects). */
+/** Get all available roadmap IDs dynamically from filesystem */
+export function getAvailableRoadmapIds(): string[] {
+  const roadmapsDir = path.resolve(process.cwd(), "roadmaps");
+  const defaultIds = ["fullstack-v1", "sde-master-roadmap"];
+  
+  if (!fs.existsSync(roadmapsDir)) {
+    return defaultIds;
+  }
+
+  try {
+    const files = fs.readdirSync(roadmapsDir);
+    const jsonFiles = files
+      .filter((file) => file.endsWith(".json"))
+      .map((file) => file.replace(".json", ""));
+    
+    // Also include root sde-master-roadmap if it exists
+    if (fs.existsSync(path.resolve(process.cwd(), "sde-master-roadmap.json"))) {
+      if (!jsonFiles.includes("sde-master-roadmap")) {
+        jsonFiles.push("sde-master-roadmap");
+      }
+    }
+
+    return Array.from(new Set([...defaultIds, ...jsonFiles]));
+  } catch {
+    return defaultIds;
+  }
+}
+
+/** Legacy constant for backward compatibility */
 export const ROADMAP_IDS = ["fullstack-v1", "sde-master-roadmap"] as const;
 
-export const ROADMAP_TEMPLATES: Record<string, string> = {
-  fullstack_v1: path.resolve(process.cwd(), "roadmaps/fullstack-v1.json"),
-  sde_master_roadmap: path.resolve(process.cwd(), "sde-master-roadmap.json"),
-};
-
-/** Template ids usable by the public API / workflow. */
-export function roadmapSwitchId(roadmapId: string) {
-  switch (roadmapId) {
-    case "fullstack-v1":
-      return "fullstack_v1";
-    case "sde-master-roadmap":
-      return "sde_master_roadmap";
-    default:
-      return null;
+/** Get template file path by ID */
+export function getRoadmapFilePath(roadmapId: string): string | null {
+  // Check exact path in roadmaps/ directory
+  const inRoadmapsDir = path.resolve(process.cwd(), `roadmaps/${roadmapId}.json`);
+  if (fs.existsSync(inRoadmapsDir)) {
+    return inRoadmapsDir;
   }
+
+  // Legacy root file
+  if (roadmapId === "sde-master-roadmap" || roadmapId === "sde_master_roadmap") {
+    const rootFile = path.resolve(process.cwd(), "sde-master-roadmap.json");
+    if (fs.existsSync(rootFile)) {
+      return rootFile;
+    }
+  }
+
+  // Fallback map
+  if (roadmapId === "fullstack-v1" || roadmapId === "fullstack_v1") {
+    const defaultFile = path.resolve(process.cwd(), "roadmaps/fullstack-v1.json");
+    if (fs.existsSync(defaultFile)) {
+      return defaultFile;
+    }
+  }
+
+  return null;
 }
 
 /**
  * Load a roadmap template config by template id. Defaults to the Full Stack
- * template on signup. The legacy sde-master file keeps its `roadmap` metadata
- * wrapper; both shapes normalize to `RoadmapTemplate`.
+ * template on signup. Supports dynamic discovery from roadmaps/ directory.
  */
 export function readRoadmap(
   roadmapId: string = DEFAULT_ROADMAP_ID,
 ): RoadmapTemplate {
-  const key = roadmapSwitchId(roadmapId) ?? roadmapSwitchId(DEFAULT_ROADMAP_ID)!;
-  const file = ROADMAP_TEMPLATES[key];
+  const file = getRoadmapFilePath(roadmapId);
   if (!file || !fs.existsSync(file)) {
     throw new Error(`Unknown roadmap template: ${roadmapId}`);
   }

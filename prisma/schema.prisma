@@ -56,6 +56,23 @@ enum NotificationStatus {
 // AI Provider System
 // ====================
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum AuditOutcome {
+  SUCCESS
+  FAILURE
+}
+
+enum AuditSource {
+  UI
+  API
+  CLI
+  SCRIPT
+}
+
 enum AIProviderType {
   SYSTEM
   CUSTOM
@@ -153,6 +170,7 @@ model User {
   onboardingDismissedAt   DateTime?
   dailyStudyTargetMinutes Int       @default(240)
   theme                   String    @default("dark")
+  role                    UserRole  @default(USER)
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
@@ -168,6 +186,43 @@ model User {
   integrations            UserIntegration[]
   logs                    NotificationLog[]
   aiProviderSecrets       AIProviderSecret[] @relation("AIProviderSecretUser")
+  auditLogs               AuditLog[]
+
+}
+
+model AuditLog {
+  id               String       @id @default(cuid())
+  createdAt        DateTime     @default(now())
+  actorUserId      String?
+  actorEmail       String?
+  action           String
+  entityType       String
+  entityId         String?
+  before           Json?
+  after            Json?
+  changedFields    String[]
+  outcome          AuditOutcome
+  ip               String?
+  userAgent        String?
+  method           String?
+  path             String?
+  route            String?
+  statusCode       Int?
+  durationMs       Int?
+  requestId        String?
+  source           AuditSource  @default(API)
+  errorMessage     String?
+  metadata         Json?
+
+  // Relations
+  actor            User?        @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([actorUserId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([outcome])
+  @@index([requestId])
 }
 
 model TaskCategory {

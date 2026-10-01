@@ -45,6 +45,7 @@ const safeUserSelect = {
   dailyStudyTargetMinutes: true,
   theme: true,
   onboardingDismissedAt: true,
+  role: true,
 } as const;
 
 export async function getCurrentUser() {
@@ -59,10 +60,22 @@ export async function getCurrentUser() {
 /**
  * Resolves the authenticated user from the session cookie, or null when there
  * is no valid session. Ownership in every user-owned handler must come from
- * this value, never from client-provided identifiers.
+ * this value, never from client-supplied identifiers.
  */
 export async function requireUser() {
   return getCurrentUser();
+}
+
+/**
+ * Resolves the authenticated admin user from the session cookie, or null when
+ * there is no valid session or user is not admin. Ownership in every admin handler
+ * must come from this value, never from client-supplied identifiers.
+ */
+export async function requireAdmin() {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return ((user as any).role === "ADMIN") ? user : null;
 }
 
 export async function isAuthenticated() { return Boolean(await getCurrentUser()); }
