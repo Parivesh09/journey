@@ -319,7 +319,9 @@ export default function DailyTab() {
                   setEditTitle(routine.title);
                   setEditDescription(routine.description ?? "");
                   setEditDailySlot(routine.dailySlot ?? "");
+                  setEditPlannedHours(routine.plannedHours ?? 0);
                   setEditPlannedMinutes(routine.plannedMinutes ?? 60);
+                  setEditPlannedSeconds(routine.plannedSeconds ?? 0);
                   setEditStartTime(
                     routine.startTime
                       ? new Date(routine.startTime).toISOString().slice(0, 16)
@@ -449,7 +451,9 @@ export default function DailyTab() {
           setEditTitle("");
           setEditDescription("");
           setEditDailySlot("");
+          setEditPlannedHours(0);
           setEditPlannedMinutes(60);
+          setEditPlannedSeconds(0);
           setEditStartTime("");
           setEditEndTime("");
         }}
