@@ -1,7 +1,18 @@
 "use client";
 
 import { useMemo, useState, type FormEvent } from "react";
-import { Plus, Link as LinkIcon, Edit, Trash2, Sun, Moon, Coffee, Play, Pause, RotateCcw } from "lucide-react";
+import {
+  Plus,
+  Link as LinkIcon,
+  Edit,
+  Trash2,
+  Sun,
+  Moon,
+  Coffee,
+  Play,
+  Pause,
+  RotateCcw,
+} from "lucide-react";
 import {
   SectionHead,
   Stamp,
@@ -89,9 +100,20 @@ function RoutineRow({
   onEdit?: () => void;
   onDelete?: () => void;
 }) {
-  const totalSeconds = (routine.plannedHours ?? 0) * 3600 + (routine.plannedMinutes ?? 0) * 60 + (routine.plannedSeconds ?? 0);
+  const totalSeconds =
+    (routine.plannedHours ?? 0) * 3600 +
+    (routine.plannedMinutes ?? 0) * 60 +
+    (routine.plannedSeconds ?? 0);
   const showTimer = totalSeconds > 0;
-  const { state, startTask, pauseTask, resumeTask, restartTask, isTaskActive, canStartTask } = useTaskTimer();
+  const {
+    state,
+    startTask,
+    pauseTask,
+    resumeTask,
+    restartTask,
+    isTaskActive,
+    canStartTask,
+  } = useTaskTimer();
 
   const isActive = isTaskActive(routine.id);
   const isRunning = isActive && state.status === "running";
@@ -114,7 +136,7 @@ function RoutineRow({
   const handleResume = () => resumeTask();
   const handleRestart = () => restartTask();
 
-    return (
+  return (
     <div className="task-row py-3 group transition-colors duration-fast hover:bg-muted/30">
       <Bubble
         filled={routine.doneToday}
@@ -127,8 +149,8 @@ function RoutineRow({
         <div className="flex items-center gap-2">
           <p
             className={`truncate text-sm transition-all duration-fast ${
-              routine.doneToday 
-                ? "text-graphite-faint line-through opacity-60" 
+              routine.doneToday
+                ? "text-graphite-faint line-through opacity-60"
                 : "text-foreground font-medium"
             }`}
           >
@@ -143,14 +165,19 @@ function RoutineRow({
         )}
         <div className="mt-0.5 flex items-center gap-3 flex-wrap">
           <p className="font-mono text-xs text-graphite-faint">
-            Every day · {Math.floor(totalSeconds / 60)}m {totalSeconds % 60}s {routine.doneToday && "· done today"}
+            Every day · {Math.floor(totalSeconds / 60)}m {totalSeconds % 60}s{" "}
+            {routine.doneToday && "· done today"}
           </p>
           {(routine.startTime ?? routine.endTime) && (
             <CountdownTimer targetTime={routine.startTime ?? routine.endTime} />
           )}
           {showTimer && isActive && (
             <span className="font-mono text-xs px-2 py-1 rounded bg-destructive/10 text-destructive">
-              {String(Math.floor(state.remainingMs / 60000)).padStart(2, "0")}:{String(Math.floor((state.remainingMs % 60000) / 1000)).padStart(2, "0")}
+              {String(Math.floor(state.remainingMs / 60000)).padStart(2, "0")}:
+              {String(Math.floor((state.remainingMs % 60000) / 1000)).padStart(
+                2,
+                "0",
+              )}
             </span>
           )}
         </div>
@@ -181,7 +208,7 @@ function RoutineRow({
                 <Play className="h-3.5 w-3.5" />
               </button>
             )}
-            {(!isRunning && !isPaused) && (
+            {!isRunning && !isPaused && (
               <button
                 onClick={handleRestart}
                 className="p-1.5 rounded hover:bg-muted transition-colors opacity-50 cursor-not-allowed"
@@ -246,7 +273,7 @@ export default function DailyTab() {
     data: dailyData,
     isLoading: loading,
     error: dailyError,
-  } = useGetDailyTasksQuery("daily");
+  } = useGetDailyTasksQuery({ tab: "daily" }, { skip: false });
 
   const { data: roadmapsData, isLoading: roadmapsLoading } =
     useGetRoadmapsQuery(undefined, {
@@ -312,9 +339,18 @@ export default function DailyTab() {
         priority: "MEDIUM",
         isPersonalDaily: true,
         dailySlot: newDailySlot || undefined,
-        plannedHours: newPlannedHours !== "" && newPlannedHours !== undefined ? Number(newPlannedHours) : undefined,
-        plannedMinutes: newPlannedMinutes !== "" && newPlannedMinutes !== undefined ? Number(newPlannedMinutes) : undefined,
-        plannedSeconds: newPlannedSeconds !== "" && newPlannedSeconds !== undefined ? Number(newPlannedSeconds) : undefined,
+        plannedHours:
+          newPlannedHours !== "" && newPlannedHours !== undefined
+            ? Number(newPlannedHours)
+            : undefined,
+        plannedMinutes:
+          newPlannedMinutes !== "" && newPlannedMinutes !== undefined
+            ? Number(newPlannedMinutes)
+            : undefined,
+        plannedSeconds:
+          newPlannedSeconds !== "" && newPlannedSeconds !== undefined
+            ? Number(newPlannedSeconds)
+            : undefined,
         startTime: newStartTime || undefined,
         endTime: newEndTime || undefined,
       }).unwrap();
@@ -364,9 +400,18 @@ export default function DailyTab() {
         title: editTitle.trim(),
         description: editDescription.trim() || undefined,
         dailySlot: editDailySlot || undefined,
-        plannedHours: editPlannedHours !== "" && editPlannedHours !== undefined ? Number(editPlannedHours) : undefined,
-        plannedMinutes: editPlannedMinutes !== "" && editPlannedMinutes !== undefined ? Number(editPlannedMinutes) : undefined,
-        plannedSeconds: editPlannedSeconds !== "" && editPlannedSeconds !== undefined ? Number(editPlannedSeconds) : undefined,
+        plannedHours:
+          editPlannedHours !== "" && editPlannedHours !== undefined
+            ? Number(editPlannedHours)
+            : undefined,
+        plannedMinutes:
+          editPlannedMinutes !== "" && editPlannedMinutes !== undefined
+            ? Number(editPlannedMinutes)
+            : undefined,
+        plannedSeconds:
+          editPlannedSeconds !== "" && editPlannedSeconds !== undefined
+            ? Number(editPlannedSeconds)
+            : undefined,
         startTime: editStartTime || undefined,
         endTime: editEndTime || undefined,
       }).unwrap();
@@ -397,7 +442,7 @@ export default function DailyTab() {
     } catch {
       setError("Unable to delete routine. Please try again.");
     }
-}
+  }
   async function handleLinkRoadmap(roadmapId: string) {
     setLinkingRoadmap(roadmapId);
     setError("");
@@ -476,10 +521,7 @@ export default function DailyTab() {
         {loading ? (
           <div className="mt-6 space-y-3">
             {[...Array(3)].map((_, i) => (
-              <div
-                key={i}
-                className="h-12 bg-muted animate-pulse rounded-lg"
-              />
+              <div key={i} className="h-12 bg-muted animate-pulse rounded-lg" />
             ))}
           </div>
         ) : routines.length === 0 ? (
@@ -511,8 +553,16 @@ export default function DailyTab() {
                   setEditDescription(routine.description ?? "");
                   setEditDailySlot(routine.dailySlot ?? "");
                   setEditPlannedMinutes(routine.plannedMinutes ?? 60);
-                  setEditStartTime(routine.startTime ? new Date(routine.startTime).toISOString().slice(0, 16) : "");
-                  setEditEndTime(routine.endTime ? new Date(routine.endTime).toISOString().slice(0, 16) : "");
+                  setEditStartTime(
+                    routine.startTime
+                      ? new Date(routine.startTime).toISOString().slice(0, 16)
+                      : "",
+                  );
+                  setEditEndTime(
+                    routine.endTime
+                      ? new Date(routine.endTime).toISOString().slice(0, 16)
+                      : "",
+                  );
                 }}
                 onDelete={() => setDeletingRoutine(routine)}
               />
@@ -532,10 +582,7 @@ export default function DailyTab() {
         {loading ? (
           <div className="mt-6 space-y-3">
             {[...Array(2)].map((_, i) => (
-              <div
-                key={i}
-                className="h-16 bg-muted animate-pulse rounded-lg"
-              />
+              <div key={i} className="h-16 bg-muted animate-pulse rounded-lg" />
             ))}
           </div>
         ) : connected.length === 0 ? (
@@ -641,7 +688,9 @@ export default function DailyTab() {
                   <FormGroup label="Description (optional)">
                     <textarea
                       value={newDescription}
-                      onChange={(event) => setNewDescription(event.target.value)}
+                      onChange={(event) =>
+                        setNewDescription(event.target.value)
+                      }
                       placeholder="What does this routine involve?"
                       className="input min-h-[80px]"
                       rows={3}
@@ -668,7 +717,9 @@ export default function DailyTab() {
                           min="0"
                           max="23"
                           value={newPlannedHours ?? ""}
-                          onChange={(event) => setNewPlannedHours(event.target.valueAsNumber || 0)}
+                          onChange={(event) =>
+                            setNewPlannedHours(event.target.valueAsNumber || 0)
+                          }
                           className="input"
                           placeholder="0"
                         />
@@ -680,7 +731,11 @@ export default function DailyTab() {
                           min="0"
                           max="59"
                           value={newPlannedMinutes ?? ""}
-                          onChange={(event) => setNewPlannedMinutes(event.target.valueAsNumber || 0)}
+                          onChange={(event) =>
+                            setNewPlannedMinutes(
+                              event.target.valueAsNumber || 0,
+                            )
+                          }
                           className="input"
                           placeholder="0"
                         />
@@ -692,7 +747,11 @@ export default function DailyTab() {
                           min="0"
                           max="59"
                           value={newPlannedSeconds ?? ""}
-                          onChange={(event) => setNewPlannedSeconds(event.target.valueAsNumber || 0)}
+                          onChange={(event) =>
+                            setNewPlannedSeconds(
+                              event.target.valueAsNumber || 0,
+                            )
+                          }
                           className="input"
                           placeholder="0"
                         />
@@ -704,7 +763,9 @@ export default function DailyTab() {
                       <input
                         type="time"
                         value={newStartTime}
-                        onChange={(event) => setNewStartTime(event.target.value)}
+                        onChange={(event) =>
+                          setNewStartTime(event.target.value)
+                        }
                         className="input"
                       />
                     </FormGroup>
@@ -722,15 +783,17 @@ export default function DailyTab() {
                     study habits.
                   </p>
                   <div className="pt-4 flex justify-end gap-3">
-                    <SecondaryButton onClick={() => {
-                      setAddModalOpen(false);
-                      setNewTitle("");
-                      setNewDescription("");
-                      setNewDailySlot("");
-                      setNewPlannedMinutes(60);
-                      setNewStartTime("");
-                      setNewEndTime("");
-                    }}>
+                    <SecondaryButton
+                      onClick={() => {
+                        setAddModalOpen(false);
+                        setNewTitle("");
+                        setNewDescription("");
+                        setNewDailySlot("");
+                        setNewPlannedMinutes(60);
+                        setNewStartTime("");
+                        setNewEndTime("");
+                      }}
+                    >
                       Cancel
                     </SecondaryButton>
                     <PrimaryButton
@@ -823,17 +886,17 @@ export default function DailyTab() {
                   )}
                 </div>
               )}
+            </div>
           </div>
-        </div>
         </div>
       )}
 
       {/* Edit Routine Modal */}
       <Dialog
         open={!!editingRoutine}
-        onClose={() => { 
-          setEditingRoutine(null); 
-          setEditTitle(""); 
+        onClose={() => {
+          setEditingRoutine(null);
+          setEditTitle("");
           setEditDescription("");
           setEditDailySlot("");
           setEditPlannedHours(0);
@@ -883,7 +946,9 @@ export default function DailyTab() {
                   min="0"
                   max="23"
                   value={editPlannedHours ?? ""}
-                  onChange={(event) => setEditPlannedHours(event.target.valueAsNumber || 0)}
+                  onChange={(event) =>
+                    setEditPlannedHours(event.target.valueAsNumber || 0)
+                  }
                   className="input"
                   placeholder="0"
                 />
@@ -895,7 +960,9 @@ export default function DailyTab() {
                   min="0"
                   max="59"
                   value={editPlannedMinutes ?? ""}
-                  onChange={(event) => setEditPlannedMinutes(event.target.valueAsNumber || 0)}
+                  onChange={(event) =>
+                    setEditPlannedMinutes(event.target.valueAsNumber || 0)
+                  }
                   className="input"
                   placeholder="0"
                 />
@@ -907,7 +974,9 @@ export default function DailyTab() {
                   min="0"
                   max="59"
                   value={editPlannedSeconds ?? ""}
-                  onChange={(event) => setEditPlannedSeconds(event.target.valueAsNumber || 0)}
+                  onChange={(event) =>
+                    setEditPlannedSeconds(event.target.valueAsNumber || 0)
+                  }
                   className="input"
                   placeholder="0"
                 />
@@ -934,18 +1003,23 @@ export default function DailyTab() {
           </div>
           <Caption>Changes apply to this routine going forward.</Caption>
           <div className="pt-4 flex justify-end gap-3">
-            <SecondaryButton onClick={() => { 
-              setEditingRoutine(null); 
-              setEditTitle(""); 
-              setEditDescription("");
-              setEditDailySlot("");
-              setEditPlannedMinutes(60);
-              setEditStartTime("");
-              setEditEndTime("");
-            }}>
+            <SecondaryButton
+              onClick={() => {
+                setEditingRoutine(null);
+                setEditTitle("");
+                setEditDescription("");
+                setEditDailySlot("");
+                setEditPlannedMinutes(60);
+                setEditStartTime("");
+                setEditEndTime("");
+              }}
+            >
               Cancel
             </SecondaryButton>
-            <PrimaryButton type="submit" disabled={!!updating || !editTitle.trim()}>
+            <PrimaryButton
+              type="submit"
+              disabled={!!updating || !editTitle.trim()}
+            >
               {updating ? "Saving..." : "Save Changes"}
             </PrimaryButton>
           </div>
@@ -961,7 +1035,8 @@ export default function DailyTab() {
       >
         <div className="space-y-4">
           <p className="text-sm text-foreground">
-            Are you sure you want to delete <strong className="font-medium">{deletingRoutine?.title}</strong>?
+            Are you sure you want to delete{" "}
+            <strong className="font-medium">{deletingRoutine?.title}</strong>?
             This cannot be undone.
           </p>
           <div className="pt-4 flex justify-end gap-3">
@@ -1021,11 +1096,14 @@ function ConnectedRow({
           <p className="flex items-center gap-2 font-mono text-xs text-graphite-faint">
             <Moon className="h-3.5 w-3.5" />
             <span>
-              {item.task.milestoneTitle ?? item.task.phaseTitle} / {item.task.topicTitle ?? "General"}
+              {item.task.milestoneTitle ?? item.task.phaseTitle} /{" "}
+              {item.task.topicTitle ?? "General"}
             </span>
           </p>
           {(item.task.startTime ?? item.task.endTime) && (
-            <CountdownTimer targetTime={item.task.startTime ?? item.task.endTime} />
+            <CountdownTimer
+              targetTime={item.task.startTime ?? item.task.endTime}
+            />
           )}
         </div>
       </div>
