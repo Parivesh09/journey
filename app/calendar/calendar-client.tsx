@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useTransition, useEffect, useCallback } from "react";
+import { useState, useTransition, useEffect, useCallback, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Plus, Check, MousePointer2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, PageHeader, SectionHead, Stamp, Card, CardContent, Loader, Dialog, Input, FormGroup, PrimaryButton, SecondaryButton, EmptyState, DailyTasksModal } from "@/app/components/ui";
+import { AddDailyTaskModal } from "@/app/components/add-daily-task-modal";
 import { formatMonthYear, formatWeekRange, formatDay, addMonths, addWeeks, addDays, getDaysInMonth, getWeekDays, isSameDay, isToday, startOfWeek, endOfWeek, getTimeSlots } from "@/lib/utils";
-import { useGetDailyTasksQuery, useCreateTaskMutation, useCreateStudySessionMutation, useToggleTaskCompleteTodayMutation } from "@/lib/api";
+import { useGetDailyTasksQuery, useCreateTaskMutation, useCreateStudySessionMutation, useToggleTaskCompleteTodayMutation, useGetRoadmapsQuery, useGetDailyRoadmapsQuery, useLinkRoadmapMutation, useUnlinkRoadmapMutation } from "@/lib/api";
 import { useTaskTimer } from "@/app/components/task-timer-context";
+import type { RoadmapSummary } from "@/lib/types";
 
 export default function CalendarClient({
   initialView,
@@ -20,12 +22,11 @@ export default function CalendarClient({
   const [isPending, startTransition] = useTransition();
   const { startTask } = useTaskTimer();
 
-  const [view, setView] = useState(initialView);
-  const [currentDate, setCurrentDate] = useState(new Date(initialDate));
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date(initialDate));
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [newTaskPriority, setNewTaskPriority] = useState("MEDIUM");
+   const [view, setView] = useState(initialView);
+   const [currentDate, setCurrentDate] = useState(new Date(initialDate));
+   const [selectedDate, setSelectedDate] = useState<Date>(new Date(initialDate));
+   const [newTaskTitle, setNewTaskTitle] = useState("");
+   const [newTaskPriority, setNewTaskPriority] = useState("MEDIUM");
 
   const [isStudyModalOpen, setIsStudyModalOpen] = useState(false);
   const [studyMinutes, setStudyMinutes] = useState("");
@@ -33,6 +34,21 @@ export default function CalendarClient({
   // Daily tasks modal state
   const [isDailyTasksModalOpen, setIsDailyTasksModalOpen] = useState(false);
   const [dailyTasksDate, setDailyTasksDate] = useState<Date | null>(null);
+  
+  // Shared Add Daily Task Modal state
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [modalError, setModalError] = useState("");
+  const [activeTabInModal, setActiveTabInModal] = useState<"personal" | "roadmap">("personal");
+  const [linkingRoadmap, setLinkingRoadmap] = useState<string | null>(null);
+  const [unlinkingRoadmap, setUnlinkingRoadmap] = useState<string | null>(null);
+  const [newTitle, setNewTitle] = useState("");
+  const [newDescription, setNewDescription] = useState("");
+  const [newDailySlot, setNewDailySlot] = useState("");
+  const [newPlannedHours, setNewPlannedHours] = useState<number | "">(0);
+  const [newPlannedMinutes, setNewPlannedMinutes] = useState<number | "">(60);
+  const [newPlannedSeconds, setNewPlannedSeconds] = useState<number | "">(0);
+  const [newStartTime, setNewStartTime] = useState("");
+  const [newEndTime, setNewEndTime] = useState("");
 
   // Fetch daily tasks for today (for day view sidebar)
   const { data: dailyData, isLoading } = useGetDailyTasksQuery({ tab: "daily" });
@@ -43,9 +59,13 @@ export default function CalendarClient({
     { skip: !dailyTasksDate }
   );
 
-  const [createTask] = useCreateTaskMutation();
-  const [createStudySession] = useCreateStudySessionMutation();
-  const [toggleTaskCompleteToday] = useToggleTaskCompleteTodayMutation();
+   const [createTask] = useCreateTaskMutation();
+   const [createStudySession] = useCreateStudySessionMutation();
+   const [toggleTaskCompleteToday] = useToggleTaskCompleteTodayMutation();
+   const { data: roadmapsData, isLoading: roadmapsLoading } = useGetRoadmapsQuery(undefined, {
+     skip: false,
+   });
+   const { data: dailyRoadmapsData } = useGetDailyRoadmapsQuery();
 
   // Handle double-click to open daily tasks modal
   const handleOpenDailyTasksModal = useCallback((date: Date) => {
@@ -71,6 +91,8 @@ export default function CalendarClient({
     });
     setIsDailyTasksModalOpen(false);
   }, [startTask]);
+
+
 
   const handlePrev = () => {
     setCurrentDate((current) => {
@@ -118,34 +140,18 @@ export default function CalendarClient({
     }
   };
 
-  const handleAddTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newTaskTitle.trim()) return;
-    try {
-      await createTask({
-        title: newTaskTitle.trim(),
-        priority: newTaskPriority,
-        isPersonalDaily: true,
-      }).unwrap();
-      setNewTaskTitle("");
-      setIsTaskModalOpen(false);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleAddStudySession = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const mins = Number(studyMinutes);
-    if (!mins || mins <= 0) return;
-    try {
-      await createStudySession({ minutes: mins }).unwrap();
-      setStudyMinutes("");
-      setIsStudyModalOpen(false);
-    } catch (err) {
-      console.error(err);
-    }
-  };
+   const handleAddStudySession = async (e: React.FormEvent) => {
+     e.preventDefault();
+     const mins = Number(studyMinutes);
+     if (!mins || mins <= 0) return;
+     try {
+       await createStudySession({ minutes: mins }).unwrap();
+       setStudyMinutes("");
+       setIsStudyModalOpen(false);
+     } catch (err) {
+       console.error(err);
+     }
+   };
 
   // Navigation effect - handles URL updates after date changes
   useEffect(() => {
@@ -376,24 +382,24 @@ export default function CalendarClient({
         <PageHeader
           title="Plan"
           subtitle="Your editorial study planner — schedules, milestones, routines, and logged sessions"
-          action={
-            <div className="flex gap-3">
-              <button
-                onClick={() => setIsTaskModalOpen(true)}
-                className="btn btn-primary"
-              >
-                <Plus className="h-4 w-4" />
-                Add Daily Task
-              </button>
-              <button
-                onClick={() => setIsStudyModalOpen(true)}
-                className="btn btn-accent"
-              >
-                <Plus className="h-4 w-4" />
-                Log Focus
-              </button>
-            </div>
-          }
+           action={
+             <div className="flex gap-3">
+               <button
+                 onClick={() => setAddModalOpen(true)}
+                 className="btn btn-primary"
+               >
+                 <Plus className="h-4 w-4" />
+                 Add Daily Task
+               </button>
+               <button
+                 onClick={() => setIsStudyModalOpen(true)}
+                 className="btn btn-accent"
+               >
+                 <Plus className="h-4 w-4" />
+                 Log Focus
+               </button>
+             </div>
+           }
         />
 
         {/* Toolbar */}
@@ -526,45 +532,53 @@ export default function CalendarClient({
         </div>
 
         {/* Task Creation Modal */}
-        <Dialog
-          open={isTaskModalOpen}
-          onClose={() => setIsTaskModalOpen(false)}
-          title="Add routine Habit"
-          description="Create a repeatable task that returns to your agenda daily"
-        >
-          <form onSubmit={handleAddTask} className="space-y-5">
-            <FormGroup label="Title">
-              <Input
-                required
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="e.g. 45 min LeetCode session"
-              />
-            </FormGroup>
-
-            <FormGroup label="Priority">
-              <select
-                value={newTaskPriority}
-                onChange={(e) => setNewTaskPriority(e.target.value)}
-                className="input"
-              >
-                <option value="LOW">Low</option>
-                <option value="MEDIUM">Medium</option>
-                <option value="HIGH">High</option>
-                <option value="CRITICAL">Critical</option>
-              </select>
-            </FormGroup>
-
-            <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <SecondaryButton onClick={() => setIsTaskModalOpen(false)}>
-                Cancel
-              </SecondaryButton>
-              <PrimaryButton type="submit">
-                Create Habit
-              </PrimaryButton>
-            </div>
-          </form>
-        </Dialog>
+        <AddDailyTaskModal
+          open={addModalOpen}
+          onClose={() => {
+            setAddModalOpen(false);
+            setModalError("");
+            setNewTitle("");
+            setNewDescription("");
+            setNewDailySlot("");
+            setNewPlannedHours(0);
+            setNewPlannedMinutes(60);
+            setNewPlannedSeconds(0);
+            setNewStartTime("");
+            setNewEndTime("");
+            setActiveTabInModal("personal");
+          }}
+          error={modalError}
+          setError={setModalError}
+          activeRoadmaps={roadmapsData?.roadmaps ?? []}
+          linkedRoadmapIds={new Set((dailyRoadmapsData?.linkedRoadmaps ?? []).map(item => item.roadmapId))}
+          roadmapsLoading={roadmapsLoading}
+          linkingRoadmap={linkingRoadmap}
+          unlinkingRoadmap={unlinkingRoadmap}
+          onLinkRoadmap={async (roadmapId: string) => {
+            setLinkingRoadmap(roadmapId);
+            setModalError("");
+            try {
+              await linkRoadmap(roadmapId).unwrap();
+            } catch (reason: unknown) {
+              const data = (reason as { data?: ApiError }).data;
+              setModalError(data?.error || "Unable to link roadmap.");
+            } finally {
+              setLinkingRoadmap(null);
+            }
+          }}
+          onUnlinkRoadmap={async (roadmapId: string) => {
+            setUnlinkingRoadmap(roadmapId);
+            setModalError("");
+            try {
+              await unlinkRoadmap(roadmapId).unwrap();
+            } catch (reason: unknown) {
+              const data = (reason as { data?: ApiError }).data;
+              setModalError(data?.error || "Unable to unlink roadmap.");
+            } finally {
+              setUnlinkingRoadmap(null);
+            }
+          }}
+        />
 
         {/* Study Logging Modal */}
         <Dialog
