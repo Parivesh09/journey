@@ -139,14 +139,14 @@ export async function POST(
     }
 
     // Parse request body for options
-    const body = await request.json().catch(() => ({}));
+    const body = await request.json().catch(() => ({})) as { forceRegenerate?: boolean; diagramType?: string };
     const forceRegenerate = body.forceRegenerate === true;
-    const diagramType = body.diagramType || "architecture";
+    const diagramType = (body.diagramType || "architecture") as "architecture" | "sequence" | "lifecycle" | "dataflow";
 
     // Generate diagram
     const result = await generationService.generateDiagram({
       roadmapId,
-      diagramType: diagramType as const,
+      diagramType,
       forceRegenerate,
     });
 

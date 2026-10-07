@@ -223,7 +223,7 @@ export default function SettingsClient() {
             <button
               key={item.id}
               type="button"
-              onClick={() => setActiveTab(item.id as any)}
+              onClick={() => setActiveTab(item.id as "account" | "appearance" | "notifications" | "configuration")}
               className={`pb-3 border-b-2 font-medium relative transition-all duration-fast ${
                 activeTab === item.id
                   ? "text-foreground border-primary"

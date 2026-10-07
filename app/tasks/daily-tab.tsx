@@ -34,6 +34,11 @@ import {
   useToggleTaskCompleteTodayMutation,
   useUpdateTaskMutation,
   useDeleteTaskMutation,
+  useCreateTaskMutation,
+  useGetRoadmapsQuery,
+  useGetDailyRoadmapsQuery,
+  useLinkRoadmapMutation,
+  useUnlinkRoadmapMutation,
 } from "@/lib/api";
 import type { RoadmapSummary } from "@/lib/types";
 
@@ -277,6 +282,7 @@ export default function DailyTab() {
       skip: false,
     });
   const { data: dailyRoadmapsData } = useGetDailyRoadmapsQuery();
+  const linkedRoadmaps = dailyRoadmapsData?.linkedRoadmaps ?? [];
 
   const [createTask, { isLoading: adding }] = useCreateTaskMutation();
   const [toggleTaskCompleteToday] = useToggleTaskCompleteTodayMutation();
@@ -296,6 +302,16 @@ export default function DailyTab() {
   const [editStartTime, setEditStartTime] = useState("");
   const [editEndTime, setEditEndTime] = useState("");
   const [deletingRoutine, setDeletingRoutine] = useState<Routine | null>(null);
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [updating, setUpdating] = useState<string | null>(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [activeTabInModal, setActiveTabInModal] = useState<"personal" | "roadmap">("personal");
+  const [linkingRoadmap, setLinkingRoadmap] = useState<string | null>(null);
+  const [unlinkingRoadmap, setUnlinkingRoadmap] = useState<string | null>(null);
+  const [editingRoutine, setEditingRoutine] = useState<Routine | null>(null);
+  const [activeRoadmaps, setActiveRoadmaps] = useState<RoadmapSummary[]>([]);
 
   const linkedRoadmapIds = useMemo(
     () => new Set(linkedRoadmaps.map((item) => item.roadmapId)),

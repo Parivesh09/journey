@@ -9,7 +9,7 @@ import { AddDailyTaskModal } from "@/app/components/add-daily-task-modal";
 import { formatMonthYear, formatWeekRange, formatDay, addMonths, addWeeks, addDays, getDaysInMonth, getWeekDays, isSameDay, isToday, startOfWeek, endOfWeek, getTimeSlots } from "@/lib/utils";
 import { useGetDailyTasksQuery, useCreateTaskMutation, useCreateStudySessionMutation, useToggleTaskCompleteTodayMutation, useGetRoadmapsQuery, useGetDailyRoadmapsQuery, useLinkRoadmapMutation, useUnlinkRoadmapMutation } from "@/lib/api";
 import { useTaskTimer } from "@/app/components/task-timer-context";
-import type { RoadmapSummary } from "@/lib/types";
+import type { RoadmapSummary, ApiError } from "@/lib/types";
 
 export default function CalendarClient({
   initialView,
@@ -32,9 +32,10 @@ export default function CalendarClient({
   const [studyMinutes, setStudyMinutes] = useState("");
 
   // Daily tasks modal state
-  const [isDailyTasksModalOpen, setIsDailyTasksModalOpen] = useState(false);
+const [isDailyTasksModalOpen, setIsDailyTasksModalOpen] = useState(false);
   const [dailyTasksDate, setDailyTasksDate] = useState<Date | null>(null);
-  
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+   
   // Shared Add Daily Task Modal state
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [modalError, setModalError] = useState("");
@@ -62,6 +63,8 @@ export default function CalendarClient({
    const [createTask] = useCreateTaskMutation();
    const [createStudySession] = useCreateStudySessionMutation();
    const [toggleTaskCompleteToday] = useToggleTaskCompleteTodayMutation();
+   const [linkRoadmap] = useLinkRoadmapMutation();
+   const [unlinkRoadmap] = useUnlinkRoadmapMutation();
    const { data: roadmapsData, isLoading: roadmapsLoading } = useGetRoadmapsQuery(undefined, {
      skip: false,
    });

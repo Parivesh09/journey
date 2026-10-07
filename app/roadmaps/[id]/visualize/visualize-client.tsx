@@ -229,10 +229,10 @@ export default function VisualizationClient({
       try {
         if (container.requestFullscreen) {
           await container.requestFullscreen();
-        } else if (container.webkitRequestFullscreen) {
-          await container.webkitRequestFullscreen();
-        } else if (container.msRequestFullscreen) {
-          await container.msRequestFullscreen();
+        } else if (container instanceof HTMLElement && (container as HTMLElement).webkitRequestFullscreen) {
+          await (container as HTMLElement).webkitRequestFullscreen();
+        } else if (container instanceof HTMLElement && (container as HTMLElement).msRequestFullscreen) {
+          await (container as HTMLElement).msRequestFullscreen();
         }
         setIsFullscreen(true);
       } catch (err) {
@@ -242,10 +242,10 @@ export default function VisualizationClient({
       try {
         if (document.exitFullscreen) {
           await document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-          await document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-          await document.msExitFullscreen();
+        } else if (document instanceof HTMLElement && (document as HTMLElement).webkitExitFullscreen) {
+          await (document as HTMLElement).webkitExitFullscreen();
+        } else if (document instanceof HTMLElement && (document as HTMLElement).msExitFullscreen) {
+          await (document as HTMLElement).msExitFullscreen();
         }
         setIsFullscreen(false);
       } catch (err) {
@@ -259,8 +259,8 @@ export default function VisualizationClient({
     const handleFullscreenChange = () => {
       const isFull = !!(
         document.fullscreenElement ||
-        (document as any).webkitFullscreenElement ||
-        (document as any).msFullscreenElement
+        document.webkitFullscreenElement ||
+        document.msFullscreenElement
       );
       setIsFullscreen(isFull);
     };
@@ -363,14 +363,12 @@ export default function VisualizationClient({
               <VisualizationButton
                 onClick={handleOpenInNewTab}
                 className="btn btn-secondary"
-                title="Open in new tab"
               >
                 <ExternalLink className="h-4 w-4" />
               </VisualizationButton>
               <VisualizationButton
                 onClick={handleFullscreen}
                 className="btn btn-secondary"
-                title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
               >
                 {isFullscreen ? (
                   <Minimize className="h-4 w-4" />

@@ -11,7 +11,7 @@ function toStoredDiagram(diagram: any): StoredArchifyDiagram | null {
     diagramType: diagram.diagramType as DiagramType,
     sourceJson: diagram.sourceJson as unknown as ArchifyDiagram,
     errorMetadata: diagram.errorMetadata ? JSON.parse(diagram.errorMetadata as string) : undefined,
-  };
+  } as StoredArchifyDiagram | null;
 }
 
 export async function GET(
