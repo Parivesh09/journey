@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Sheet, PageHeader, SectionHead } from "@/app/components/ui";
 import DailyTab from "./daily-tab";
-import RoadmapTab from "./roadmap-tab";
+import RoadmapsExecutionPage from "./roadmaps/page";
 
 export default function TasksWorkspace({
   initialTab,
@@ -60,23 +60,13 @@ export default function TasksWorkspace({
           </div>
         </div>
 
-        <div>
-          {tab === "daily" ? (
-            <DailyTab />
-          ) : (
-            <>
-              <SectionHead
-                index="01"
-                title="Roadmap Overview"
-                instruction="Your activated roadmaps and progress"
-              />
-              <RoadmapTab
-                title="All roadmap tasks"
-                initialFilters={initialFilters}
-              />
-            </>
-          )}
-        </div>
+         <div>
+           {tab === "daily" ? (
+             <DailyTab />
+           ) : (
+             <RoadmapsExecutionPage />
+           )}
+         </div>
       </Sheet>
     </main>
   );

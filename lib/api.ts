@@ -13,6 +13,7 @@ import type {
   SessionResponse,
   PendingNotificationsResponse,
   Task,
+  RoadmapExecution,
 } from "@/lib/types";
 
 const baseUrl = typeof window !== "undefined" ? "/api" : undefined;
@@ -101,6 +102,11 @@ export const apiSlice = createApi({
       providesTags: ["Roadmaps"],
     }),
 
+    getRoadmapExecution: builder.query<RoadmapExecution, string>({
+      query: (roadmapId) => `roadmaps?roadmapId=${roadmapId}`,
+      providesTags: (result, error, roadmapId) => [{ type: "Roadmaps", id: roadmapId }],
+    }),
+
     activateRoadmap: builder.mutation<
       { activated: boolean; roadmapId: string; categories: number; tasksCreated: number; tasksSkipped: number },
       string
@@ -150,6 +156,21 @@ export const apiSlice = createApi({
         body: { roadmapId },
       }),
       invalidatesTags: ["Milestones"],
+    }),
+
+    roadmapItemAction: builder.mutation<
+      { success: boolean; action: string; itemId: string },
+      { itemId: string; action: string; roadmapId: string }
+    >({
+      query: ({ itemId, action, roadmapId }) => ({
+        url: `roadmap-items/${itemId}/${action}`,
+        method: "POST",
+        body: { roadmapId },
+      }),
+      invalidatesTags: (result, error, { roadmapId }) => [
+        { type: "Roadmaps", id: roadmapId },
+        { type: "Milestones", id: roadmapId },
+      ],
     }),
 
     // Daily Pins API
@@ -285,6 +306,8 @@ export const {
   useLoginMutation,
   useSignupMutation,
   useLogoutMutation,
+  useGetRoadmapExecutionQuery,
+  useRoadmapItemActionMutation,
 } = apiSlice;
 
 export default apiSlice;

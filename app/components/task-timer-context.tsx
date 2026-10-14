@@ -9,7 +9,7 @@ export interface ActiveTask {
   title: string;
   description?: string | null;
   plannedSeconds: number;
-  kind: "routine" | "task" | "connected" | "roadmap";
+  kind: "routine" | "task" | "connected" | "roadmap" | "milestone" | "topic";
   isDailyTask: boolean;
   roadmapId?: string | null;
   phaseTitle?: string | null;

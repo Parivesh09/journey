@@ -174,11 +174,11 @@ export default function TemplateAccordion({
   return (
     <>
       <div className="space-y-2">
-        {milestones.map((milestone, index) => {
-          const isOpen = openId === milestone.id;
-          const milestonePhases = milestone.phases
-            .map((phaseId) => phases.find((phase) => phase.id === phaseId))
-            .filter((phase): phase is Phase => Boolean(phase));
+       {milestones.map((milestone, index) => {
+           const isOpen = openId === milestone.id;
+           const milestonePhases = (milestone.phases || [])
+             .map((phaseId) => phases.find((phase) => phase.id === phaseId))
+             .filter((phase): phase is Phase => Boolean(phase));
 
           return (
             <div key={milestone.id} className="border border-border rounded">
