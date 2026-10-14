@@ -132,7 +132,7 @@ function MobileNavButton({
     <button
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center gap-1 px-3 py-2 text-xs transition-colors rounded-lg min-w-[72px]",
+        "flex flex-col items-center gap-1 px-3 py-2 text-xs transition-colors rounded-lg min-w-18",
         isActive
           ? "text-primary bg-primary/5"
           : "text-graphite-muted hover:text-foreground hover:bg-muted/50",
@@ -346,7 +346,7 @@ export default function AppShell({ active, children, user }: AppShellProps) {
         {/* Desktop Sidebar */}
         <aside
           className={cn(
-            "fixed inset-y-0 left-0 z-50 hidden w-[280px] bg-surface border-r border-border md:flex md:flex-col",
+            "fixed inset-y-0 left-0 z-50 hidden w-70 bg-surface border-r border-border md:flex md:flex-col",
             "transition-transform duration-moderate ease-out will-change-transform",
             isMobileMenuOpen
               ? "translate-x-0"
